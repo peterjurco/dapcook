@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       const { data: householdRows, error: rpcError } = await supabase.rpc('get_household_by_invite_token', {
         token: pendingToken,
       })
-      const household = householdRows?.[0] ?? null
+      const household = (householdRows as Array<{ id: string; name: string }> | null)?.[0] ?? null
 
       console.log('[auth/callback] rpc result:', { household, rpcError })
 

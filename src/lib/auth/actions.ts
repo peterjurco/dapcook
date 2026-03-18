@@ -104,7 +104,7 @@ export async function joinHousehold(inviteToken: string) {
 
   const { data: householdRows, error: lookupError } = await supabase
     .rpc('get_household_by_invite_token', { token: inviteToken })
-  const household = householdRows?.[0] ?? null
+  const household = (householdRows as Array<{ id: string; name: string }> | null)?.[0] ?? null
 
   if (lookupError || !household) {
     return { error: 'Invalid invite code' }

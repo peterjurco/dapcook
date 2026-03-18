@@ -19,7 +19,7 @@ export default async function JoinCompletePage({
   const { data: householdRows, error } = await supabase.rpc('get_household_by_invite_token', {
     token,
   })
-  const household = householdRows?.[0] ?? null
+  const household = (householdRows as Array<{ id: string; name: string }> | null)?.[0] ?? null
 
   if (error || !household) redirect('/join-invalid')
 
