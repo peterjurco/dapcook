@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { InviteLink } from '@/components/settings/InviteLink'
 import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
+import { TagsEditor } from '@/components/settings/TagsEditor'
+import type { TagData } from '@/app/api/tags/route'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -20,11 +22,26 @@ export default async function SettingsPage() {
 
   if (!profile?.household_id) redirect('/onboarding')
 
-  const [{ data: household }, { data: members }, { data: plannerRules }] = await Promise.all([
+  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }] = await Promise.all([
     supabase.from('households').select('*').eq('id', profile.household_id).single(),
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
     supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
+    supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
+    supabase.from('tags').select('name, color').eq('household_id', profile.household_id),
   ])
+
+  // Compute tag usage counts server-side
+  const tagCounts = new Map<string, number>()
+  for (const r of recipes ?? []) {
+    for (const tag of r.tags ?? []) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+  }
+  const colorMap = new Map((tagsMeta ?? []).map((t) => [t.name, t.color]))
+  const allTags: TagData[] = Array.from(tagCounts.entries())
+    .map(([name, count]) => ({ name, color: colorMap.get(name) ?? null, count }))
+    .sort((a, b) => b.count - a.count)
+  for (const t of tagsMeta ?? []) {
+    if (!tagCounts.has(t.name)) allTags.push({ name: t.name, color: t.color, count: 0 })
+  }
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const inviteUrl = `${origin}/join/${household?.invite_token}`
@@ -49,6 +66,17 @@ export default async function SettingsPage() {
             </p>
             <InviteLink url={inviteUrl} />
           </div>
+        </div>
+      </section>
+
+      {/* Tags */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Tags</h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="text-xs text-gray-400 mb-4">
+            Assign colors, rename, or remove tags. Renaming or deleting updates all recipes.
+          </p>
+          <TagsEditor initialTags={allTags} />
         </div>
       </section>
 

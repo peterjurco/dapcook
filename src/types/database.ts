@@ -145,6 +145,30 @@ export interface Database {
         }
         Relationships: []
       }
+      tags: {
+        Row: {
+          id: string
+          household_id: string
+          name: string
+          color: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          name: string
+          color?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          name?: string
+          color?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       week_plans: {
         Row: {
           id: string
@@ -339,6 +363,14 @@ export interface Database {
       get_household_invite_details: {
         Args: { token: string }
         Returns: { id: string; name: string; members: { display_name: string | null; avatar_url: string | null }[] }[]
+      }
+      rename_tag: {
+        Args: { p_household_id: string; p_old_name: string; p_new_name: string }
+        Returns: void
+      }
+      delete_tag: {
+        Args: { p_household_id: string; p_name: string }
+        Returns: void
       }
     }
   }

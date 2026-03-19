@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, ExternalLink, AlertTriangle } from 'lucide-react'
+import { ExternalLink, AlertTriangle } from 'lucide-react'
 import { IngredientEditor } from './IngredientEditor'
 import { StepEditor } from './StepEditor'
 import { ImageUpload } from './ImageUpload'
+import { TagInput } from './TagInput'
 import type { Recipe } from '@/types/database'
 import type { RecipeDraft, IngredientFormItem, Step } from '@/types/recipe'
+import type { TagData } from '@/app/api/tags/route'
 
 interface RecipeFormProps {
   recipe?: Recipe        // edit mode
@@ -45,7 +47,6 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const [cookTime, setCookTime] = useState(String(source?.cook_time_min ?? ''))
   const [servings, setServings] = useState(String(source?.servings ?? ''))
   const [notes, setNotes] = useState(recipe?.notes ?? '')
-  const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>(source?.tags ?? [])
   const [ingredients, setIngredients] = useState<IngredientFormItem[]>(
     (source?.ingredients as Array<{ id: string; quantity: number | null; unit: string; name: string; notes: string }> | undefined ?? []).map(ingredientToFormItem)
@@ -56,21 +57,13 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [allTags, setAllTags] = useState<TagData[]>([])
 
-  function addTag(raw: string) {
-    const tag = raw.trim().toLowerCase()
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag])
-    }
-    setTagInput('')
-  }
-
-  function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault()
-      addTag(tagInput)
-    }
-  }
+  useEffect(() => {
+    fetch('/api/tags').then((r) => r.json()).then((data) => {
+      if (Array.isArray(data)) setAllTags(data)
+    }).catch(() => {})
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -220,35 +213,8 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
           {/* Tags */}
           <div>
-            <label htmlFor="tags" className={labelClass}>Tags</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => setTags(tags.filter((t) => t !== tag))}
-                    className="text-gray-400 hover:text-gray-700"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <input
-              id="tags"
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              onBlur={() => tagInput.trim() && addTag(tagInput)}
-              placeholder="Type a tag and press Enter"
-              className={inputClass}
-            />
-            <p className="text-xs text-gray-400 mt-1">Press Enter or comma to add</p>
+            <label className={labelClass}>Tags</label>
+            <TagInput tags={tags} onChange={setTags} allTags={allTags} />
           </div>
         </section>
 
