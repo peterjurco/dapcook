@@ -11,7 +11,6 @@ import {
   getWeekDays,
   formatDayLabel,
   toDateString,
-  dayOfWeekNumber,
 } from '@/lib/utils/week'
 import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
 import type { Recipe, WeekPlan, WeekPlanRule } from '@/types/database'

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     // Determine which days are occupied in this week
-    let occupiedDays = new Set<number>()
+    const occupiedDays = new Set<number>()
     if (weekPlan) {
       const { data: slots } = await supabase
         .from('meal_slots')
