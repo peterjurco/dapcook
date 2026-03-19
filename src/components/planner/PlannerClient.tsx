@@ -25,6 +25,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const [weekRules, setWeekRules] = useState<WeekPlanRule[]>([])
   const [loading, setLoading] = useState(true)
   const [activeSlot, setActiveSlot] = useState<MealSlotWithRecipe | null>(null)
+  const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
 
   const weekStartStr = toDateString(weekStart)
   const today = new Date()
@@ -173,6 +174,9 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                   coveredBy={coveredBy}
                   isToday={isToday}
                   maxSpanDays={maxSpanDays}
+                  isSearchOpen={openSearchDay === dow}
+                  onOpenSearch={() => setOpenSearchDay(dow)}
+                  onCloseSearch={() => setOpenSearchDay(null)}
                   onAddRecipe={handleAddRecipe}
                   onAddCustom={handleAddCustom}
                   onDelete={handleDelete}

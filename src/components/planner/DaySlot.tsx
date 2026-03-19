@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { Plus } from 'lucide-react'
 import { SlotCard } from './SlotCard'
@@ -17,6 +16,9 @@ interface DaySlotProps {
   coveredBy: MealSlotWithRecipe | null
   isToday: boolean
   maxSpanDays: number
+  isSearchOpen: boolean
+  onOpenSearch: () => void
+  onCloseSearch: () => void
   onAddRecipe: (dayOfWeek: number, recipe: Recipe) => void
   onAddCustom: (dayOfWeek: number, label: string) => void
   onDelete: (slotId: string) => void
@@ -30,13 +32,14 @@ export function DaySlot({
   coveredBy,
   isToday,
   maxSpanDays,
+  isSearchOpen,
+  onOpenSearch,
+  onCloseSearch,
   onAddRecipe,
   onAddCustom,
   onDelete,
   onSpanChange,
 }: DaySlotProps) {
-  const [searching, setSearching] = useState(false)
-
   const { setNodeRef, isOver } = useDroppable({ id: `day-${dayOfWeek}`, data: { dayOfWeek } })
 
   const isEmpty = !slot && !coveredBy
@@ -79,16 +82,16 @@ export function DaySlot({
           </div>
         ) : (
           <div className="h-full relative">
-            {searching ? (
+            {isSearchOpen ? (
               <RecipeSearch
-                onSelectRecipe={(recipe) => { setSearching(false); onAddRecipe(dayOfWeek, recipe) }}
-                onSelectCustom={(label) => { setSearching(false); onAddCustom(dayOfWeek, label) }}
-                onClose={() => setSearching(false)}
+                onSelectRecipe={(recipe) => { onCloseSearch(); onAddRecipe(dayOfWeek, recipe) }}
+                onSelectCustom={(label) => { onCloseSearch(); onAddCustom(dayOfWeek, label) }}
+                onClose={onCloseSearch}
               />
             ) : (
               <button
                 type="button"
-                onClick={() => setSearching(true)}
+                onClick={onOpenSearch}
                 className={`w-full h-full min-h-[130px] flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed transition-colors group ${
                   isOver
                     ? 'border-blue-300 bg-blue-50'

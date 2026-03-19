@@ -16,10 +16,21 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
   const [results, setResults] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onClose()
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [onClose])
 
   useEffect(() => {
     if (!query.trim()) {
@@ -29,8 +40,8 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
     const timer = setTimeout(async () => {
       setLoading(true)
       const res = await fetch(`/api/recipes?search=${encodeURIComponent(query)}`)
-      const data = await res.json() as Recipe[]
-      setResults(data ?? [])
+      const data = await res.json()
+      setResults(Array.isArray(data) ? data : [])
       setLoading(false)
     }, 250)
     return () => clearTimeout(timer)
@@ -46,7 +57,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
   }, [onClose])
 
   return (
-    <div className="absolute z-20 top-0 left-0 right-0 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+    <div ref={containerRef} className="absolute z-20 top-0 left-0 w-56 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
       {/* Search input */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
         <Search size={14} className="text-gray-400 flex-shrink-0" />

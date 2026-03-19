@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
 
   if (search) {
-    query = query.ilike('title', `%${search}%`)
+    // eslint-disable-next-line no-misleading-character-class
+    const normalized = search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    query = query.ilike('title_normalized', `%${normalized}%`)
   }
   if (tag) {
     query = query.contains('tags', [tag])

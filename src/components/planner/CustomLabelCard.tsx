@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, X, UtensilsCrossed, ShoppingBag, Soup } from 'lucide-react'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
 const LABEL_STYLES: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
@@ -42,6 +44,7 @@ interface CustomLabelCardProps {
 }
 
 export function CustomLabelCard({ slot, onDelete }: CustomLabelCardProps) {
+  const [confirming, setConfirming] = useState(false)
   const label = slot.custom_label ?? 'Custom'
   const style = getStyle(label)
 
@@ -55,37 +58,48 @@ export function CustomLabelCard({ slot, onDelete }: CustomLabelCardProps) {
     : undefined
 
   return (
-    <div
-      ref={setNodeRef}
-      style={css}
-      className={`relative rounded-lg border overflow-hidden group ${style.bg} ${
-        isDragging ? 'shadow-lg ring-2 ring-gray-300' : ''
-      }`}
-    >
-      <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-4 min-h-[100px]">
-        {style.icon}
-        <p className={`text-xs font-semibold text-center leading-tight ${style.text}`}>{label}</p>
+    <>
+      <div
+        ref={setNodeRef}
+        style={css}
+        className={`relative rounded-lg border overflow-hidden group ${style.bg} ${
+          isDragging ? 'shadow-lg ring-2 ring-gray-300' : ''
+        }`}
+      >
+        <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-4 min-h-[100px]">
+          {style.icon}
+          <p className={`text-xs font-semibold text-center leading-tight ${style.text}`}>{label}</p>
+        </div>
+
+        {/* Drag handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="absolute top-1.5 left-1.5 p-0.5 rounded bg-white/70 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical size={12} />
+        </button>
+
+        {/* Delete */}
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/70 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Remove"
+        >
+          <X size={12} />
+        </button>
       </div>
 
-      {/* Drag handle */}
-      <button
-        {...attributes}
-        {...listeners}
-        className="absolute top-1.5 left-1.5 p-0.5 rounded bg-white/70 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-        aria-label="Drag to reorder"
-      >
-        <GripVertical size={12} />
-      </button>
-
-      {/* Delete */}
-      <button
-        type="button"
-        onClick={onDelete}
-        className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/70 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="Remove"
-      >
-        <X size={12} />
-      </button>
-    </div>
+      {confirming && (
+        <ConfirmModal
+          message={`Remove "${label}" from the plan?`}
+          confirmLabel="Remove"
+          onConfirm={() => { setConfirming(false); onDelete() }}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
+    </>
   )
 }
