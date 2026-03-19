@@ -1,5 +1,23 @@
 import type { RecipeDraft } from '@/types/recipe'
 
+// Decode common HTML entities found in malformed JSON-LD (e.g. kuchynalidla.sk)
+function decodeHtmlEntities(str: string): string {
+  const named: Record<string, string> = {
+    aacute: 'á', eacute: 'é', iacute: 'í', oacute: 'ó', uacute: 'ú',
+    yacute: 'ý', agrave: 'à', egrave: 'è', igrave: 'ì', ograve: 'ò',
+    ugrave: 'ù', acirc: 'â', ecirc: 'ê', icirc: 'î', ocirc: 'ô', ucirc: 'û',
+    atilde: 'ã', ntilde: 'ñ', otilde: 'õ', auml: 'ä', euml: 'ë', iuml: 'ï',
+    ouml: 'ö', uuml: 'ü', yuml: 'ÿ', aring: 'å', aelig: 'æ', ccedil: 'ç',
+    scaron: 'š', zcaron: 'ž', amp: '&', lt: '<', gt: '>', quot: '"',
+    nbsp: ' ', ndash: '–', mdash: '—', hellip: '…', ldquo: '"', rdquo: '"',
+    lsquo: '\u2018', rsquo: '\u2019',
+  }
+  return str
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&([a-z]+);/gi, (match, name) => named[name.toLowerCase()] ?? match)
+}
+
 // Parse ISO 8601 duration to minutes: PT1H30M → 90
 function parseDuration(iso: string | undefined): number | null {
   if (!iso) return null
@@ -86,6 +104,43 @@ function findRecipe(data: unknown): Record<string, unknown> | null {
   return null
 }
 
+// Escape bare control characters (CR, LF, TAB, etc.) that appear inside JSON
+// string values — some sites emit invalid JSON with literal newlines in strings.
+function sanitizeJsonControlChars(input: string): string {
+  let inString = false
+  let escaped = false
+  let result = ''
+  for (const char of input) {
+    if (escaped) { result += char; escaped = false; continue }
+    if (char === '\\' && inString) { escaped = true; result += char; continue }
+    if (char === '"') { inString = !inString; result += char; continue }
+    if (inString) {
+      const code = char.charCodeAt(0)
+      if (code < 0x20) {
+        if (code === 0x0a) result += '\\n'
+        else if (code === 0x0d) result += '\\r'
+        else if (code === 0x09) result += '\\t'
+        else result += `\\u${code.toString(16).padStart(4, '0')}`
+        continue
+      }
+    }
+    result += char
+  }
+  return result
+}
+
+function tryParseJson(content: string): unknown {
+  try {
+    return JSON.parse(content)
+  } catch {
+    try {
+      return JSON.parse(sanitizeJsonControlChars(content))
+    } catch {
+      return null
+    }
+  }
+}
+
 export function parseJsonLd(
   scriptContents: string[],
   sourceUrl: string
@@ -94,22 +149,37 @@ export function parseJsonLd(
   rawSteps: string[]
 } | null {
   for (const content of scriptContents) {
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(content)
-    } catch {
-      continue
-    }
+    const parsed = tryParseJson(content)
+    if (!parsed) continue
     const recipe = findRecipe(parsed)
     if (!recipe) continue
 
-    const rawIngredients: string[] = Array.isArray(recipe.recipeIngredient)
-      ? recipe.recipeIngredient.filter((x): x is string => typeof x === 'string')
-      : []
+    // recipeIngredient: standard = string[], non-standard = newline-delimited string
+    let rawIngredients: string[] = []
+    if (Array.isArray(recipe.recipeIngredient)) {
+      rawIngredients = recipe.recipeIngredient
+        .filter((x): x is string => typeof x === 'string')
+        .map((s) => decodeHtmlEntities(s).trim())
+        .filter(Boolean)
+    } else if (typeof recipe.recipeIngredient === 'string') {
+      rawIngredients = recipe.recipeIngredient
+        .split(/[\r\n]+/)
+        .map((s) => decodeHtmlEntities(s.replace(/^\t+/, '')).trim())
+        .filter((s) => s.length > 1)
+    }
 
-    const rawSteps: string[] = Array.isArray(recipe.recipeInstructions)
-      ? recipe.recipeInstructions.flatMap(extractStepText)
-      : []
+    // recipeInstructions: standard = HowToStep[], non-standard = plain string
+    let rawSteps: string[] = []
+    if (Array.isArray(recipe.recipeInstructions)) {
+      rawSteps = recipe.recipeInstructions
+        .flatMap(extractStepText)
+        .map((s) => decodeHtmlEntities(s))
+    } else if (typeof recipe.recipeInstructions === 'string') {
+      rawSteps = recipe.recipeInstructions
+        .split(/\r?\n\r?\n+/)
+        .map((s) => decodeHtmlEntities(s.replace(/^\s+|\s+$/g, '')))
+        .filter((s) => s.length > 10)
+    }
 
     return {
       title: typeof recipe.name === 'string' ? recipe.name.trim() : 'Untitled Recipe',
@@ -122,7 +192,7 @@ export function parseJsonLd(
       tags: parseTags(recipe.keywords),
       rawIngredients,
       rawSteps,
-      partial: rawIngredients.length === 0 && rawSteps.length === 0,
+      partial: rawIngredients.length === 0 || rawSteps.length === 0,
     }
   }
   return null

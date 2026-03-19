@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { X, ExternalLink, AlertTriangle } from 'lucide-react'
 import { IngredientEditor } from './IngredientEditor'
 import { StepEditor } from './StepEditor'
+import { ImageUpload } from './ImageUpload'
 import type { Recipe } from '@/types/database'
 import type { RecipeDraft, IngredientFormItem, Step } from '@/types/recipe'
 
@@ -280,15 +281,18 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
           </div>
 
           <div>
-            <label htmlFor="image-url" className={labelClass}>Image URL</label>
-            <input
-              id="image-url"
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
-              className={inputClass}
-            />
+            <label className={labelClass}>Image</label>
+            {draft ? (
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://..."
+                className={inputClass}
+              />
+            ) : (
+              <ImageUpload value={imageUrl} onChange={setImageUrl} />
+            )}
           </div>
 
           <div>
