@@ -27,11 +27,12 @@ function makeQB(result: { data: unknown; error: null | { message: string } }) {
   return qb
 }
 
+interface MockResult { data: unknown; error: null | { message: string } }
 function makeSupabase({
   user = mockUser as typeof mockUser | null,
-  recipesResult = { data: [], error: null },
-  profileResult = { data: { household_id: 'hh-1' }, error: null },
-  insertResult = { data: null as unknown, error: null },
+  recipesResult = { data: [] as unknown[], error: null } as MockResult,
+  profileResult = { data: { household_id: 'hh-1' }, error: null } as MockResult,
+  insertResult = { data: null as unknown, error: null } as MockResult,
 } = {}) {
   return {
     auth: {
@@ -45,8 +46,9 @@ function makeSupabase({
   }
 }
 
-function req(url: string, opts?: RequestInit) {
-  return new NextRequest(`http://localhost${url}`, opts)
+function req(url: string, opts?: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new NextRequest(`http://localhost${url}`, opts as any)
 }
 
 beforeEach(() => {
@@ -55,7 +57,7 @@ beforeEach(() => {
 
 describe('GET /api/recipes', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
     const res = await GET(req('/api/recipes'))
     expect(res.status).toBe(401)
   })
@@ -63,7 +65,7 @@ describe('GET /api/recipes', () => {
   it('returns recipes list for authenticated user', async () => {
     const recipes = [{ id: 'r1', title: 'Pasta' }]
     vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ recipesResult: { data: recipes, error: null } }) as ReturnType<typeof createClient>
+      makeSupabase({ recipesResult: { data: recipes, error: null } }) as unknown as ReturnType<typeof createClient>
     )
     const res = await GET(req('/api/recipes'))
     expect(res.status).toBe(200)
@@ -72,7 +74,7 @@ describe('GET /api/recipes', () => {
 
   it('applies search filter', async () => {
     const supabase = makeSupabase({ recipesResult: { data: [], error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
     await GET(req('/api/recipes?search=pasta'))
     const qb = supabase.from.mock.results[0].value
     expect(qb.ilike).toHaveBeenCalledWith('title', '%pasta%')
@@ -80,7 +82,7 @@ describe('GET /api/recipes', () => {
 
   it('applies tag filter', async () => {
     const supabase = makeSupabase({ recipesResult: { data: [], error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
     await GET(req('/api/recipes?tag=vegan'))
     const qb = supabase.from.mock.results[0].value
     expect(qb.contains).toHaveBeenCalledWith('tags', ['vegan'])
@@ -88,7 +90,7 @@ describe('GET /api/recipes', () => {
 
   it('returns 500 when DB query fails', async () => {
     vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ recipesResult: { data: null, error: { message: 'db error' } } }) as ReturnType<typeof createClient>
+      makeSupabase({ recipesResult: { data: null, error: { message: 'db error' } } }) as unknown as ReturnType<typeof createClient>
     )
     const res = await GET(req('/api/recipes'))
     expect(res.status).toBe(500)
@@ -97,14 +99,14 @@ describe('GET /api/recipes', () => {
 
 describe('POST /api/recipes', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
     const res = await POST(req('/api/recipes', { method: 'POST', body: JSON.stringify({ title: 'Test' }) }))
     expect(res.status).toBe(401)
   })
 
   it('returns 403 when user has no household', async () => {
     vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ profileResult: { data: { household_id: null }, error: null } }) as ReturnType<typeof createClient>
+      makeSupabase({ profileResult: { data: { household_id: null }, error: null } }) as unknown as ReturnType<typeof createClient>
     )
     const res = await POST(req('/api/recipes', {
       method: 'POST',
@@ -114,7 +116,7 @@ describe('POST /api/recipes', () => {
   })
 
   it('returns 400 when title is missing', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
     const res = await POST(req('/api/recipes', {
       method: 'POST',
       body: JSON.stringify({ description: 'no title here' }),
@@ -133,7 +135,7 @@ describe('POST /api/recipes', () => {
       if (table === 'recipes') return makeQB({ data: created, error: null })
       throw new Error(`Unexpected: ${table}`)
     })
-    vi.mocked(createClient).mockReturnValue(supabase as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
 
     const res = await POST(req('/api/recipes', {
       method: 'POST',
@@ -152,7 +154,7 @@ describe('POST /api/recipes', () => {
         throw new Error(`Unexpected: ${table}`)
       }),
     }
-    vi.mocked(createClient).mockReturnValue(supabase as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
 
     await POST(req('/api/recipes', {
       method: 'POST',

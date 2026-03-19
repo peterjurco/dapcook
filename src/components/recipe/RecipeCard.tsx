@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
-import { Clock, Users } from 'lucide-react'
+import { useState } from 'react'
+import { Clock, Users, CalendarPlus, Check, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import type { Recipe } from '@/types/database'
 
@@ -32,12 +35,31 @@ function tagColor(tag: string): string {
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
   const totalTime = (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0)
+  const [addState, setAddState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+
+  async function handleAddToPlan(e: React.MouseEvent) {
+    e.preventDefault() // don't navigate to recipe
+    if (addState !== 'idle') return
+    setAddState('loading')
+    const res = await fetch('/api/planner/slots/next-empty', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipe_id: recipe.id }),
+    })
+    if (res.ok) {
+      setAddState('done')
+      setTimeout(() => setAddState('idle'), 2000)
+    } else {
+      setAddState('error')
+      setTimeout(() => setAddState('idle'), 2500)
+    }
+  }
 
   return (
     <Link href={`/recipes/${recipe.id}`} className="group block">
       <article className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-gray-300 transition-all duration-150">
         {/* Image */}
-        <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
+        <div className="aspect-[4/3] bg-gray-100 overflow-hidden relative">
           {recipe.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -53,6 +75,29 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
               </svg>
             </div>
           )}
+
+          {/* Add to plan button */}
+          <button
+            type="button"
+            onClick={handleAddToPlan}
+            disabled={addState === 'loading'}
+            className={cn(
+              'absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium shadow-sm transition-all opacity-0 group-hover:opacity-100',
+              addState === 'done'
+                ? 'bg-green-500 text-white opacity-100'
+                : addState === 'error'
+                ? 'bg-red-500 text-white opacity-100'
+                : 'bg-white text-gray-700 hover:bg-gray-900 hover:text-white'
+            )}
+            title="Add to weekly plan"
+          >
+            {addState === 'loading' && <Loader2 size={11} className="animate-spin" />}
+            {addState === 'done' && <Check size={11} />}
+            {addState === 'error' && <span>Full</span>}
+            {addState === 'idle' && <CalendarPlus size={11} />}
+            {addState === 'idle' && 'Plan'}
+            {addState === 'done' && 'Added'}
+          </button>
         </div>
 
         {/* Content */}

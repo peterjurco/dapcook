@@ -47,14 +47,14 @@ function req(body: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(createClient).mockReturnValue(makeSupabase() as ReturnType<typeof createClient>)
+  vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
   vi.mocked(scrapeRecipe).mockResolvedValue({ raw: rawScraped } as Awaited<ReturnType<typeof scrapeRecipe>>)
   vi.mocked(parseRecipeData).mockResolvedValue(parsedParts)
 })
 
 describe('POST /api/recipes/import', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
     const res = await POST(req({ url: 'https://example.com' }))
     expect(res.status).toBe(401)
   })

@@ -180,15 +180,17 @@ export interface Database {
           recipe_id: string | null
           servings_scale: number
           custom_label: string | null
+          span_days: number
         }
         Insert: {
           id?: string
           week_plan_id: string
           day_of_week: number
-          meal_type: string
+          meal_type?: string
           recipe_id?: string | null
           servings_scale?: number
           custom_label?: string | null
+          span_days?: number
         }
         Update: {
           id?: string
@@ -198,6 +200,37 @@ export interface Database {
           recipe_id?: string | null
           servings_scale?: number
           custom_label?: string | null
+          span_days?: number
+        }
+        Relationships: []
+      }
+      week_plan_rules: {
+        Row: {
+          id: string
+          week_plan_id: string
+          rule_type: string
+          label: string | null
+          config: Json
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          week_plan_id: string
+          rule_type?: string
+          label?: string | null
+          config?: Json
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          week_plan_id?: string
+          rule_type?: string
+          label?: string | null
+          config?: Json
+          is_active?: boolean
+          created_at?: string
         }
         Relationships: []
       }
@@ -323,3 +356,4 @@ export type MealSlot = Tables<'meal_slots'>
 export type ShoppingList = Tables<'shopping_lists'>
 export type ShoppingItem = Tables<'shopping_items'>
 export type ChatMessage = Tables<'chat_messages'>
+export type WeekPlanRule = Tables<'week_plan_rules'>

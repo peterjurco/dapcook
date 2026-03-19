@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { InviteLink } from '@/components/settings/InviteLink'
+import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -19,9 +20,10 @@ export default async function SettingsPage() {
 
   if (!profile?.household_id) redirect('/onboarding')
 
-  const [{ data: household }, { data: members }] = await Promise.all([
+  const [{ data: household }, { data: members }, { data: plannerRules }] = await Promise.all([
     supabase.from('households').select('*').eq('id', profile.household_id).single(),
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
+    supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
   ])
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -47,6 +49,17 @@ export default async function SettingsPage() {
             </p>
             <InviteLink url={inviteUrl} />
           </div>
+        </div>
+      </section>
+
+      {/* Planner rules */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Planner rules</h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="text-xs text-gray-400 mb-4">
+            These rules are copied into each new week plan. The AI will respect them when generating suggestions.
+          </p>
+          <PlannerRulesEditor initialRules={plannerRules ?? []} />
         </div>
       </section>
 
