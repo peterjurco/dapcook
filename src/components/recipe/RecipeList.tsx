@@ -8,9 +8,10 @@ import type { Recipe } from '@/types/database'
 
 interface RecipeListProps {
   recipes: Recipe[]
+  tagColors: Record<string, string | null>
 }
 
-export function RecipeList({ recipes }: RecipeListProps) {
+export function RecipeList({ recipes, tagColors }: RecipeListProps) {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
 
@@ -75,19 +76,24 @@ export function RecipeList({ recipes }: RecipeListProps) {
       {/* Tag filter */}
       {allTags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                activeTag === tag
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
+          {allTags.map((tag) => {
+            const color = tagColors[tag] ?? null
+            const isActive = activeTag === tag
+            return (
+              <button
+                key={tag}
+                onClick={() => setActiveTag(isActive ? null : tag)}
+                className="px-3 py-1 text-sm rounded-full border transition-colors"
+                style={
+                  isActive
+                    ? color ? { backgroundColor: color, color: '#fff', borderColor: color } : { backgroundColor: '#111827', color: '#fff', borderColor: '#111827' }
+                    : color ? { color, borderColor: color + '60', backgroundColor: color + '14' } : undefined
+                }
+              >
+                {tag}
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -95,7 +101,7 @@ export function RecipeList({ recipes }: RecipeListProps) {
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
+            <RecipeCard key={recipe.id} recipe={recipe} tagColors={tagColors} />
           ))}
         </div>
       ) : (

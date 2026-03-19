@@ -8,6 +8,7 @@ import type { Recipe } from '@/types/database'
 
 interface RecipeCardProps {
   recipe: Recipe
+  tagColors: Record<string, string | null>
 }
 
 function formatTime(min: number | null): string | null {
@@ -18,22 +19,7 @@ function formatTime(min: number | null): string | null {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-const TAG_COLORS: Record<string, string> = {
-  vegetarian: 'bg-green-100 text-green-700',
-  vegan: 'bg-emerald-100 text-emerald-700',
-  meat: 'bg-red-100 text-red-700',
-  fish: 'bg-blue-100 text-blue-700',
-  quick: 'bg-yellow-100 text-yellow-700',
-  healthy: 'bg-lime-100 text-lime-700',
-  soup: 'bg-orange-100 text-orange-700',
-  pasta: 'bg-amber-100 text-amber-700',
-}
-
-function tagColor(tag: string): string {
-  return TAG_COLORS[tag.toLowerCase()] ?? 'bg-gray-100 text-gray-600'
-}
-
-export function RecipeCard({ recipe }: RecipeCardProps) {
+export function RecipeCard({ recipe, tagColors }: RecipeCardProps) {
   const totalTime = (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0)
   const [addState, setAddState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
 
@@ -109,14 +95,21 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
           {/* Tags */}
           {recipe.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {recipe.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className={cn('text-xs px-2 py-0.5 rounded-full font-medium', tagColor(tag))}
-                >
-                  {tag}
-                </span>
-              ))}
+              {recipe.tags.slice(0, 3).map((tag) => {
+                const color = tagColors[tag] ?? null
+                return (
+                  <span
+                    key={tag}
+                    className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={color
+                      ? { backgroundColor: color + '28', color, borderColor: color + '60' }
+                      : { backgroundColor: '#f3f4f6', color: '#4b5563' }
+                    }
+                  >
+                    {tag}
+                  </span>
+                )
+              })}
               {recipe.tags.length > 3 && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
                   +{recipe.tags.length - 3}
