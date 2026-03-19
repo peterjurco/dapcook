@@ -256,7 +256,6 @@ describe('RecipeForm — tag management', () => {
   it('removes a tag by clicking X', async () => {
     render(<RecipeForm recipe={sampleRecipe} />)
     expect(screen.getByText('dessert')).toBeInTheDocument()
-    const removeButtons = screen.getAllByRole('button', { name: '' })
     // Find the X button next to 'dessert' chip
     const dessertChip = screen.getByText('dessert').closest('span')!
     const xButton = dessertChip.querySelector('button')!
