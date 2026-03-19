@@ -6,8 +6,18 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { TagData } from '@/app/api/tags/route'
 
 const PALETTE = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e',
-  '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280',
+  // Reds & pinks
+  '#ef4444', '#f87171', '#dc2626', '#f43f5e', '#fb7185', '#be185d', '#ec4899', '#f9a8d4',
+  // Oranges & yellows
+  '#f97316', '#fb923c', '#ea580c', '#f59e0b', '#fbbf24', '#eab308', '#ca8a04', '#d97706',
+  // Greens
+  '#22c55e', '#4ade80', '#16a34a', '#84cc16', '#a3e635', '#65a30d', '#10b981', '#34d399',
+  // Blues & cyans
+  '#3b82f6', '#60a5fa', '#1d4ed8', '#06b6d4', '#22d3ee', '#0891b2', '#0ea5e9', '#38bdf8',
+  // Purples & violets
+  '#8b5cf6', '#a78bfa', '#7c3aed', '#a855f7', '#c084fc', '#9333ea', '#6366f1', '#818cf8',
+  // Neutrals
+  '#6b7280', '#9ca3af', '#374151', '#14b8a6', '#2dd4bf', '#0d9488', '#64748b', '#475569',
 ]
 
 interface TagsEditorProps {
@@ -73,7 +83,7 @@ export function TagsEditor({ initialTags }: TagsEditorProps) {
                 title="Change color"
               />
               {colorPickerFor === tag.name && (
-                <div className="absolute z-10 top-7 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-wrap gap-1.5 w-48">
+                <div className="absolute z-10 top-7 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-wrap gap-1.5 w-56">
                   {PALETTE.map((c) => (
                     <button
                       key={c}
