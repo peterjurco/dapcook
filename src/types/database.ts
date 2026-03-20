@@ -8,18 +8,21 @@ export interface Database {
           id: string
           name: string
           invite_token: string
+          preferred_units: 'metric' | 'imperial'
           created_at: string
         }
         Insert: {
           id?: string
           name: string
           invite_token: string
+          preferred_units?: 'metric' | 'imperial'
           created_at?: string
         }
         Update: {
           id?: string
           name?: string
           invite_token?: string
+          preferred_units?: 'metric' | 'imperial'
           created_at?: string
         }
         Relationships: []
@@ -259,12 +262,41 @@ export interface Database {
         }
         Relationships: []
       }
+      shopping_categories: {
+        Row: {
+          id: string
+          household_id: string
+          name: string
+          color: string | null
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          name: string
+          color?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          name?: string
+          color?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       shopping_lists: {
         Row: {
           id: string
           household_id: string
           week_plan_id: string | null
           name: string
+          date_from: string | null
+          date_to: string | null
           created_at: string
         }
         Insert: {
@@ -272,6 +304,8 @@ export interface Database {
           household_id: string
           week_plan_id?: string | null
           name: string
+          date_from?: string | null
+          date_to?: string | null
           created_at?: string
         }
         Update: {
@@ -279,6 +313,8 @@ export interface Database {
           household_id?: string
           week_plan_id?: string | null
           name?: string
+          date_from?: string | null
+          date_to?: string | null
           created_at?: string
         }
         Relationships: []
@@ -386,6 +422,7 @@ export type Recipe = Tables<'recipes'>
 export type PlannerRule = Tables<'planner_rules'>
 export type WeekPlan = Tables<'week_plans'>
 export type MealSlot = Tables<'meal_slots'>
+export type ShoppingCategory = Tables<'shopping_categories'>
 export type ShoppingList = Tables<'shopping_lists'>
 export type ShoppingItem = Tables<'shopping_items'>
 export type ChatMessage = Tables<'chat_messages'>

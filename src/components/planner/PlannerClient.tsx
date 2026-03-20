@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { ShoppingCart } from 'lucide-react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { DaySlot } from './DaySlot'
 import { SlotCard } from './SlotCard'
@@ -214,6 +216,18 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             setWeekRules((prev) => prev.map((r) => r.id === id ? { ...r, is_active: isActive } : r))
           }
         />
+      )}
+
+      {slots.some((s) => s.recipe_id) && (
+        <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
+          <Link
+            href={`/shopping?from=${weekStartStr}&to=${toDateString(weekDays[6])}`}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <ShoppingCart size={14} />
+            Generate shopping list
+          </Link>
+        </div>
       )}
     </div>
   )

@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { InviteLink } from '@/components/settings/InviteLink'
 import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagsEditor } from '@/components/settings/TagsEditor'
+import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
+import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
 import type { TagData } from '@/app/api/tags/route'
 
 export default async function SettingsPage() {
@@ -22,12 +24,13 @@ export default async function SettingsPage() {
 
   if (!profile?.household_id) redirect('/onboarding')
 
-  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }] = await Promise.all([
+  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }, { data: shoppingCategories }] = await Promise.all([
     supabase.from('households').select('*').eq('id', profile.household_id).single(),
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
     supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
     supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
     supabase.from('tags').select('name, color').eq('household_id', profile.household_id),
+    supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
   ])
 
   // Compute tag usage counts server-side
@@ -60,6 +63,14 @@ export default async function SettingsPage() {
           </div>
 
           <div>
+            <p className="text-xs text-gray-500 mb-2">Preferred units</p>
+            <p className="text-xs text-gray-400 mb-2">
+              Applied when &quot;Make smarter&quot; merges your shopping list.
+            </p>
+            <UnitPreferenceSelector initialValue={household?.preferred_units ?? 'metric'} />
+          </div>
+
+          <div>
             <p className="text-xs text-gray-500 mb-2">Invite link</p>
             <p className="text-xs text-gray-400 mb-2">
               Share this link with your partner to join this household.
@@ -77,6 +88,17 @@ export default async function SettingsPage() {
             Assign colors, rename, or remove tags. Renaming or deleting updates all recipes.
           </p>
           <TagsEditor initialTags={allTags} />
+        </div>
+      </section>
+
+      {/* Shopping categories */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Shopping categories</h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="text-xs text-gray-400 mb-4">
+            Categories group items on your shopping list. Order them to match your supermarket layout. If none are defined, the AI will generate them automatically.
+          </p>
+          <ShoppingCategoriesEditor initialCategories={shoppingCategories ?? []} />
         </div>
       </section>
 
