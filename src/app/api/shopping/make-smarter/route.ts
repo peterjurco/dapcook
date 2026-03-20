@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
   // If AI invented new categories, save them
   if (result.newCategories.length > 0) {
     await supabase.from('shopping_categories').insert(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       result.newCategories.map(({ id: _id, created_at: _c, ...rest }) => rest)
     )
   }
