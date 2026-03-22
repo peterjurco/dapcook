@@ -112,7 +112,6 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
     const saved = await res.json() as { id: string }
     router.push(`/recipes/${saved.id}`)
-    router.refresh()
   }
 
   const inputClass =
@@ -120,7 +119,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
+    <form onSubmit={handleSubmit} noValidate className="max-w-3xl mx-auto">
       {/* Partial import warning */}
       {draft?.partial && (
         <div className="mb-6 flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
