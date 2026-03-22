@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ShoppingClient } from '@/components/shopping/ShoppingClient'
 import { getWeekStart, nextWeekStart, toDateString } from '@/lib/utils/week'
-import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
+import type { ShoppingList, ShoppingItem, ShoppingCategory, ShoppingRule } from '@/types/database'
 
 interface PageProps {
   searchParams: { from?: string; to?: string }
@@ -30,7 +30,7 @@ export default async function ShoppingPage({ searchParams }: PageProps) {
   const dateFrom = searchParams.from ?? defaultDateFrom
   const dateTo = searchParams.to ?? defaultDateTo
 
-  const [{ data: list }, { data: categories }] = await Promise.all([
+  const [{ data: list }, { data: categories }, { data: rules }] = await Promise.all([
     supabase
       .from('shopping_lists')
       .select('*')
@@ -43,6 +43,11 @@ export default async function ShoppingPage({ searchParams }: PageProps) {
       .select('*')
       .eq('household_id', householdId)
       .order('sort_order'),
+    supabase
+      .from('shopping_rules')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('created_at'),
   ])
 
   let items: ShoppingItem[] = []
@@ -71,6 +76,7 @@ export default async function ShoppingPage({ searchParams }: PageProps) {
       initialItems={items}
       initialCategories={(categories as ShoppingCategory[]) ?? []}
       initialRecipeNames={recipeNames}
+      initialRules={(rules as ShoppingRule[]) ?? []}
       defaultDateFrom={dateFrom}
       defaultDateTo={dateTo}
     />

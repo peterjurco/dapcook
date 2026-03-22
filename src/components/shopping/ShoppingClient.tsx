@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { ShoppingCart, Sparkles, Copy, Plus, X, Check } from 'lucide-react'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
+import type { ShoppingList, ShoppingItem, ShoppingCategory, ShoppingRule } from '@/types/database'
 
 interface Props {
   initialList: ShoppingList | null
   initialItems: ShoppingItem[]
   initialCategories: ShoppingCategory[]
   initialRecipeNames: Record<string, string>
+  initialRules: ShoppingRule[]
   defaultDateFrom: string
   defaultDateTo: string
 }
@@ -21,11 +22,12 @@ interface GroupedItems {
   items: ShoppingItem[]
 }
 
-export function ShoppingClient({ initialList, initialItems, initialCategories, initialRecipeNames, defaultDateFrom, defaultDateTo }: Props) {
+export function ShoppingClient({ initialList, initialItems, initialCategories, initialRecipeNames, initialRules, defaultDateFrom, defaultDateTo }: Props) {
   const [list, setList] = useState<ShoppingList | null>(initialList)
   const [items, setItems] = useState<ShoppingItem[]>(initialItems)
   const [categories, setCategories] = useState<ShoppingCategory[]>(initialCategories)
   const [recipeNames, setRecipeNames] = useState<Record<string, string>>(initialRecipeNames)
+  const [rules, setRules] = useState<ShoppingRule[]>(initialRules)
   const [dateFrom, setDateFrom] = useState(defaultDateFrom)
   const [dateTo, setDateTo] = useState(defaultDateTo)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -36,6 +38,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const [newItemName, setNewItemName] = useState('')
   const [newItemQty, setNewItemQty] = useState('')
   const [newItemUnit, setNewItemUnit] = useState('')
+  const [newRule, setNewRule] = useState('')
+  const [addingRule, setAddingRule] = useState(false)
 
   async function generateList(confirmOverwrite = false) {
     setIsGenerating(true)
@@ -128,6 +132,26 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     setAddingItem(false)
   }
 
+  async function handleAddRule() {
+    if (!newRule.trim()) return
+    const res = await fetch('/api/shopping/rules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rule: newRule.trim() }),
+    })
+    if (res.ok) {
+      const created = await res.json() as ShoppingRule
+      setRules((prev) => [...prev, created])
+    }
+    setNewRule('')
+    setAddingRule(false)
+  }
+
+  async function handleDeleteRule(id: string) {
+    setRules((prev) => prev.filter((r) => r.id !== id))
+    await fetch(`/api/shopping/rules/${id}`, { method: 'DELETE' })
+  }
+
   function copyToClipboard() {
     const lines = items.map((item) => {
       const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
@@ -194,6 +218,64 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
               Generate
             </button>
           </div>
+        </div>
+
+        {/* AI rules */}
+        <div className="border-t border-gray-100 pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
+              <Sparkles size={12} className="text-yellow-400" />
+              Rules for AI
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {rules.map((r) => (
+              <span
+                key={r.id}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+              >
+                {r.rule}
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRule(r.id)}
+                  className="text-gray-400 hover:text-gray-700 transition-colors ml-0.5"
+                  aria-label="Remove rule"
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+          {addingRule ? (
+            <div className="flex items-center gap-2">
+              <input
+                autoFocus
+                value={newRule}
+                onChange={(e) => setNewRule(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddRule()
+                  if (e.key === 'Escape') { setAddingRule(false); setNewRule('') }
+                }}
+                placeholder="e.g. Do not include water"
+                className="flex-1 text-sm px-2.5 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+              <button type="button" onClick={handleAddRule} className="text-gray-500 hover:text-gray-900">
+                <Check size={14} />
+              </button>
+              <button type="button" onClick={() => { setAddingRule(false); setNewRule('') }} className="text-gray-400 hover:text-gray-700">
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingRule(true)}
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <Plus size={12} />
+              Add rule
+            </button>
+          )}
         </div>
       </div>
 

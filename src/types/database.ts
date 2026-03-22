@@ -319,6 +319,27 @@ export interface Database {
         }
         Relationships: []
       }
+      shopping_rules: {
+        Row: {
+          id: string
+          household_id: string
+          rule: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          rule: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          rule?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       shopping_items: {
         Row: {
           id: string
@@ -423,6 +444,7 @@ export type PlannerRule = Tables<'planner_rules'>
 export type WeekPlan = Tables<'week_plans'>
 export type MealSlot = Tables<'meal_slots'>
 export type ShoppingCategory = Tables<'shopping_categories'>
+export type ShoppingRule = Tables<'shopping_rules'>
 export type ShoppingList = Tables<'shopping_lists'>
 export type ShoppingItem = Tables<'shopping_items'>
 export type ChatMessage = Tables<'chat_messages'>

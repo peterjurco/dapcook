@@ -20,7 +20,8 @@ export async function makeShoppingListSmart(
   rawItems: ShoppingItem[],
   existingCategories: ShoppingCategory[],
   householdId: string,
-  preferredUnits: 'metric' | 'imperial' = 'metric'
+  preferredUnits: 'metric' | 'imperial' = 'metric',
+  rules: string[] = []
 ): Promise<MakeSmartResult> {
   const hasCategories = existingCategories.length > 0
   const categoryNames = existingCategories.map((c) => c.name)
@@ -41,6 +42,10 @@ export async function makeShoppingListSmart(
     ? `Use imperial units throughout: oz, lb, fl oz, cups, pints, quarts, gallons, tsp, tbsp. Convert metric quantities to imperial equivalents (e.g. 500g → 1.1 lb, 250ml → 1 cup).`
     : `Use metric units throughout: g, kg, ml, l, tsp, tbsp. Convert imperial quantities to metric equivalents (e.g. 1 lb → 450g, 1 cup → 240ml).`
 
+  const rulesSection = rules.length > 0
+    ? `\nHousehold rules (must be respected):\n${rules.map((r) => `- ${r}`).join('\n')}\n`
+    : ''
+
   const prompt = `You are a helpful kitchen assistant. You will receive a list of raw shopping items from several recipes (some may overlap or be in different languages).
 
 Your tasks:
@@ -48,7 +53,7 @@ Your tasks:
 2. Normalize all units to the preferred unit system: ${unitSystemInstruction}
 3. Assign each merged item to exactly one category.
 4. Keep ingredient names in their original language — do not translate.
-
+${rulesSection}
 ${categoryInstruction}
 
 Return ONLY valid JSON with this exact structure, no other text:
