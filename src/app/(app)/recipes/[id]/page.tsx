@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic'
-
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Clock, Users, Pencil, ExternalLink, ChevronLeft } from 'lucide-react'
