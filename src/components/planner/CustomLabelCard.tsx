@@ -62,11 +62,11 @@ export function CustomLabelCard({ slot, onDelete }: CustomLabelCardProps) {
       <div
         ref={setNodeRef}
         style={css}
-        className={`relative rounded-lg border overflow-hidden group ${style.bg} ${
+        className={`relative h-full rounded-lg border overflow-hidden group ${style.bg} ${
           isDragging ? 'shadow-lg ring-2 ring-gray-300' : ''
         }`}
       >
-        <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-4 min-h-[100px]">
+        <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-4 h-full">
           {style.icon}
           <p className={`text-xs font-semibold text-center leading-tight ${style.text}`}>{label}</p>
         </div>

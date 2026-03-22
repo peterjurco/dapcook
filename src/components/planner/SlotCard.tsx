@@ -35,7 +35,7 @@ export function SlotCard({ slot, onDelete, onSpanChange, maxSpanDays }: SlotCard
       <div
         ref={setNodeRef}
         style={style}
-        className={`relative bg-white border rounded-lg overflow-hidden shadow-sm group ${
+        className={`relative h-full flex flex-col bg-white border rounded-lg overflow-hidden shadow-sm group ${
           isDragging ? 'shadow-lg ring-2 ring-gray-300' : 'border-gray-200'
         }`}
       >
