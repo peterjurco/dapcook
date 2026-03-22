@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Clock, Users, Pencil, ExternalLink, ChevronLeft } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils/cn'
 import type { Recipe } from '@/types/database'
@@ -169,8 +170,22 @@ export default async function RecipeDetailPage({ params }: Props) {
         {/* Notes */}
         {r.notes && (
           <div className="mt-10 p-4 bg-amber-50 border border-amber-100 rounded-lg">
-            <p className="text-sm font-medium text-amber-800 mb-1">Notes</p>
-            <p className="text-sm text-amber-700 leading-relaxed">{r.notes}</p>
+            <p className="text-sm font-medium text-amber-800 mb-2">Notes</p>
+            <div className="text-sm text-amber-700 leading-relaxed">
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                  ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-2 last:mb-0">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-2 last:mb-0">{children}</ol>,
+                  li: ({ children }) => <li>{children}</li>,
+                  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                  em: ({ children }) => <em className="italic">{children}</em>,
+                  a: ({ href, children }) => <a href={href} className="underline hover:text-amber-900" target="_blank" rel="noopener noreferrer">{children}</a>,
+                }}
+              >
+                {r.notes}
+              </ReactMarkdown>
+            </div>
           </div>
         )}
 
