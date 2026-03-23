@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { Ingredient, Step } from '@/types/recipe'
 
@@ -66,7 +65,6 @@ export async function PUT(
 
   if (error || !data) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 404 })
 
-  revalidatePath(`/recipes/${params.id}`)
   return NextResponse.json(data)
 }
 
