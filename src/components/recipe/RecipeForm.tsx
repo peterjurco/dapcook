@@ -67,8 +67,6 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    console.log('[RecipeForm] handleSubmit fired, isEdit=', isEdit)
-
     if (!title.trim()) {
       setError('Title is required')
       return
@@ -78,9 +76,9 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
     const payload = {
       title: title.trim(),
-      description: description.trim() || undefined,
-      source_url: sourceUrl.trim() || undefined,
-      image_url: imageUrl.trim() || undefined,
+      description: description.trim() || null,
+      source_url: sourceUrl.trim() || null,
+      image_url: imageUrl.trim() || null,
       prep_time_min: parseQuantity(prepTime),
       cook_time_min: parseQuantity(cookTime),
       servings: parseQuantity(servings),
@@ -93,12 +91,11 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
         notes: ing.notes.trim(),
       })),
       steps: steps.map((s, i) => ({ id: s.id, order: i + 1, text: s.text.trim() })),
-      notes: notes.trim() || undefined,
+      notes: notes.trim() || null,
     }
 
     const url = isEdit ? `/api/recipes/${recipe!.id}` : '/api/recipes'
     const method = isEdit ? 'PUT' : 'POST'
-    console.log('[RecipeForm] fetching', method, url)
 
     const res = await fetch(url, {
       method,
@@ -106,21 +103,16 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
       body: JSON.stringify(payload),
     })
 
-    console.log('[RecipeForm] response status:', res.status, 'ok:', res.ok)
-
     if (!res.ok) {
       const body = await res.json().catch(() => ({})) as { error?: string }
-      console.log('[RecipeForm] error body:', body)
       setError(body.error ?? 'Something went wrong')
       setSaving(false)
       return
     }
 
     const saved = await res.json() as { id: string }
-    console.log('[RecipeForm] saved id:', saved.id, '— calling router.push then router.refresh')
     router.push(`/recipes/${saved.id}`)
     router.refresh()
-    console.log('[RecipeForm] router.push + router.refresh called')
   }
 
   const inputClass =
