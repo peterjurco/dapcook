@@ -63,6 +63,7 @@ export async function PUT(
     .select()
     .single()
 
+  console.log('[PUT /api/recipes/:id] supabase result — error:', error?.message ?? null, '| data id:', data?.id ?? null)
   if (error || !data) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 404 })
 
   return NextResponse.json(data)

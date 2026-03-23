@@ -67,6 +67,8 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    console.log('[RecipeForm] handleSubmit fired, isEdit=', isEdit)
+
     if (!title.trim()) {
       setError('Title is required')
       return
@@ -96,6 +98,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
     const url = isEdit ? `/api/recipes/${recipe!.id}` : '/api/recipes'
     const method = isEdit ? 'PUT' : 'POST'
+    console.log('[RecipeForm] fetching', method, url)
 
     const res = await fetch(url, {
       method,
@@ -103,16 +106,21 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
       body: JSON.stringify(payload),
     })
 
+    console.log('[RecipeForm] response status:', res.status, 'ok:', res.ok)
+
     if (!res.ok) {
       const body = await res.json().catch(() => ({})) as { error?: string }
+      console.log('[RecipeForm] error body:', body)
       setError(body.error ?? 'Something went wrong')
       setSaving(false)
       return
     }
 
     const saved = await res.json() as { id: string }
+    console.log('[RecipeForm] saved id:', saved.id, '— calling router.push then router.refresh')
     router.push(`/recipes/${saved.id}`)
     router.refresh()
+    console.log('[RecipeForm] router.push + router.refresh called')
   }
 
   const inputClass =
