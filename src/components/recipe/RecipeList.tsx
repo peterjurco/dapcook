@@ -46,16 +46,16 @@ export function RecipeList({ recipes, tagColors }: RecipeListProps) {
         <div className="flex items-center gap-2">
           <Link
             href="/recipes/import"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <Import size={15} />
+            <Import size={14} />
             Import
           </Link>
           <Link
             href="/recipes/new"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             New recipe
           </Link>
         </div>

@@ -183,41 +183,41 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
 
       {/* Generate controls */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">From</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full text-sm px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
-            />
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1 flex items-center gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full text-sm px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                min={dateFrom}
+                className="w-full text-sm px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+            </div>
           </div>
-          <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">To</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              min={dateFrom}
-              className="w-full text-sm px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
-            />
-          </div>
-          <div className="pt-5">
-            <button
-              type="button"
-              onClick={() => generateList()}
-              disabled={isGenerating || !dateFrom || !dateTo}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isGenerating ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <ShoppingCart size={14} />
-              )}
-              Generate
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => generateList()}
+            disabled={isGenerating || !dateFrom || !dateTo}
+            className="self-start flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isGenerating ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <ShoppingCart size={14} />
+            )}
+            Generate
+          </button>
         </div>
 
         {/* AI rules */}
@@ -283,7 +283,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {list && (
         <div className="space-y-4">
           {/* List header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <p className="text-sm font-medium text-gray-900">{list.name}</p>
               <p className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</p>
@@ -292,7 +292,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
               type="button"
               onClick={makeSmarter}
               disabled={isMakingSmarter || items.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="self-start flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isMakingSmarter ? (
                 <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
