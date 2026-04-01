@@ -209,7 +209,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
             type="button"
             onClick={() => generateList()}
             disabled={isGenerating || !dateFrom || !dateTo}
-            className="self-start flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="self-start sm:self-auto flex items-center gap-1.5 px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isGenerating ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
