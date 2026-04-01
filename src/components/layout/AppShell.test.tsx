@@ -34,7 +34,7 @@ describe('AppShell', () => {
         <div>content</div>
       </AppShell>
     )
-    expect(screen.getByRole('link', { name: /recipes/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /recipes/i }).length).toBeGreaterThan(0)
   })
 
   it('renders Planner nav link', () => {
@@ -43,7 +43,7 @@ describe('AppShell', () => {
         <div>content</div>
       </AppShell>
     )
-    expect(screen.getByRole('link', { name: /planner/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /planner/i }).length).toBeGreaterThan(0)
   })
 
   it('renders Shopping nav link', () => {
@@ -52,7 +52,7 @@ describe('AppShell', () => {
         <div>content</div>
       </AppShell>
     )
-    expect(screen.getByRole('link', { name: /shopping/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /shopping/i }).length).toBeGreaterThan(0)
   })
 
   it('renders children', () => {

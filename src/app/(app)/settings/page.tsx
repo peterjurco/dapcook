@@ -5,6 +5,7 @@ import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagsEditor } from '@/components/settings/TagsEditor'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
+import { signOut } from '@/lib/auth/actions'
 import type { TagData } from '@/app/api/tags/route'
 
 export default async function SettingsPage() {
@@ -144,6 +145,18 @@ export default async function SettingsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Sign out — visible on mobile where sidebar is hidden */}
+      <section className="md:hidden">
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="w-full bg-white border border-gray-200 rounded-xl px-5 py-3 text-sm text-gray-500 hover:text-gray-700 transition-colors text-left"
+          >
+            Sign out
+          </button>
+        </form>
       </section>
     </div>
   )

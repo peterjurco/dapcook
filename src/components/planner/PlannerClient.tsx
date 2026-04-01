@@ -139,7 +139,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       <WeekNav weekStart={weekStart} />
 
       {loading ? (
-        <div className="grid grid-cols-7 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="animate-pulse">
               <div className="h-4 bg-gray-200 rounded mb-2 mx-auto w-8" />
@@ -157,7 +157,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           }}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
             {weekDays.map((date, index) => {
               const dow = index + 1
               const isToday = toDateString(date) === toDateString(today)

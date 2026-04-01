@@ -31,9 +31,9 @@ export function AppShell({ user, profile, children }: AppShellProps) {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50">
+      {/* Sidebar — desktop only */}
+      <aside className="hidden md:flex w-56 flex-shrink-0 bg-white border-r border-gray-200 flex-col">
         <div className="px-4 py-5 border-b border-gray-200">
           <span className="text-lg font-bold text-gray-900">dapcook</span>
         </div>
@@ -87,7 +87,26 @@ export function AppShell({ user, profile, children }: AppShellProps) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
+
+      {/* Bottom tab bar — mobile only */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 flex z-50">
+        {NAV_ITEMS.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors',
+              pathname.startsWith(item.href)
+                ? 'text-gray-900'
+                : 'text-gray-400'
+            )}
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        ))}
+      </nav>
     </div>
   )
 }
