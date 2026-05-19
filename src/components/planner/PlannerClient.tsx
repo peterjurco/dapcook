@@ -115,37 +115,48 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
     if (!draggedSlot || !targetDay || draggedSlot.day_of_week === targetDay) return
 
-    const displacedSlot = slotByDay.get(targetDay) ?? null
-    const originalDay = draggedSlot.day_of_week
+    const sourceDay = draggedSlot.day_of_week
+    const movingRight = targetDay > sourceDay
 
-    // Optimistic update: move dragged slot, swap displaced slot to original day
+    // Build new day assignments: insert A at target, shift slots in between by 1
+    const dayUpdates = new Map<string, number>()
+    dayUpdates.set(draggedSlot.id, targetDay)
+
+    if (movingRight) {
+      // Slots in (sourceDay, targetDay] shift left by 1
+      for (let day = sourceDay + 1; day <= targetDay; day++) {
+        const slot = slotByDay.get(day)
+        if (slot) dayUpdates.set(slot.id, day - 1)
+      }
+    } else {
+      // Slots in [targetDay, sourceDay) shift right by 1
+      for (let day = targetDay; day < sourceDay; day++) {
+        const slot = slotByDay.get(day)
+        if (slot) dayUpdates.set(slot.id, day + 1)
+      }
+    }
+
+    const originalDays = new Map(slots.map((s) => [s.id, s.day_of_week]))
+
+    // Optimistic update
     setSlots((prev) => prev.map((s) => {
-      if (s.id === draggedSlot.id) return { ...s, day_of_week: targetDay }
-      if (displacedSlot && s.id === displacedSlot.id) return { ...s, day_of_week: originalDay }
-      return s
+      const newDay = dayUpdates.get(s.id)
+      return newDay !== undefined ? { ...s, day_of_week: newDay } : s
     }))
 
-    const moves = [
-      fetch(`/api/planner/slots/${draggedSlot.id}`, {
+    const moves = Array.from(dayUpdates.entries()).map(([id, day]) =>
+      fetch(`/api/planner/slots/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ day_of_week: targetDay }),
-      }),
-      ...(displacedSlot ? [
-        fetch(`/api/planner/slots/${displacedSlot.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ day_of_week: originalDay }),
-        }),
-      ] : []),
-    ]
+        body: JSON.stringify({ day_of_week: day }),
+      })
+    )
 
     Promise.all(moves).catch(() => {
-      // Revert both on any error
+      // Revert all on error
       setSlots((prev) => prev.map((s) => {
-        if (s.id === draggedSlot.id) return { ...s, day_of_week: originalDay }
-        if (displacedSlot && s.id === displacedSlot.id) return { ...s, day_of_week: targetDay }
-        return s
+        const orig = originalDays.get(s.id)
+        return orig !== undefined ? { ...s, day_of_week: orig } : s
       }))
     })
   }
