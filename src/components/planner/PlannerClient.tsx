@@ -116,23 +116,25 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     if (!draggedSlot || !targetDay || draggedSlot.day_of_week === targetDay) return
 
     const sourceDay = draggedSlot.day_of_week
+    const span = draggedSlot.span_days
     const movingRight = targetDay > sourceDay
 
-    // Build new day assignments: insert A at target, shift slots in between by 1
+    // Build new day assignments: insert A at target, shift displaced slots by span.
+    // With span=1 this is equivalent to shifting by 1 (original behaviour).
     const dayUpdates = new Map<string, number>()
     dayUpdates.set(draggedSlot.id, targetDay)
 
     if (movingRight) {
-      // Slots in (sourceDay, targetDay] shift left by 1
-      for (let day = sourceDay + 1; day <= targetDay; day++) {
+      // Slots whose start day falls in [sourceDay+span, targetDay+span-1] shift left by span
+      for (let day = sourceDay + span; day <= targetDay + span - 1; day++) {
         const slot = slotByDay.get(day)
-        if (slot) dayUpdates.set(slot.id, day - 1)
+        if (slot) dayUpdates.set(slot.id, day - span)
       }
     } else {
-      // Slots in [targetDay, sourceDay) shift right by 1
+      // Slots whose start day falls in [targetDay, sourceDay-1] shift right by span
       for (let day = targetDay; day < sourceDay; day++) {
         const slot = slotByDay.get(day)
-        if (slot) dayUpdates.set(slot.id, day + 1)
+        if (slot) dayUpdates.set(slot.id, day + span)
       }
     }
 
