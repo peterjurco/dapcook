@@ -30,13 +30,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 422 })
   }
 
+  const { data: profile } = await supabase
+    .from('profiles').select('household_id').eq('id', user.id).single()
+
   const { raw } = scrapeResult
   const { rawIngredients, rawSteps, ...meta } = raw
 
-  const { ingredients, steps } = await parseRecipeData(rawIngredients, rawSteps)
+  const [{ ingredients, steps }, existingTags] = await Promise.all([
+    parseRecipeData(rawIngredients, rawSteps),
+    profile?.household_id
+      ? Promise.all([
+          supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
+          supabase.from('tags').select('name').eq('household_id', profile.household_id),
+        ]).then(([{ data: recipes }, { data: tagsMeta }]) => {
+          const names = new Set<string>()
+          for (const r of recipes ?? []) for (const t of r.tags ?? []) names.add(t.toLowerCase())
+          for (const t of tagsMeta ?? []) names.add(t.name.toLowerCase())
+          return names
+        })
+      : Promise.resolve(new Set<string>()),
+  ])
 
   const draft: RecipeDraft = {
     ...meta,
+    tags: (meta.tags ?? []).filter(t => existingTags.has(t.toLowerCase())),
     ingredients,
     steps,
   }
