@@ -115,20 +115,38 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
     if (!draggedSlot || !targetDay || draggedSlot.day_of_week === targetDay) return
 
-    // Optimistic update
-    setSlots((prev) => prev.map((s) =>
-      s.id === draggedSlot.id ? { ...s, day_of_week: targetDay } : s
-    ))
+    const displacedSlot = slotByDay.get(targetDay) ?? null
+    const originalDay = draggedSlot.day_of_week
 
-    fetch(`/api/planner/slots/${draggedSlot.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ day_of_week: targetDay }),
-    }).catch(() => {
-      // Revert on error
-      setSlots((prev) => prev.map((s) =>
-        s.id === draggedSlot.id ? { ...s, day_of_week: draggedSlot.day_of_week } : s
-      ))
+    // Optimistic update: move dragged slot, swap displaced slot to original day
+    setSlots((prev) => prev.map((s) => {
+      if (s.id === draggedSlot.id) return { ...s, day_of_week: targetDay }
+      if (displacedSlot && s.id === displacedSlot.id) return { ...s, day_of_week: originalDay }
+      return s
+    }))
+
+    const moves = [
+      fetch(`/api/planner/slots/${draggedSlot.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ day_of_week: targetDay }),
+      }),
+      ...(displacedSlot ? [
+        fetch(`/api/planner/slots/${displacedSlot.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day_of_week: originalDay }),
+        }),
+      ] : []),
+    ]
+
+    Promise.all(moves).catch(() => {
+      // Revert both on any error
+      setSlots((prev) => prev.map((s) => {
+        if (s.id === draggedSlot.id) return { ...s, day_of_week: originalDay }
+        if (displacedSlot && s.id === displacedSlot.id) return { ...s, day_of_week: targetDay }
+        return s
+      }))
     })
   }
 
