@@ -11,7 +11,7 @@ export async function PATCH(request: NextRequest) {
     .from('profiles').select('household_id').eq('id', user.id).single()
   if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
-  const body = await request.json() as { preferred_units?: 'metric' | 'imperial'; preferred_language?: string }
+  const body = await request.json() as { preferred_units?: 'metric' | 'imperial'; preferred_language?: string; translation_enabled?: boolean }
 
   const updates: Record<string, unknown> = {}
   if (body.preferred_units !== undefined) {
@@ -26,6 +26,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid preferred_language' }, { status: 400 })
     }
     updates.preferred_language = body.preferred_language
+  }
+
+  if (body.translation_enabled !== undefined) {
+    if (typeof body.translation_enabled !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid translation_enabled' }, { status: 400 })
+    }
+    updates.translation_enabled = body.translation_enabled
   }
 
   const { data, error } = await supabase

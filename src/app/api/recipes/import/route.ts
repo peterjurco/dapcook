@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { scrapeRecipe } from '@/lib/scraper'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
 import { transformRecipe } from '@/lib/ai/transform-recipe'
+import { categorizeTranslationError } from '@/lib/ai/translation-error'
 import type { RecipeDraft } from '@/types/recipe'
 
 export async function POST(request: NextRequest) {
@@ -51,40 +52,51 @@ export async function POST(request: NextRequest) {
         })
       : Promise.resolve(new Set<string>()),
     profile?.household_id
-      ? supabase.from('households').select('preferred_language, preferred_units').eq('id', profile.household_id).single()
+      ? supabase.from('households').select('preferred_language, preferred_units, translation_enabled').eq('id', profile.household_id).single()
       : Promise.resolve({ data: null }),
   ])
 
+  const baseDraft: RecipeDraft = {
+    ...meta,
+    description: meta.description ?? '',
+    tags: (meta.tags ?? []).filter(t => existingTags.has(t.toLowerCase())),
+    ingredients,
+    steps,
+  }
+
+  if (!household?.translation_enabled) {
+    return NextResponse.json(baseDraft)
+  }
+
   const transformOptions = {
-    targetLanguage: household?.preferred_language ?? 'en',
-    targetUnits: household?.preferred_units ?? 'metric',
+    targetLanguage: household.preferred_language ?? 'en',
+    targetUnits: household.preferred_units ?? 'metric',
   }
   console.log('[import] household_id:', profile?.household_id)
   console.log('[import] household row:', household)
   console.log('[import] transform options:', transformOptions)
 
-  let transformed
   try {
-    transformed = await transformRecipe(
+    const transformed = await transformRecipe(
       { title: meta.title, description: meta.description ?? null, ingredients, steps, notes: null },
       transformOptions,
       profile?.household_id ?? undefined
     )
     console.log('[import] original title:', meta.title)
     console.log('[import] transformed title:', transformed.title)
+    return NextResponse.json({
+      ...baseDraft,
+      title: transformed.title,
+      description: transformed.description ?? baseDraft.description,
+      ingredients: transformed.ingredients,
+      steps: transformed.steps,
+      translationError: null,
+    })
   } catch (err) {
     console.error('[import] transformRecipe failed:', err)
-    return NextResponse.json({ error: 'Failed to translate recipe. Please try again.' }, { status: 500 })
+    return NextResponse.json({
+      ...baseDraft,
+      translationError: categorizeTranslationError(err),
+    })
   }
-
-  const draft: RecipeDraft = {
-    ...meta,
-    title: transformed.title,
-    description: transformed.description ?? meta.description ?? '',
-    tags: (meta.tags ?? []).filter(t => existingTags.has(t.toLowerCase())),
-    ingredients: transformed.ingredients,
-    steps: transformed.steps,
-  }
-
-  return NextResponse.json(draft)
 }

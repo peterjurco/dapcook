@@ -7,12 +7,13 @@ import { ConfirmTransformModal } from './ConfirmTransformModal'
 interface Props {
   initialValue: 'metric' | 'imperial'
   currentPreferredLanguage: string
+  translationEnabled: boolean
   recipeIds: string[]
 }
 
 type Phase = 'idle' | 'confirm' | 'bulk'
 
-export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage, recipeIds }: Props) {
+export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage, translationEnabled, recipeIds }: Props) {
   const [value, setValue] = useState<'metric' | 'imperial'>(initialValue)
   const [saving, setSaving] = useState(false)
   const [phase, setPhase] = useState<Phase>('idle')
@@ -79,7 +80,7 @@ export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage,
       {phase === 'bulk' && pendingUnits && (
         <BulkTransformModal
           recipeIds={recipeIds}
-          targetLanguage={currentPreferredLanguage}
+          targetLanguage={translationEnabled ? currentPreferredLanguage : 'en'}
           targetUnits={pendingUnits}
           onClose={handleBulkClose}
         />

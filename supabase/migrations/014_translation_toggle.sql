@@ -1,0 +1,1 @@
+ALTER TABLE households ADD COLUMN translation_enabled BOOLEAN NOT NULL DEFAULT FALSE;

@@ -5,7 +5,7 @@ import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagsEditor } from '@/components/settings/TagsEditor'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
-import { LanguageSelector } from '@/components/settings/LanguageSelector'
+import { TranslationSettings } from '@/components/settings/TranslationSettings'
 import { signOut } from '@/lib/auth/actions'
 import type { TagData } from '@/app/api/tags/route'
 
@@ -67,12 +67,13 @@ export default async function SettingsPage() {
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-2">Preferred language</p>
+            <p className="text-xs text-gray-500 mb-2">Translation</p>
             <p className="text-xs text-gray-400 mb-2">
-              Applied when importing new recipes. Existing recipes can be translated via bulk update.
+              When enabled, recipes are translated to your chosen language on import. Existing recipes can be updated via bulk translate.
             </p>
-            <LanguageSelector
-              initialValue={household?.preferred_language ?? 'en'}
+            <TranslationSettings
+              initialEnabled={household?.translation_enabled ?? false}
+              initialLanguage={household?.preferred_language ?? 'en'}
               currentPreferredUnits={household?.preferred_units ?? 'metric'}
               recipeIds={recipeIds}
             />
@@ -86,6 +87,7 @@ export default async function SettingsPage() {
             <UnitPreferenceSelector
               initialValue={household?.preferred_units ?? 'metric'}
               currentPreferredLanguage={household?.preferred_language ?? 'en'}
+              translationEnabled={household?.translation_enabled ?? false}
               recipeIds={recipeIds}
             />
           </div>

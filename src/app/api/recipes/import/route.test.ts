@@ -36,7 +36,7 @@ function makeSelectChain(resolvedData: unknown) {
 
 function makeSupabase(
   user: typeof mockUser | null = mockUser,
-  household: { preferred_language: string; preferred_units: string } | null = { preferred_language: 'en', preferred_units: 'metric' }
+  household: { preferred_language: string; preferred_units: string; translation_enabled?: boolean } | null = { preferred_language: 'en', preferred_units: 'metric', translation_enabled: false }
 ) {
   const fromMap: Record<string, unknown> = {
     profiles: makeSingleChain({ household_id: 'hh-1' }),
@@ -140,9 +140,14 @@ describe('POST /api/recipes/import', () => {
     expect(vi.mocked(scrapeRecipe)).toHaveBeenCalledWith('https://example.com/pasta')
   })
 
-  it('calls transformRecipe with household prefs', async () => {
+  it('skips transformRecipe when translation_enabled is false', async () => {
+    await POST(req({ url: 'https://example.com/pasta' }))
+    expect(vi.mocked(transformRecipe)).not.toHaveBeenCalled()
+  })
+
+  it('calls transformRecipe with household prefs when translation_enabled', async () => {
     vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric' }) as unknown as ReturnType<typeof createClient>
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
     )
     await POST(req({ url: 'https://example.com/pasta' }))
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
@@ -152,7 +157,7 @@ describe('POST /api/recipes/import', () => {
     )
   })
 
-  it('uses transformed content in the returned draft', async () => {
+  it('uses transformed content in the returned draft when translation_enabled', async () => {
     const transformedIngredients = [{ id: 'i2', quantity: 7, unit: 'oz', name: 'pasta', notes: '' }]
     vi.mocked(transformRecipe).mockResolvedValue({
       title: 'Translated Pasta',
@@ -161,9 +166,24 @@ describe('POST /api/recipes/import', () => {
       steps: [],
       notes: null,
     })
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    )
     const res = await POST(req({ url: 'https://example.com/pasta' }))
     const draft = await res.json() as Record<string, unknown>
     expect(draft.title).toBe('Translated Pasta')
     expect(draft.ingredients).toEqual(transformedIngredients)
+  })
+
+  it('returns draft with translationError when transformRecipe throws', async () => {
+    vi.mocked(transformRecipe).mockRejectedValue(new Error('429 rate_limit'))
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    )
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    expect(res.status).toBe(200)
+    const draft = await res.json() as Record<string, unknown>
+    expect(draft.title).toBe('Pasta')  // untranslated
+    expect((draft.translationError as Record<string, unknown>).type).toBe('rate_limit')
   })
 })

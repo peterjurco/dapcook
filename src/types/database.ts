@@ -10,6 +10,7 @@ export interface Database {
           invite_token: string
           preferred_units: 'metric' | 'imperial'
           preferred_language: string
+          translation_enabled: boolean
           created_at: string
           last_sign_in_at: string | null
         }
@@ -19,6 +20,7 @@ export interface Database {
           invite_token: string
           preferred_units?: 'metric' | 'imperial'
           preferred_language?: string
+          translation_enabled?: boolean
           created_at?: string
           last_sign_in_at?: string | null
         }
@@ -28,6 +30,7 @@ export interface Database {
           invite_token?: string
           preferred_units?: 'metric' | 'imperial'
           preferred_language?: string
+          translation_enabled?: boolean
           created_at?: string
           last_sign_in_at?: string | null
         }
