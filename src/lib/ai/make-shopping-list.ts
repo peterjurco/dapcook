@@ -1,5 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ShoppingItem, ShoppingCategory } from '@/types/database'
+import { createClient } from '@/lib/supabase/server'
+import { logAiUsage } from './log-usage'
 
 const client = new Anthropic()
 
@@ -85,6 +87,8 @@ ${JSON.stringify(inputItems, null, 2)}`
     max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
   })
+
+  void logAiUsage(createClient(), householdId, 'shopping_smart', response.usage)
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)
