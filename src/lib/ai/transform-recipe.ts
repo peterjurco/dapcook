@@ -60,6 +60,8 @@ ${JSON.stringify(content, null, 2)}
 
 Return ONLY valid JSON matching the exact same structure. No other text.`
 
+  console.log('[transform-recipe] prompt:', prompt)
+
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 8192,
@@ -71,6 +73,7 @@ Return ONLY valid JSON matching the exact same structure. No other text.`
   }
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
+  console.log('[transform-recipe] AI response:', text)
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
     console.error('[transform-recipe] No JSON in AI response, returning original')
