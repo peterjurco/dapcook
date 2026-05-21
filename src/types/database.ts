@@ -9,6 +9,7 @@ export interface Database {
           name: string
           invite_token: string
           preferred_units: 'metric' | 'imperial'
+          preferred_language: string
           created_at: string
           last_sign_in_at: string | null
         }
@@ -17,6 +18,7 @@ export interface Database {
           name: string
           invite_token: string
           preferred_units?: 'metric' | 'imperial'
+          preferred_language?: string
           created_at?: string
           last_sign_in_at?: string | null
         }
@@ -25,6 +27,7 @@ export interface Database {
           name?: string
           invite_token?: string
           preferred_units?: 'metric' | 'imperial'
+          preferred_language?: string
           created_at?: string
           last_sign_in_at?: string | null
         }
