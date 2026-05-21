@@ -111,8 +111,8 @@ describe('transformRecipe', () => {
     const aiResponse = {
       ...mockContent,
       title: 'Translated',
-      ingredients: mockContent.ingredients.map(({ id: _id, ...rest }) => rest),
-      steps: mockContent.steps.map(({ id: _id, order: _o, ...rest }) => rest),
+      ingredients: mockContent.ingredients.map((ing) => ({ quantity: ing.quantity, unit: ing.unit, name: ing.name, notes: ing.notes })),
+      steps: mockContent.steps.map((step) => ({ text: step.text })),
     }
     mockAnthropicResponse(aiResponse as unknown as RecipeContent)
 
