@@ -50,7 +50,7 @@ export default async function AdminPage() {
     .from('profiles')
     .select('household_id, id')
 
-  const { data: { users } } = await adminClient.auth.admin.listUsers()
+  const { data: { users } } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
 
   // Build a map of household_id → emails
   const emailsByHousehold = new Map<string, string[]>()
