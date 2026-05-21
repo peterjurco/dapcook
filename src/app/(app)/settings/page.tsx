@@ -5,6 +5,7 @@ import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagsEditor } from '@/components/settings/TagsEditor'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
+import { LanguageSelector } from '@/components/settings/LanguageSelector'
 import { signOut } from '@/lib/auth/actions'
 import type { TagData } from '@/app/api/tags/route'
 
@@ -29,7 +30,7 @@ export default async function SettingsPage() {
     supabase.from('households').select('*').eq('id', profile.household_id).single(),
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
     supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
-    supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
+    supabase.from('recipes').select('id, tags').eq('household_id', profile.household_id).eq('is_archived', false),
     supabase.from('tags').select('name, color').eq('household_id', profile.household_id),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
   ])
@@ -46,6 +47,8 @@ export default async function SettingsPage() {
   for (const t of tagsMeta ?? []) {
     if (!tagCounts.has(t.name)) allTags.push({ name: t.name, color: t.color, count: 0 })
   }
+
+  const recipeIds = (recipes ?? []).map((r) => r.id)
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const inviteUrl = `${origin}/join/${household?.invite_token}`
@@ -64,11 +67,27 @@ export default async function SettingsPage() {
           </div>
 
           <div>
+            <p className="text-xs text-gray-500 mb-2">Preferred language</p>
+            <p className="text-xs text-gray-400 mb-2">
+              Applied when importing new recipes. Existing recipes can be translated via bulk update.
+            </p>
+            <LanguageSelector
+              initialValue={household?.preferred_language ?? 'en'}
+              currentPreferredUnits={household?.preferred_units ?? 'metric'}
+              recipeIds={recipeIds}
+            />
+          </div>
+
+          <div>
             <p className="text-xs text-gray-500 mb-2">Preferred units</p>
             <p className="text-xs text-gray-400 mb-2">
-              Applied when &quot;Make smarter&quot; merges your shopping list.
+              Applied when importing new recipes.
             </p>
-            <UnitPreferenceSelector initialValue={household?.preferred_units ?? 'metric'} />
+            <UnitPreferenceSelector
+              initialValue={household?.preferred_units ?? 'metric'}
+              currentPreferredLanguage={household?.preferred_language ?? 'en'}
+              recipeIds={recipeIds}
+            />
           </div>
 
           <div>
