@@ -2,6 +2,21 @@
 
 import { useState } from 'react'
 import { Trash2, GripVertical, Plus, ClipboardPaste, X } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { IngredientFormItem } from '@/types/recipe'
 import type { Ingredient } from '@/types/recipe'
 
@@ -10,10 +25,84 @@ interface IngredientEditorProps {
   onChange: (ingredients: IngredientFormItem[]) => void
 }
 
+interface SortableRowProps {
+  ing: IngredientFormItem
+  onUpdate: (id: string, field: keyof IngredientFormItem, value: string) => void
+  onRemove: (id: string) => void
+}
+
+function SortableIngredientRow({ ing, onUpdate, onRemove }: SortableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: ing.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 group">
+      <GripVertical
+        size={16}
+        className="text-gray-300 flex-shrink-0 cursor-grab active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      />
+
+      <input
+        type="text"
+        value={ing.quantity}
+        onChange={(e) => onUpdate(ing.id, 'quantity', e.target.value)}
+        placeholder="200"
+        className="w-16 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-center"
+      />
+
+      <input
+        type="text"
+        value={ing.unit}
+        onChange={(e) => onUpdate(ing.id, 'unit', e.target.value)}
+        placeholder="g"
+        className="w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
+      />
+
+      <input
+        type="text"
+        value={ing.name}
+        onChange={(e) => onUpdate(ing.id, 'name', e.target.value)}
+        placeholder="chicken breast"
+        className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
+      />
+
+      <input
+        type="text"
+        value={ing.notes}
+        onChange={(e) => onUpdate(ing.id, 'notes', e.target.value)}
+        placeholder="finely chopped"
+        className="w-36 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-gray-500"
+      />
+
+      <button
+        type="button"
+        onClick={() => onRemove(ing.id)}
+        className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+        aria-label="Remove ingredient"
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  )
+}
+
 export function IngredientEditor({ ingredients, onChange }: IngredientEditorProps) {
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [isParsing, setIsParsing] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+  )
 
   function update(id: string, field: keyof IngredientFormItem, value: string) {
     onChange(ingredients.map((ing) => (ing.id === id ? { ...ing, [field]: value } : ing)))
@@ -28,6 +117,14 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
       ...ingredients,
       { id: crypto.randomUUID(), quantity: '', unit: '', name: '', notes: '' },
     ])
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = ingredients.findIndex((i) => i.id === active.id)
+    const newIndex = ingredients.findIndex((i) => i.id === over.id)
+    onChange(arrayMove(ingredients, oldIndex, newIndex))
   }
 
   async function handleParse() {
@@ -104,52 +201,13 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
         </div>
       )}
 
-      {ingredients.map((ing) => (
-        <div key={ing.id} className="flex items-center gap-2 group">
-          <GripVertical size={16} className="text-gray-300 flex-shrink-0 cursor-grab" />
-
-          <input
-            type="text"
-            value={ing.quantity}
-            onChange={(e) => update(ing.id, 'quantity', e.target.value)}
-            placeholder="200"
-            className="w-16 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-center"
-          />
-
-          <input
-            type="text"
-            value={ing.unit}
-            onChange={(e) => update(ing.id, 'unit', e.target.value)}
-            placeholder="g"
-            className="w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
-
-          <input
-            type="text"
-            value={ing.name}
-            onChange={(e) => update(ing.id, 'name', e.target.value)}
-            placeholder="chicken breast"
-            className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
-
-          <input
-            type="text"
-            value={ing.notes}
-            onChange={(e) => update(ing.id, 'notes', e.target.value)}
-            placeholder="finely chopped"
-            className="w-36 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-gray-500"
-          />
-
-          <button
-            type="button"
-            onClick={() => remove(ing.id)}
-            className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-            aria-label="Remove ingredient"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={ingredients.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+          {ingredients.map((ing) => (
+            <SortableIngredientRow key={ing.id} ing={ing} onUpdate={update} onRemove={remove} />
+          ))}
+        </SortableContext>
+      </DndContext>
 
       <div className="flex items-center gap-3 mt-1">
         <button
