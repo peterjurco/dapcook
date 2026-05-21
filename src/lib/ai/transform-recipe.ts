@@ -39,7 +39,7 @@ export async function transformRecipe(
   const instructions: string[] = []
   if (needsTranslation) {
     const langName = LANGUAGE_NAMES[targetLanguage] ?? targetLanguage
-    instructions.push(`Translate all text fields to ${langName}. Use natural, colloquial culinary language as a native ${langName} cook would say it — prefer commonly used loanwords and established culinary terms over literal translations, and never calque English compound nouns word-for-word.`)
+    instructions.push(`Translate all text fields to ${langName}. Use natural, colloquial culinary language as a native ${langName} cook would say it — prefer commonly used loanwords and established culinary terms over literal translations, and never calque English compound nouns word-for-word. Also translate measurement unit abbreviations to their conventional equivalents in the target language (e.g. in Slovak: tsp→ČL, tbsp→PL, cup→šálka).`)
   }
   if (needsUnitConversion) {
     instructions.push(
