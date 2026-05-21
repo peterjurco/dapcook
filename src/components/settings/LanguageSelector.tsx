@@ -30,13 +30,18 @@ export function LanguageSelector({ initialValue, currentPreferredUnits, recipeId
 
   async function handleChange(newLang: string) {
     if (newLang === value) return
-    setValue(newLang)
+    setValue(newLang)  // optimistic update
 
-    await fetch('/api/household', {
+    const res = await fetch('/api/household', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ preferred_language: newLang }),
     })
+
+    if (!res.ok) {
+      setValue(value)  // revert on failure
+      return
+    }
 
     if (recipeIds.length > 0) {
       const confirmed = confirm(

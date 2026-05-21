@@ -53,6 +53,24 @@ describe('LanguageSelector', () => {
     expect(confirmMsg).toContain('2')
   })
 
+  it('reverts to previous value when API call fails', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
+    render(<LanguageSelector initialValue="en" currentPreferredUnits="metric" recipeIds={[]} />)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'sk' } })
+    await waitFor(() => {
+      const select = screen.getByRole('combobox') as HTMLSelectElement
+      expect(select.value).toBe('en')
+    })
+  })
+
+  it('does not show confirm dialog when API call fails', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
+    render(<LanguageSelector initialValue="en" currentPreferredUnits="metric" recipeIds={['r1']} />)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'sk' } })
+    await waitFor(() => expect(fetch).toHaveBeenCalled())
+    expect(confirm).not.toHaveBeenCalled()
+  })
+
   it('shows BulkTransformModal when user confirms', async () => {
     vi.mocked(confirm).mockReturnValue(true)
     render(<LanguageSelector initialValue="en" currentPreferredUnits="metric" recipeIds={['r1']} />)
