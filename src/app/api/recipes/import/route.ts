@@ -63,13 +63,19 @@ export async function POST(request: NextRequest) {
   console.log('[import] household row:', household)
   console.log('[import] transform options:', transformOptions)
 
-  const transformed = await transformRecipe(
-    { title: meta.title, description: meta.description ?? null, ingredients, steps, notes: null },
-    transformOptions,
-    profile?.household_id ?? undefined
-  )
-  console.log('[import] original title:', meta.title)
-  console.log('[import] transformed title:', transformed.title)
+  let transformed
+  try {
+    transformed = await transformRecipe(
+      { title: meta.title, description: meta.description ?? null, ingredients, steps, notes: null },
+      transformOptions,
+      profile?.household_id ?? undefined
+    )
+    console.log('[import] original title:', meta.title)
+    console.log('[import] transformed title:', transformed.title)
+  } catch (err) {
+    console.error('[import] transformRecipe failed:', err)
+    return NextResponse.json({ error: 'Failed to translate recipe. Please try again.' }, { status: 500 })
+  }
 
   const draft: RecipeDraft = {
     ...meta,

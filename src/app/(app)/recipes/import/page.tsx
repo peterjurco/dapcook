@@ -16,22 +16,26 @@ export default function ImportRecipePage() {
     setLoading(true)
     setError(null)
 
-    const res = await fetch('/api/recipes/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    })
+    try {
+      const res = await fetch('/api/recipes/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
 
-    const data = await res.json() as RecipeDraft & { error?: string }
+      const data = await res.json() as RecipeDraft & { error?: string }
 
-    if (!res.ok) {
-      setError(data.error ?? 'Could not import this URL')
+      if (!res.ok) {
+        setError(data.error ?? 'Could not import this URL')
+        return
+      }
+
+      setDraft(data)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    setDraft(data)
-    setLoading(false)
   }
 
   if (draft) {
