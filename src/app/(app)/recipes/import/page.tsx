@@ -1,14 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { Import, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { Import, Loader2, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { RecipeForm } from '@/components/recipe/RecipeForm'
 import type { RecipeDraft } from '@/types/recipe'
 import type { TranslationError } from '@/lib/ai/translation-error'
+import type { ImportEvent } from '@/app/api/recipes/import/route'
 
-type State = 'idle' | 'importing' | 'translation_error' | 'review'
+type PageState = 'idle' | 'importing' | 'translation_error' | 'review'
 
-const ERROR_TITLES: Record<TranslationError['type'], string> = {
+interface Step {
+  key: string
+  message: string
+}
+
+const TRANSLATION_ERROR_TITLES: Record<TranslationError['type'], string> = {
   rate_limit: 'Translation rate limit reached',
   billing: 'Translation unavailable',
   timeout: 'Translation timed out',
@@ -17,7 +23,8 @@ const ERROR_TITLES: Record<TranslationError['type'], string> = {
 
 export default function ImportRecipePage() {
   const [url, setUrl] = useState('')
-  const [state, setState] = useState<State>('idle')
+  const [pageState, setPageState] = useState<PageState>('idle')
+  const [steps, setSteps] = useState<Step[]>([])
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState<RecipeDraft | null>(null)
   const [translationError, setTranslationError] = useState<TranslationError | null>(null)
@@ -25,7 +32,8 @@ export default function ImportRecipePage() {
 
   async function handleImport(e: React.FormEvent) {
     e.preventDefault()
-    setState('importing')
+    setPageState('importing')
+    setSteps([])
     setError(null)
 
     try {
@@ -35,26 +43,51 @@ export default function ImportRecipePage() {
         body: JSON.stringify({ url }),
       })
 
-      const data = await res.json() as RecipeDraft & { error?: string; translationError?: TranslationError | null }
-
       if (!res.ok) {
+        const data = await res.json() as { error?: string }
         setError(data.error ?? 'Could not import this URL')
-        setState('idle')
+        setPageState('idle')
         return
       }
 
-      if (data.translationError) {
-        setDraft(data)
-        setTranslationError(data.translationError)
-        setState('translation_error')
-        return
-      }
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
-      setDraft(data)
-      setState('review')
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() ?? ''
+
+        for (const part of parts) {
+          if (!part.startsWith('data: ')) continue
+          const event = JSON.parse(part.slice(6)) as ImportEvent
+
+          if (event.type === 'step') {
+            setSteps(prev => [...prev, { key: event.key, message: event.message }])
+          } else if (event.type === 'error') {
+            setError(event.error)
+            setPageState('idle')
+            return
+          } else if (event.type === 'done') {
+            if (event.translationError) {
+              setDraft(event.draft)
+              setTranslationError(event.translationError as TranslationError)
+              setPageState('translation_error')
+            } else {
+              setDraft(event.draft)
+              setPageState('review')
+            }
+            return
+          }
+        }
+      }
     } catch {
       setError('Something went wrong. Please try again.')
-      setState('idle')
+      setPageState('idle')
     }
   }
 
@@ -81,11 +114,10 @@ export default function ImportRecipePage() {
         setTranslationError(data.translationError)
         return
       }
-
       if (data.content) {
         setDraft({ ...draft, ...data.content })
         setTranslationError(null)
-        setState('review')
+        setPageState('review')
       }
     } catch {
       setTranslationError({ type: 'unknown', message: 'Something went wrong. Please try again.' })
@@ -95,17 +127,18 @@ export default function ImportRecipePage() {
   }
 
   function handleKeepUntranslated() {
-    setState('review')
+    setPageState('review')
     setTranslationError(null)
   }
 
   function handleCancel() {
-    setState('idle')
+    setPageState('idle')
     setDraft(null)
     setTranslationError(null)
+    setSteps([])
   }
 
-  if (state === 'review' && draft) {
+  if (pageState === 'review' && draft) {
     return (
       <div className="p-6 lg:p-8">
         <div className="mb-8">
@@ -117,7 +150,7 @@ export default function ImportRecipePage() {
     )
   }
 
-  if (state === 'translation_error' && translationError) {
+  if (pageState === 'translation_error' && translationError) {
     return (
       <div className="p-6 lg:p-8">
         <div className="mb-8">
@@ -128,7 +161,7 @@ export default function ImportRecipePage() {
             <div className="flex gap-2">
               <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-amber-600" />
               <div>
-                <p className="text-sm font-medium text-amber-900">{ERROR_TITLES[translationError.type]}</p>
+                <p className="text-sm font-medium text-amber-900">{TRANSLATION_ERROR_TITLES[translationError.type]}</p>
                 <p className="text-xs text-amber-700 mt-0.5">{translationError.message}</p>
               </div>
             </div>
@@ -166,6 +199,39 @@ export default function ImportRecipePage() {
     )
   }
 
+  if (pageState === 'importing') {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Import recipe</h1>
+        </div>
+        <div className="max-w-xl space-y-3">
+          {steps.length === 0 ? (
+            <div className="flex items-center gap-3">
+              <Loader2 size={15} className="animate-spin text-gray-500 flex-shrink-0" />
+              <span className="text-sm text-gray-500">Starting...</span>
+            </div>
+          ) : (
+            steps.map((step, i) => {
+              const isActive = i === steps.length - 1
+              return (
+                <div key={step.key} className="flex items-center gap-3">
+                  {isActive
+                    ? <Loader2 size={15} className="animate-spin text-gray-700 flex-shrink-0" />
+                    : <CheckCircle2 size={15} className="text-gray-400 flex-shrink-0" />
+                  }
+                  <span className={`text-sm ${isActive ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                    {step.message}
+                  </span>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 lg:p-8">
       <div className="mb-8">
@@ -185,20 +251,10 @@ export default function ImportRecipePage() {
           />
           <button
             type="submit"
-            disabled={state === 'importing'}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
           >
-            {state === 'importing' ? (
-              <>
-                <Loader2 size={15} className="animate-spin" />
-                Importing...
-              </>
-            ) : (
-              <>
-                <Import size={15} />
-                Import
-              </>
-            )}
+            <Import size={15} />
+            Import
           </button>
         </form>
 

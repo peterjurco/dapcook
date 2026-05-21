@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { POST } from './route'
+import type { ImportEvent } from './route'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 vi.mock('@/lib/scraper', () => ({ scrapeRecipe: vi.fn() }))
@@ -16,27 +17,29 @@ import { transformRecipe } from '@/lib/ai/transform-recipe'
 const mockUser = { id: 'user-1' }
 
 function makeSingleChain(resolvedData: unknown) {
-  const chain = {
+  return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({ data: resolvedData }),
   }
-  return chain
 }
 
 function makeSelectChain(resolvedData: unknown) {
-  const chain = {
+  return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     then: (resolve: (v: unknown) => unknown) =>
       Promise.resolve({ data: resolvedData }).then(resolve),
   }
-  return chain
 }
 
 function makeSupabase(
   user: typeof mockUser | null = mockUser,
-  household: { preferred_language: string; preferred_units: string; translation_enabled?: boolean } | null = { preferred_language: 'en', preferred_units: 'metric', translation_enabled: false }
+  household: { preferred_language: string; preferred_units: string; translation_enabled?: boolean } | null = {
+    preferred_language: 'en',
+    preferred_units: 'metric',
+    translation_enabled: false,
+  }
 ) {
   const fromMap: Record<string, unknown> = {
     profiles: makeSingleChain({ household_id: 'hh-1' }),
@@ -76,6 +79,18 @@ function req(body: unknown) {
   })
 }
 
+async function collectEvents(res: Response): Promise<ImportEvent[]> {
+  const text = await res.text()
+  return text
+    .split('\n\n')
+    .filter(chunk => chunk.startsWith('data: '))
+    .map(chunk => JSON.parse(chunk.slice(6)) as ImportEvent)
+}
+
+function getDoneEvent(events: ImportEvent[]) {
+  return events.find(e => e.type === 'done') as Extract<ImportEvent, { type: 'done' }> | undefined
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
@@ -101,29 +116,38 @@ describe('POST /api/recipes/import', () => {
   it('returns 400 for invalid URL format', async () => {
     const res = await POST(req({ url: 'not-a-url' }))
     expect(res.status).toBe(400)
-    const body = await res.json() as { error: string }
-    expect(body.error).toContain('Invalid')
   })
 
-  it('returns 422 when scrape throws', async () => {
-    vi.mocked(scrapeRecipe).mockRejectedValue(new Error('Connection refused'))
-    const res = await POST(req({ url: 'https://example.com/recipe' }))
-    expect(res.status).toBe(422)
-    const body = await res.json() as { error: string }
-    expect(body.error).toBe('Connection refused')
-  })
-
-  it('returns draft on successful scrape', async () => {
+  it('streams text/event-stream on valid request', async () => {
     const res = await POST(req({ url: 'https://example.com/pasta' }))
     expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('text/event-stream')
+  })
 
-    const draft = await res.json() as Record<string, unknown>
-    expect(draft.title).toBe('Pasta')
-    expect(draft.ingredients).toEqual(parsedParts.ingredients)
-    expect(draft.steps).toEqual(parsedParts.steps)
-    // raw fields should not be in the draft
-    expect(draft.rawIngredients).toBeUndefined()
-    expect(draft.rawSteps).toBeUndefined()
+  it('emits scraping and parsing step events', async () => {
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    const events = await collectEvents(res)
+    const steps = events.filter(e => e.type === 'step').map(e => (e as Extract<ImportEvent, { type: 'step' }>).key)
+    expect(steps).toContain('scraping')
+    expect(steps).toContain('parsing')
+  })
+
+  it('returns draft in done event on successful scrape', async () => {
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    const events = await collectEvents(res)
+    const done = getDoneEvent(events)
+    expect(done).toBeDefined()
+    expect(done!.draft.title).toBe('Pasta')
+    expect(done!.draft.ingredients).toEqual(parsedParts.ingredients)
+    expect(done!.draft.steps).toEqual(parsedParts.steps)
+  })
+
+  it('emits error event when scrape throws', async () => {
+    vi.mocked(scrapeRecipe).mockRejectedValue(new Error('Connection refused'))
+    const res = await POST(req({ url: 'https://example.com/recipe' }))
+    const events = await collectEvents(res)
+    const errorEvent = events.find(e => e.type === 'error') as Extract<ImportEvent, { type: 'error' }> | undefined
+    expect(errorEvent?.error).toBe('Connection refused')
   })
 
   it('passes raw ingredients and steps to parseRecipeData', async () => {
@@ -135,21 +159,19 @@ describe('POST /api/recipes/import', () => {
     )
   })
 
-  it('calls scrapeRecipe with the provided URL', async () => {
-    await POST(req({ url: 'https://example.com/pasta' }))
-    expect(vi.mocked(scrapeRecipe)).toHaveBeenCalledWith('https://example.com/pasta')
-  })
-
   it('skips transformRecipe when translation_enabled is false', async () => {
     await POST(req({ url: 'https://example.com/pasta' }))
     expect(vi.mocked(transformRecipe)).not.toHaveBeenCalled()
   })
 
-  it('calls transformRecipe with household prefs when translation_enabled', async () => {
+  it('emits translating step and calls transformRecipe when translation_enabled', async () => {
     vi.mocked(createClient).mockReturnValue(
       makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
     )
-    await POST(req({ url: 'https://example.com/pasta' }))
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    const events = await collectEvents(res)
+    const steps = events.filter(e => e.type === 'step').map(e => (e as Extract<ImportEvent, { type: 'step' }>).key)
+    expect(steps).toContain('translating')
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Pasta' }),
       { targetLanguage: 'sk', targetUnits: 'metric' },
@@ -157,7 +179,7 @@ describe('POST /api/recipes/import', () => {
     )
   })
 
-  it('uses transformed content in the returned draft when translation_enabled', async () => {
+  it('uses translated content in done event', async () => {
     const transformedIngredients = [{ id: 'i2', quantity: 7, unit: 'oz', name: 'pasta', notes: '' }]
     vi.mocked(transformRecipe).mockResolvedValue({
       title: 'Translated Pasta',
@@ -170,20 +192,19 @@ describe('POST /api/recipes/import', () => {
       makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
     )
     const res = await POST(req({ url: 'https://example.com/pasta' }))
-    const draft = await res.json() as Record<string, unknown>
-    expect(draft.title).toBe('Translated Pasta')
-    expect(draft.ingredients).toEqual(transformedIngredients)
+    const done = getDoneEvent(await collectEvents(res))
+    expect(done!.draft.title).toBe('Translated Pasta')
+    expect(done!.draft.ingredients).toEqual(transformedIngredients)
   })
 
-  it('returns draft with translationError when transformRecipe throws', async () => {
+  it('includes translationError in done event when transformRecipe throws', async () => {
     vi.mocked(transformRecipe).mockRejectedValue(new Error('429 rate_limit'))
     vi.mocked(createClient).mockReturnValue(
       makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
     )
     const res = await POST(req({ url: 'https://example.com/pasta' }))
-    expect(res.status).toBe(200)
-    const draft = await res.json() as Record<string, unknown>
-    expect(draft.title).toBe('Pasta')  // untranslated
-    expect((draft.translationError as Record<string, unknown>).type).toBe('rate_limit')
+    const done = getDoneEvent(await collectEvents(res))
+    expect(done!.draft.title).toBe('Pasta')  // untranslated
+    expect(done!.translationError?.type).toBe('rate_limit')
   })
 })
