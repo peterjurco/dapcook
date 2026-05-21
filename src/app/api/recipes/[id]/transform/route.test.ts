@@ -108,12 +108,13 @@ describe('POST /api/recipes/[id]/transform', () => {
   })
 
   it('returns 500 when DB update fails', async () => {
+    // callCount must be outside the from() callback — each from('recipes') call creates a new
+    // query builder object, so a counter inside would reset on every call.
+    let callCount = 0
     const supabase = {
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
       from: vi.fn((table: string) => {
         if (table === 'recipes') {
-          // First call (SELECT) returns recipe, second call (UPDATE) returns error
-          let callCount = 0
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
