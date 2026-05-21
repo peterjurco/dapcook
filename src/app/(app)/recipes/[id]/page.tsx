@@ -4,6 +4,7 @@ import { Clock, Users, Pencil, ExternalLink, ChevronLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils/cn'
+import { DeleteRecipeButton } from '@/components/recipe/DeleteRecipeButton'
 import type { Recipe } from '@/types/database'
 import type { Ingredient, Step } from '@/types/recipe'
 
@@ -74,13 +75,16 @@ export default async function RecipeDetailPage({ params }: Props) {
             <ChevronLeft size={16} />
             All recipes
           </Link>
-          <Link
-            href={`/recipes/${r.id}/edit`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Pencil size={13} />
-            Edit
-          </Link>
+          <div className="flex items-center gap-2">
+            <DeleteRecipeButton recipeId={r.id} />
+            <Link
+              href={`/recipes/${r.id}/edit`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Pencil size={13} />
+              Edit
+            </Link>
+          </div>
         </div>
 
         {/* Title */}
