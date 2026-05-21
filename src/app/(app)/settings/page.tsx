@@ -74,7 +74,7 @@ export default async function SettingsPage() {
           <div>
             <p className="text-xs text-gray-500 mb-2">Invite link</p>
             <p className="text-xs text-gray-400 mb-2">
-              Share this link with your partner to join this household.
+              Share this link with anyone you want to join this household.
             </p>
             <InviteLink url={inviteUrl} />
           </div>

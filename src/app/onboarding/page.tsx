@@ -33,7 +33,7 @@ export default function OnboardingPage() {
           {/* Create household */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="font-semibold text-gray-900 mb-1">Create household</h2>
-            <p className="text-sm text-gray-500 mb-4">Start fresh and invite your partner later</p>
+            <p className="text-sm text-gray-500 mb-4">Start fresh and invite others later</p>
             <form onSubmit={handleCreate} className="space-y-3">
               <div>
                 <label htmlFor="household-name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -62,7 +62,7 @@ export default function OnboardingPage() {
           {/* Join household */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="font-semibold text-gray-900 mb-1">Join household</h2>
-            <p className="text-sm text-gray-500 mb-4">Enter the invite code from your partner</p>
+            <p className="text-sm text-gray-500 mb-4">Enter the invite code from someone in the household</p>
             <form onSubmit={handleJoin} className="space-y-3">
               <div>
                 <label htmlFor="invite-code" className="block text-sm font-medium text-gray-700 mb-1">
