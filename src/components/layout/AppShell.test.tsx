@@ -70,7 +70,7 @@ describe('AppShell', () => {
         <div>content</div>
       </AppShell>
     )
-    expect(screen.getAllByRole('link', { name: /admin/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('link', { name: /admin/i })).toHaveLength(2)
   })
 
   it('hides Admin nav link when isAdmin is false', () => {
