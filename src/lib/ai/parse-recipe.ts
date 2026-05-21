@@ -1,5 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { Ingredient, Step } from '@/types/recipe'
+import { createClient } from '@/lib/supabase/server'
+import { logAiUsage } from './log-usage'
 
 const client = new Anthropic()
 
@@ -28,7 +30,8 @@ function rawFallback(rawIngredients: string[], rawSteps: string[]): ParseResult 
 
 export async function parseRecipeData(
   rawIngredients: string[],
-  rawSteps: string[]
+  rawSteps: string[],
+  householdId?: string
 ): Promise<ParseResult> {
   // Guard: skip Claude call unless explicitly enabled
   if (process.env.RECIPE_IMPORT_USE_AI !== 'true') {
@@ -78,6 +81,10 @@ Rules:
     max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   })
+
+  if (householdId) {
+    void logAiUsage(createClient(), householdId, 'recipe_parse', response.usage)
+  }
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
 
