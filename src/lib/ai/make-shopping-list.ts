@@ -22,7 +22,6 @@ export async function makeShoppingListSmart(
   rawItems: ShoppingItem[],
   existingCategories: ShoppingCategory[],
   householdId: string,
-  preferredUnits: 'metric' | 'imperial' = 'metric',
   rules: string[] = []
 ): Promise<MakeSmartResult> {
   const hasCategories = existingCategories.length > 0
@@ -40,10 +39,6 @@ export async function makeShoppingListSmart(
     source_recipe_ids: item.source_recipe_ids,
   }))
 
-  const unitSystemInstruction = preferredUnits === 'imperial'
-    ? `Use imperial units throughout: oz, lb, fl oz, cups, pints, quarts, gallons, tsp, tbsp. Convert metric quantities to imperial equivalents (e.g. 500g → 1.1 lb, 250ml → 1 cup).`
-    : `Use metric units throughout: g, kg, ml, l, tsp, tbsp. Convert imperial quantities to metric equivalents (e.g. 1 lb → 450g, 1 cup → 240ml).`
-
   const rulesSection = rules.length > 0
     ? `\nHousehold rules (must be respected):\n${rules.map((r) => `- ${r}`).join('\n')}\n`
     : ''
@@ -52,7 +47,7 @@ export async function makeShoppingListSmart(
 
 Your tasks:
 1. Merge duplicate ingredients (same ingredient in different quantities) by summing quantities where units are compatible.
-2. Normalize all units to the preferred unit system: ${unitSystemInstruction}
+2. Keep all units as-is — recipes are already stored in the household's preferred units.
 3. Assign each merged item to exactly one category.
 4. Keep ingredient names in their original language — do not translate.
 ${rulesSection}

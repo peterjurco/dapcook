@@ -25,21 +25,19 @@ export async function POST(request: NextRequest) {
 
   if (!list) return NextResponse.json({ error: 'List not found' }, { status: 404 })
 
-  const [{ data: items }, { data: categories }, { data: household }, { data: rulesRows }] = await Promise.all([
+  const [{ data: items }, { data: categories }, { data: rulesRows }] = await Promise.all([
     supabase.from('shopping_items').select('*').eq('shopping_list_id', list.id).order('sort_order'),
     supabase.from('shopping_categories').select('*').eq('household_id', householdId).order('sort_order'),
-    supabase.from('households').select('preferred_units').eq('id', householdId).single(),
     supabase.from('shopping_rules').select('rule').eq('household_id', householdId).order('created_at'),
   ])
 
   if (!items?.length) return NextResponse.json({ error: 'List has no items' }, { status: 400 })
 
-  const preferredUnits = household?.preferred_units ?? 'metric'
   const rules = (rulesRows ?? []).map((r) => r.rule)
 
   let result
   try {
-    result = await makeShoppingListSmart(items, categories ?? [], householdId, preferredUnits, rules)
+    result = await makeShoppingListSmart(items, categories ?? [], householdId, rules)
   } catch (err) {
     console.error('[make-smarter] AI call failed:', err)
     return NextResponse.json({ error: 'AI processing failed' }, { status: 500 })
