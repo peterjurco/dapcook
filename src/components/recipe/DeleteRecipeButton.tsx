@@ -18,6 +18,7 @@ export function DeleteRecipeButton({ recipeId }: Props) {
     const res = await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' })
     if (res.ok) {
       router.push('/recipes')
+      router.refresh()
     } else {
       setDeleting(false)
       setConfirming(false)
