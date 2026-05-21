@@ -35,6 +35,13 @@ export async function GET(request: NextRequest) {
     .eq('id', data.user.id)
     .single()
 
+  if (profile?.household_id) {
+    await supabase
+      .from('households')
+      .update({ last_sign_in_at: new Date().toISOString() })
+      .eq('id', profile.household_id)
+  }
+
   if (!profile?.household_id) {
     // Check for a pending invite stored in a cookie (set before OAuth to survive the round-trip)
     const pendingToken = request.cookies.get('pending_invite_token')?.value
