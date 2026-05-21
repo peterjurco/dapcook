@@ -13,9 +13,34 @@ import { parseRecipeData } from '@/lib/ai/parse-recipe'
 
 const mockUser = { id: 'user-1' }
 
+function makeSingleChain(resolvedData: unknown) {
+  const chain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: resolvedData }),
+  }
+  return chain
+}
+
+function makeSelectChain(resolvedData: unknown) {
+  const chain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    then: (resolve: (v: unknown) => unknown) =>
+      Promise.resolve({ data: resolvedData }).then(resolve),
+  }
+  return chain
+}
+
 function makeSupabase(user: typeof mockUser | null = mockUser) {
+  const fromMap: Record<string, unknown> = {
+    profiles: makeSingleChain({ household_id: 'hh-1' }),
+    recipes: makeSelectChain([]),
+    tags: makeSelectChain([]),
+  }
   return {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+    from: vi.fn((table: string) => fromMap[table] ?? makeSingleChain(null)),
   }
 }
 
@@ -98,7 +123,8 @@ describe('POST /api/recipes/import', () => {
     await POST(req({ url: 'https://example.com/pasta' }))
     expect(vi.mocked(parseRecipeData)).toHaveBeenCalledWith(
       rawScraped.rawIngredients,
-      rawScraped.rawSteps
+      rawScraped.rawSteps,
+      'hh-1'
     )
   })
 
