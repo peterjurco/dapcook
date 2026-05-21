@@ -1,12 +1,16 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
+
 vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: {
-      create: vi.fn(),
-    },
-  })),
+  default: vi.fn().mockImplementation(function () {
+    return {
+      messages: {
+        create: mockCreate,
+      },
+    }
+  }),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn(() => ({})) }))
@@ -30,15 +34,12 @@ const mockContent: RecipeContent = {
   notes: 'Serve immediately.',
 }
 
-// Shared create mock — re-created fresh in each beforeEach
-let createMock: ReturnType<typeof vi.fn>
-
 function getCreateMock() {
-  return createMock
+  return mockCreate
 }
 
 function mockAnthropicResponse(content: RecipeContent) {
-  createMock.mockResolvedValue({
+  mockCreate.mockResolvedValue({
     content: [{ type: 'text', text: JSON.stringify(content) }],
     usage: { input_tokens: 100, output_tokens: 200 },
   })
@@ -46,11 +47,6 @@ function mockAnthropicResponse(content: RecipeContent) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  createMock = vi.fn()
-  const instance = { messages: { create: createMock } } as unknown as InstanceType<typeof Anthropic>
-  vi.mocked(Anthropic).mockImplementation(function () {
-    return instance
-  } as unknown as typeof Anthropic)
 })
 
 describe('transformRecipe', () => {

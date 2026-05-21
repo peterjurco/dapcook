@@ -16,10 +16,27 @@ interface TransformOptions {
   targetUnits?: 'metric' | 'imperial'
 }
 
+// BCP-47 code → human-readable name for the prompt
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  it: 'Italian',
+  pt: 'Portuguese',
+  nl: 'Dutch',
+  pl: 'Polish',
+  ru: 'Russian',
+  cs: 'Czech',
+  sk: 'Slovak',
+}
+
+const client = new Anthropic()
+
 export async function transformRecipe(
   content: RecipeContent,
   options: TransformOptions,
-  householdId: string
+  householdId: string | undefined
 ): Promise<RecipeContent> {
   const { targetLanguage, targetUnits } = options
 
@@ -54,16 +71,15 @@ ${JSON.stringify(content, null, 2)}
 
 Return ONLY valid JSON matching the exact same structure. No other text.`
 
-  // Create client inside function so mocks work correctly in tests
-  const client = new Anthropic()
-
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
   })
 
-  void logAiUsage(createClient(), householdId, 'recipe_transform', response.usage)
+  if (householdId) {
+    void logAiUsage(createClient(), householdId, 'recipe_transform', response.usage)
+  }
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -93,19 +109,4 @@ Return ONLY valid JSON matching the exact same structure. No other text.`
       order: content.steps[i]?.order ?? step.order ?? i + 1,
     })),
   }
-}
-
-// BCP-47 code → human-readable name for the prompt
-const LANGUAGE_NAMES: Record<string, string> = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  de: 'German',
-  it: 'Italian',
-  pt: 'Portuguese',
-  nl: 'Dutch',
-  pl: 'Polish',
-  ru: 'Russian',
-  cs: 'Czech',
-  sk: 'Slovak',
 }
