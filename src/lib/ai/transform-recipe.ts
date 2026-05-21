@@ -63,7 +63,7 @@ Return ONLY valid JSON matching the exact same structure. No other text.`
   console.log('[transform-recipe] prompt:', prompt)
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-sonnet-4-5-20250929',
     max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
   })
