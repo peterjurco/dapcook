@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles').select('household_id').eq('id', user.id).single()
+
   const body = await request.json() as { ingredients_text?: string; steps_text?: string }
 
   const rawIngredients = body.ingredients_text ? splitIngredients(body.ingredients_text) : []
@@ -35,6 +38,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ingredients: [], steps: [] })
   }
 
-  const result = await parseRecipeData(rawIngredients, rawSteps)
+  const result = await parseRecipeData(rawIngredients, rawSteps, profile?.household_id ?? undefined)
   return NextResponse.json(result)
 }

@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   const { rawIngredients, rawSteps, ...meta } = raw
 
   const [{ ingredients, steps }, existingTags] = await Promise.all([
-    parseRecipeData(rawIngredients, rawSteps),
+    parseRecipeData(rawIngredients, rawSteps, profile?.household_id ?? undefined),
     profile?.household_id
       ? Promise.all([
           supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
