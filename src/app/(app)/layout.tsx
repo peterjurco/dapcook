@@ -20,8 +20,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!profile?.household_id) redirect('/onboarding')
 
+  const isAdmin = user.email === process.env.ADMIN_EMAIL
+
   return (
-    <AppShell user={user} profile={profile}>
+    <AppShell user={user} profile={profile} isAdmin={isAdmin}>
       {children}
     </AppShell>
   )
