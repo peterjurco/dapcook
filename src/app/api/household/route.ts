@@ -10,7 +10,7 @@ export async function PATCH(request: NextRequest) {
     .from('profiles').select('household_id').eq('id', user.id).single()
   if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
-  const body = await request.json() as { preferred_units?: 'metric' | 'imperial' }
+  const body = await request.json() as { preferred_units?: 'metric' | 'imperial'; preferred_language?: string }
 
   const updates: Record<string, unknown> = {}
   if (body.preferred_units !== undefined) {
@@ -18,6 +18,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid preferred_units' }, { status: 400 })
     }
     updates.preferred_units = body.preferred_units
+  }
+
+  if (body.preferred_language !== undefined) {
+    const VALID_LANGUAGES = ['en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru', 'cs', 'sk']
+    if (!VALID_LANGUAGES.includes(body.preferred_language)) {
+      return NextResponse.json({ error: 'Invalid preferred_language' }, { status: 400 })
+    }
+    updates.preferred_language = body.preferred_language
   }
 
   const { data, error } = await supabase
