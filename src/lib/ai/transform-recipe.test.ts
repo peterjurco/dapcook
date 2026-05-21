@@ -50,10 +50,11 @@ beforeEach(() => {
 })
 
 describe('transformRecipe', () => {
-  it('short-circuits and returns content unchanged when lang=en and units=metric', async () => {
+  it('calls Anthropic when targetLanguage is en (back-translation to English)', async () => {
+    mockAnthropicResponse(mockContent)
     const result = await transformRecipe(mockContent, { targetLanguage: 'en', targetUnits: 'metric' }, 'hh-1')
-    expect(result).toBe(mockContent) // reference equality — same object
-    expect(vi.mocked(Anthropic)).not.toHaveBeenCalled()
+    expect(getCreateMock()).toHaveBeenCalledOnce()
+    expect(result).toEqual(mockContent)
   })
 
   it('short-circuits when no options are provided', async () => {
@@ -85,7 +86,7 @@ describe('transformRecipe', () => {
     }
     mockAnthropicResponse(converted)
 
-    const result = await transformRecipe(mockContent, { targetLanguage: 'en', targetUnits: 'imperial' }, 'hh-1')
+    const result = await transformRecipe(mockContent, { targetUnits: 'imperial' }, 'hh-1')
 
     expect(getCreateMock()).toHaveBeenCalledOnce()
     const callArgs = getCreateMock().mock.calls[0][0] as { messages: Array<{ content: string }> }

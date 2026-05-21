@@ -80,7 +80,7 @@ export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage,
       {phase === 'bulk' && pendingUnits && (
         <BulkTransformModal
           recipeIds={recipeIds}
-          targetLanguage={translationEnabled ? currentPreferredLanguage : 'en'}
+          targetLanguage={translationEnabled ? currentPreferredLanguage : undefined}
           targetUnits={pendingUnits}
           onClose={handleBulkClose}
         />

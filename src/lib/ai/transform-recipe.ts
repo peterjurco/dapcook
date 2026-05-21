@@ -27,7 +27,7 @@ export async function transformRecipe(
   const { targetLanguage, targetUnits } = options
 
   // Short-circuit: nothing to do
-  const needsTranslation = targetLanguage && targetLanguage !== 'en'
+  const needsTranslation = !!targetLanguage
   const needsUnitConversion = targetUnits && targetUnits !== 'metric'
   console.log('[transform-recipe] targetLanguage:', targetLanguage, '| needsTranslation:', needsTranslation)
   console.log('[transform-recipe] targetUnits:', targetUnits, '| needsUnitConversion:', needsUnitConversion)
