@@ -171,27 +171,18 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
     setIsGeneratingList(true)
 
-    async function generate(confirmOverwrite: boolean): Promise<{ list: { id: string } } | null> {
-      const res = await fetch('/api/shopping/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, confirm_overwrite: confirmOverwrite }),
-      })
-      if (res.status === 409) {
-        const confirmed = window.confirm('You already have a shopping list. Generating a new one will replace it. Continue?')
-        if (!confirmed) return null
-        return generate(true)
-      }
-      if (!res.ok) return null
-      return res.json() as Promise<{ list: { id: string } }>
-    }
+    const res = await fetch('/api/shopping/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, confirm_overwrite: true }),
+    })
 
-    const result = await generate(false)
-    if (result) {
+    if (res.ok) {
+      const data = await res.json() as { list: { id: string } }
       await fetch('/api/shopping/make-smarter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ list_id: result.list.id }),
+        body: JSON.stringify({ list_id: data.list.id }),
       })
       router.push(`/shopping?from=${dateFrom}&to=${dateTo}`)
     }
