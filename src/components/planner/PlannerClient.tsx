@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ShoppingCart } from 'lucide-react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { DaySlot } from './DaySlot'
@@ -22,12 +22,14 @@ interface PlannerClientProps {
 }
 
 export function PlannerClient({ weekStart }: PlannerClientProps) {
+  const router = useRouter()
   const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(null)
   const [slots, setSlots] = useState<MealSlotWithRecipe[]>([])
   const [weekRules, setWeekRules] = useState<WeekPlanRule[]>([])
   const [loading, setLoading] = useState(true)
   const [activeSlot, setActiveSlot] = useState<MealSlotWithRecipe | null>(null)
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
+  const [isGeneratingList, setIsGeneratingList] = useState(false)
 
   const weekStartStr = toDateString(weekStart)
   const today = new Date()
@@ -163,6 +165,40 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     })
   }
 
+  async function handleGenerateShoppingList() {
+    const dateFrom = weekStartStr
+    const dateTo = toDateString(getWeekDays(weekStart)[6])
+
+    setIsGeneratingList(true)
+
+    async function generate(confirmOverwrite: boolean): Promise<{ list: { id: string } } | null> {
+      const res = await fetch('/api/shopping/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, confirm_overwrite: confirmOverwrite }),
+      })
+      if (res.status === 409) {
+        const confirmed = window.confirm('You already have a shopping list. Generating a new one will replace it. Continue?')
+        if (!confirmed) return null
+        return generate(true)
+      }
+      if (!res.ok) return null
+      return res.json() as Promise<{ list: { id: string } }>
+    }
+
+    const result = await generate(false)
+    if (result) {
+      await fetch('/api/shopping/make-smarter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ list_id: result.list.id }),
+      })
+      router.push(`/shopping?from=${dateFrom}&to=${dateTo}`)
+    }
+
+    setIsGeneratingList(false)
+  }
+
   const weekDays = getWeekDays(weekStart)
 
   return (
@@ -251,13 +287,19 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
       {slots.some((s) => s.recipe_id) && (
         <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
-          <Link
-            href={`/shopping?from=${weekStartStr}&to=${toDateString(weekDays[6])}`}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+          <button
+            type="button"
+            onClick={handleGenerateShoppingList}
+            disabled={isGeneratingList}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <ShoppingCart size={14} />
+            {isGeneratingList ? (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <ShoppingCart size={14} />
+            )}
             Generate shopping list
-          </Link>
+          </button>
         </div>
       )}
     </div>
