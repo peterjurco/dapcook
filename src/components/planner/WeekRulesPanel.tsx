@@ -73,6 +73,10 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
 
       {open && (
         <div className="p-4 space-y-3">
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
+            These rules are saved but not yet enforced — AI-assisted planning is a upcoming feature.
+          </p>
+
           {rules.length === 0 && !adding && (
             <p className="text-sm text-gray-400">No rules for this week yet.</p>
           )}
