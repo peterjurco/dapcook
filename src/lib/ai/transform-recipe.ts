@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { Ingredient, Step } from '@/types/recipe'
 import { createClient } from '@/lib/supabase/server'
 import { logAiUsage } from './log-usage'
+import { LANGUAGE_NAMES } from '@/lib/constants/languages'
 
 export interface RecipeContent {
   title: string
@@ -14,21 +15,6 @@ export interface RecipeContent {
 interface TransformOptions {
   targetLanguage?: string
   targetUnits?: 'metric' | 'imperial'
-}
-
-// BCP-47 code → human-readable name for the prompt
-const LANGUAGE_NAMES: Record<string, string> = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  de: 'German',
-  it: 'Italian',
-  pt: 'Portuguese',
-  nl: 'Dutch',
-  pl: 'Polish',
-  ru: 'Russian',
-  cs: 'Czech',
-  sk: 'Slovak',
 }
 
 const client = new Anthropic()

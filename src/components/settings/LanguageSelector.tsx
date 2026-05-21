@@ -2,20 +2,7 @@
 
 import { useState } from 'react'
 import { BulkTransformModal } from './BulkTransformModal'
-
-export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Spanish' },
-  { code: 'fr', label: 'French' },
-  { code: 'de', label: 'German' },
-  { code: 'it', label: 'Italian' },
-  { code: 'pt', label: 'Portuguese' },
-  { code: 'nl', label: 'Dutch' },
-  { code: 'pl', label: 'Polish' },
-  { code: 'ru', label: 'Russian' },
-  { code: 'cs', label: 'Czech' },
-  { code: 'sk', label: 'Slovak' },
-] as const
+import { SUPPORTED_LANGUAGES } from '@/lib/constants/languages'
 
 interface Props {
   initialValue: string

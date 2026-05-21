@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { VALID_LANGUAGE_CODES } from '@/lib/constants/languages'
 
 export async function PATCH(request: NextRequest) {
   const supabase = createClient()
@@ -21,8 +22,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (body.preferred_language !== undefined) {
-    const VALID_LANGUAGES = ['en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru', 'cs', 'sk']
-    if (!VALID_LANGUAGES.includes(body.preferred_language)) {
+    if (!VALID_LANGUAGE_CODES.includes(body.preferred_language)) {
       return NextResponse.json({ error: 'Invalid preferred_language' }, { status: 400 })
     }
     updates.preferred_language = body.preferred_language

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { transformRecipe } from '@/lib/ai/transform-recipe'
 import type { Ingredient, Step } from '@/types/recipe'
 import type { Json } from '@/types/database'
+import { VALID_LANGUAGE_CODES } from '@/lib/constants/languages'
 
 export async function POST(
   request: NextRequest,
@@ -13,6 +14,13 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json() as { targetLanguage?: string; targetUnits?: 'metric' | 'imperial' }
+
+  if (body.targetLanguage !== undefined && !VALID_LANGUAGE_CODES.includes(body.targetLanguage)) {
+    return NextResponse.json({ error: 'Invalid targetLanguage' }, { status: 400 })
+  }
+  if (body.targetUnits !== undefined && !(['metric', 'imperial'] as const).includes(body.targetUnits)) {
+    return NextResponse.json({ error: 'Invalid targetUnits' }, { status: 400 })
+  }
 
   const { data: recipe, error } = await supabase
     .from('recipes')
