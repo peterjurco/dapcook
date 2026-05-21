@@ -6,10 +6,12 @@ import { POST } from './route'
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 vi.mock('@/lib/scraper', () => ({ scrapeRecipe: vi.fn() }))
 vi.mock('@/lib/ai/parse-recipe', () => ({ parseRecipeData: vi.fn() }))
+vi.mock('@/lib/ai/transform-recipe', () => ({ transformRecipe: vi.fn() }))
 
 import { createClient } from '@/lib/supabase/server'
 import { scrapeRecipe } from '@/lib/scraper'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
+import { transformRecipe } from '@/lib/ai/transform-recipe'
 
 const mockUser = { id: 'user-1' }
 
@@ -32,11 +34,15 @@ function makeSelectChain(resolvedData: unknown) {
   return chain
 }
 
-function makeSupabase(user: typeof mockUser | null = mockUser) {
+function makeSupabase(
+  user: typeof mockUser | null = mockUser,
+  household: { preferred_language: string; preferred_units: string } | null = { preferred_language: 'en', preferred_units: 'metric' }
+) {
   const fromMap: Record<string, unknown> = {
     profiles: makeSingleChain({ household_id: 'hh-1' }),
     recipes: makeSelectChain([]),
     tags: makeSelectChain([]),
+    households: makeSingleChain(household),
   }
   return {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
@@ -75,6 +81,7 @@ beforeEach(() => {
   vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
   vi.mocked(scrapeRecipe).mockResolvedValue({ raw: rawScraped } as Awaited<ReturnType<typeof scrapeRecipe>>)
   vi.mocked(parseRecipeData).mockResolvedValue(parsedParts)
+  vi.mocked(transformRecipe).mockImplementation(async (content) => content)
 })
 
 describe('POST /api/recipes/import', () => {
@@ -131,5 +138,32 @@ describe('POST /api/recipes/import', () => {
   it('calls scrapeRecipe with the provided URL', async () => {
     await POST(req({ url: 'https://example.com/pasta' }))
     expect(vi.mocked(scrapeRecipe)).toHaveBeenCalledWith('https://example.com/pasta')
+  })
+
+  it('calls transformRecipe with household prefs', async () => {
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric' }) as unknown as ReturnType<typeof createClient>
+    )
+    await POST(req({ url: 'https://example.com/pasta' }))
+    expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Pasta' }),
+      { targetLanguage: 'sk', targetUnits: 'metric' },
+      'hh-1'
+    )
+  })
+
+  it('uses transformed content in the returned draft', async () => {
+    const transformedIngredients = [{ id: 'i2', quantity: 7, unit: 'oz', name: 'pasta', notes: '' }]
+    vi.mocked(transformRecipe).mockResolvedValue({
+      title: 'Translated Pasta',
+      description: null,
+      ingredients: transformedIngredients,
+      steps: [],
+      notes: null,
+    })
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    const draft = await res.json() as Record<string, unknown>
+    expect(draft.title).toBe('Translated Pasta')
+    expect(draft.ingredients).toEqual(transformedIngredients)
   })
 })

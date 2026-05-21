@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { scrapeRecipe } from '@/lib/scraper'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
+import { transformRecipe } from '@/lib/ai/transform-recipe'
 import type { RecipeDraft } from '@/types/recipe'
 
 export async function POST(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    new URL(url) // validate URL format
+    new URL(url)
   } catch {
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
   }
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
   const { raw } = scrapeResult
   const { rawIngredients, rawSteps, ...meta } = raw
 
-  const [{ ingredients, steps }, existingTags] = await Promise.all([
+  const [{ ingredients, steps }, existingTags, { data: household }] = await Promise.all([
     parseRecipeData(rawIngredients, rawSteps, profile?.household_id ?? undefined),
     profile?.household_id
       ? Promise.all([
@@ -49,13 +50,27 @@ export async function POST(request: NextRequest) {
           return names
         })
       : Promise.resolve(new Set<string>()),
+    profile?.household_id
+      ? supabase.from('households').select('preferred_language, preferred_units').eq('id', profile.household_id).single()
+      : Promise.resolve({ data: null }),
   ])
+
+  const transformed = await transformRecipe(
+    { title: meta.title, description: meta.description ?? null, ingredients, steps, notes: null },
+    {
+      targetLanguage: household?.preferred_language ?? 'en',
+      targetUnits: household?.preferred_units ?? 'metric',
+    },
+    profile?.household_id ?? undefined
+  )
 
   const draft: RecipeDraft = {
     ...meta,
+    title: transformed.title,
+    description: transformed.description ?? meta.description ?? '',
     tags: (meta.tags ?? []).filter(t => existingTags.has(t.toLowerCase())),
-    ingredients,
-    steps,
+    ingredients: transformed.ingredients,
+    steps: transformed.steps,
   }
 
   return NextResponse.json(draft)
