@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, Calendar, ShoppingCart, Settings, LogOut } from 'lucide-react'
+import { BookOpen, Calendar, ShoppingCart, Settings, LogOut, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { signOut } from '@/lib/auth/actions'
 import type { User } from '@supabase/supabase-js'
@@ -24,10 +24,11 @@ const NAV_ITEMS: NavItem[] = [
 interface AppShellProps {
   user: User
   profile: Profile
+  isAdmin?: boolean
   children: React.ReactNode
 }
 
-export function AppShell({ user, profile, children }: AppShellProps) {
+export function AppShell({ user, profile, isAdmin = false, children }: AppShellProps) {
   const pathname = usePathname()
 
   return (
@@ -54,6 +55,20 @@ export function AppShell({ user, profile, children }: AppShellProps) {
               {item.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                pathname.startsWith('/admin')
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              )}
+            >
+              <Shield size={18} />
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="px-4 py-4 border-t border-gray-200">
@@ -106,6 +121,18 @@ export function AppShell({ user, profile, children }: AppShellProps) {
             {item.label}
           </Link>
         ))}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors',
+              pathname.startsWith('/admin') ? 'text-gray-900' : 'text-gray-400'
+            )}
+          >
+            <Shield size={18} />
+            Admin
+          </Link>
+        )}
       </nav>
     </div>
   )

@@ -63,4 +63,31 @@ describe('AppShell', () => {
     )
     expect(screen.getByTestId('page-content')).toBeInTheDocument()
   })
+
+  it('shows Admin nav link when isAdmin is true', () => {
+    render(
+      <AppShell user={mockUser} profile={mockProfile} isAdmin={true}>
+        <div>content</div>
+      </AppShell>
+    )
+    expect(screen.getAllByRole('link', { name: /admin/i }).length).toBeGreaterThan(0)
+  })
+
+  it('hides Admin nav link when isAdmin is false', () => {
+    render(
+      <AppShell user={mockUser} profile={mockProfile} isAdmin={false}>
+        <div>content</div>
+      </AppShell>
+    )
+    expect(screen.queryByRole('link', { name: /admin/i })).toBeNull()
+  })
+
+  it('hides Admin nav link when isAdmin is omitted', () => {
+    render(
+      <AppShell user={mockUser} profile={mockProfile}>
+        <div>content</div>
+      </AppShell>
+    )
+    expect(screen.queryByRole('link', { name: /admin/i })).toBeNull()
+  })
 })
