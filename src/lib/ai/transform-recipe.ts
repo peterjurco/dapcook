@@ -36,7 +36,7 @@ export async function transformRecipe(
   const instructions: string[] = []
   if (needsTranslation) {
     const langName = LANGUAGE_NAMES[targetLanguage] ?? targetLanguage
-    instructions.push(`Translate all text fields to ${langName}.`)
+    instructions.push(`Translate all text fields to ${langName}. Use natural, colloquial culinary language as a native ${langName} cook would say it — prefer commonly used loanwords and established culinary terms over literal translations, and never calque English compound nouns word-for-word.`)
   }
   if (needsUnitConversion) {
     instructions.push(
