@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { BulkTransformModal } from './BulkTransformModal'
+import { ConfirmTransformModal } from './ConfirmTransformModal'
 
 interface Props {
   initialValue: 'metric' | 'imperial'
@@ -9,10 +10,12 @@ interface Props {
   recipeIds: string[]
 }
 
+type Phase = 'idle' | 'confirm' | 'bulk'
+
 export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage, recipeIds }: Props) {
   const [value, setValue] = useState<'metric' | 'imperial'>(initialValue)
   const [saving, setSaving] = useState(false)
-  const [showModal, setShowModal] = useState(false)
+  const [phase, setPhase] = useState<Phase>('idle')
   const [pendingUnits, setPendingUnits] = useState<'metric' | 'imperial' | null>(null)
 
   async function handleChange(next: 'metric' | 'imperial') {
@@ -34,15 +37,14 @@ export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage,
     }
 
     if (recipeIds.length > 0) {
-      const confirmed = confirm(
-        `You have ${recipeIds.length} recipe${recipeIds.length === 1 ? '' : 's'}. Convert their units now?`
-      )
-      if (confirmed) {
-        setPendingUnits(next)
-        setShowModal(true)
-      }
+      setPendingUnits(next)
+      setPhase('confirm')
     }
   }
+
+  function handleConfirm() { setPhase('bulk') }
+  function handleCancel() { setPhase('idle'); setPendingUnits(null) }
+  function handleBulkClose() { setPhase('idle'); setPendingUnits(null) }
 
   return (
     <>
@@ -64,12 +66,22 @@ export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage,
         ))}
       </div>
 
-      {showModal && pendingUnits && (
+      {phase === 'confirm' && pendingUnits && (
+        <ConfirmTransformModal
+          recipeCount={recipeIds.length}
+          message={`Convert your recipes to ${pendingUnits} units?`}
+          confirmLabel="Convert all"
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
+      )}
+
+      {phase === 'bulk' && pendingUnits && (
         <BulkTransformModal
           recipeIds={recipeIds}
           targetLanguage={currentPreferredLanguage}
           targetUnits={pendingUnits}
-          onClose={() => { setShowModal(false); setPendingUnits(null) }}
+          onClose={handleBulkClose}
         />
       )}
     </>

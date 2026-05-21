@@ -3,12 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { UnitPreferenceSelector } from './UnitPreferenceSelector'
 
 global.fetch = vi.fn()
-global.confirm = vi.fn()
 
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetch).mockResolvedValue({ ok: true } as Response)
-  vi.mocked(confirm).mockReturnValue(false)
 })
 
 describe('UnitPreferenceSelector', () => {
@@ -35,28 +33,39 @@ describe('UnitPreferenceSelector', () => {
     })
   })
 
-  it('does not show confirm dialog when recipeIds is empty', async () => {
+  it('does not show confirm modal when recipeIds is empty', async () => {
     render(<UnitPreferenceSelector initialValue="metric" currentPreferredLanguage="en" recipeIds={[]} />)
     fireEvent.click(screen.getByRole('button', { name: 'imperial' }))
     await waitFor(() => expect(fetch).toHaveBeenCalled())
-    expect(confirm).not.toHaveBeenCalled()
+    expect(screen.queryByText(/will be updated/)).toBeNull()
   })
 
-  it('shows confirm dialog when recipeIds is non-empty', async () => {
+  it('shows confirm modal when recipeIds is non-empty', async () => {
     render(<UnitPreferenceSelector initialValue="metric" currentPreferredLanguage="en" recipeIds={['r1', 'r2', 'r3']} />)
     fireEvent.click(screen.getByRole('button', { name: 'imperial' }))
-    await waitFor(() => expect(confirm).toHaveBeenCalled())
-    const msg = vi.mocked(confirm).mock.calls[0][0] as string
-    expect(msg).toContain('3')
+    await waitFor(() => {
+      expect(screen.getByText('Convert your recipes to imperial units?')).toBeDefined()
+      expect(screen.getByText(/3 recipes will be updated/)).toBeDefined()
+    })
   })
 
-  it('shows BulkTransformModal when user confirms', async () => {
-    vi.mocked(confirm).mockReturnValue(true)
+  it('shows BulkTransformModal when user clicks confirm in modal', async () => {
     render(<UnitPreferenceSelector initialValue="metric" currentPreferredLanguage="en" recipeIds={['r1']} />)
     fireEvent.click(screen.getByRole('button', { name: 'imperial' }))
+    await waitFor(() => expect(screen.getByText('Convert your recipes to imperial units?')).toBeDefined())
+    fireEvent.click(screen.getByRole('button', { name: 'Convert all' }))
     await waitFor(() => {
       expect(screen.getByTestId('bulk-transform-modal')).toBeDefined()
     })
+  })
+
+  it('dismisses confirm modal when user clicks Not now', async () => {
+    render(<UnitPreferenceSelector initialValue="metric" currentPreferredLanguage="en" recipeIds={['r1']} />)
+    fireEvent.click(screen.getByRole('button', { name: 'imperial' }))
+    await waitFor(() => expect(screen.getByText('Convert your recipes to imperial units?')).toBeDefined())
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
+    expect(screen.queryByText(/will be updated/)).toBeNull()
+    expect(screen.queryByTestId('bulk-transform-modal')).toBeNull()
   })
 
   it('reverts to previous value when API call fails', async () => {
