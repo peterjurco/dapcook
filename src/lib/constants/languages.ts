@@ -7,7 +7,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'pt', label: 'Portuguese' },
   { code: 'nl', label: 'Dutch' },
   { code: 'pl', label: 'Polish' },
-  { code: 'ru', label: 'Russian' },
+  { code: 'uk', label: 'Ukrainian' },
   { code: 'cs', label: 'Czech' },
   { code: 'sk', label: 'Slovak' },
 ] as const
