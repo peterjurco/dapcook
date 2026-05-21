@@ -29,7 +29,10 @@ export async function transformRecipe(
   // Short-circuit: nothing to do
   const needsTranslation = targetLanguage && targetLanguage !== 'en'
   const needsUnitConversion = targetUnits && targetUnits !== 'metric'
+  console.log('[transform-recipe] targetLanguage:', targetLanguage, '| needsTranslation:', needsTranslation)
+  console.log('[transform-recipe] targetUnits:', targetUnits, '| needsUnitConversion:', needsUnitConversion)
   if (!needsTranslation && !needsUnitConversion) {
+    console.log('[transform-recipe] short-circuiting — no transformation needed')
     return content
   }
 

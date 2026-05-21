@@ -55,14 +55,21 @@ export async function POST(request: NextRequest) {
       : Promise.resolve({ data: null }),
   ])
 
+  const transformOptions = {
+    targetLanguage: household?.preferred_language ?? 'en',
+    targetUnits: household?.preferred_units ?? 'metric',
+  }
+  console.log('[import] household_id:', profile?.household_id)
+  console.log('[import] household row:', household)
+  console.log('[import] transform options:', transformOptions)
+
   const transformed = await transformRecipe(
     { title: meta.title, description: meta.description ?? null, ingredients, steps, notes: null },
-    {
-      targetLanguage: household?.preferred_language ?? 'en',
-      targetUnits: household?.preferred_units ?? 'metric',
-    },
+    transformOptions,
     profile?.household_id ?? undefined
   )
+  console.log('[import] original title:', meta.title)
+  console.log('[import] transformed title:', transformed.title)
 
   const draft: RecipeDraft = {
     ...meta,
