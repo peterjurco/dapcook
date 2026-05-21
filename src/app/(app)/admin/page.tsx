@@ -16,8 +16,9 @@ function formatTokens(n: number): string {
   return String(n)
 }
 
+// Priced at claude-sonnet-4-5 rates: $3/MTok input, $15/MTok output
 function formatCost(inputTokens: number, outputTokens: number): string {
-  const cost = (inputTokens / 1_000_000) * 0.25 + (outputTokens / 1_000_000) * 1.25
+  const cost = (inputTokens / 1_000_000) * 3 + (outputTokens / 1_000_000) * 15
   return `$${cost.toFixed(4)}`
 }
 
