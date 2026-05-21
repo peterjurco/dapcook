@@ -31,7 +31,6 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const [dateFrom, setDateFrom] = useState(defaultDateFrom)
   const [dateTo, setDateTo] = useState(defaultDateTo)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isMakingSmarter, setIsMakingSmarter] = useState(false)
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false)
   const [copied, setCopied] = useState(false)
   const [addingItem, setAddingItem] = useState(false)
@@ -59,31 +58,30 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       const data = await res.json() as { list: ShoppingList; items: ShoppingItem[] }
       setList(data.list)
       setItems(data.items)
-      // Fetch recipe names for the new items
       const listRes = await fetch('/api/shopping/list')
       if (listRes.ok) {
         const listData = await listRes.json() as { recipeNames: Record<string, string> }
         setRecipeNames(listData.recipeNames)
       }
+      await makeSmarter(data.list.id)
     }
     setIsGenerating(false)
     setShowOverwriteConfirm(false)
   }
 
-  async function makeSmarter() {
-    if (!list) return
-    setIsMakingSmarter(true)
+  async function makeSmarter(listId?: string) {
+    const id = listId ?? list?.id
+    if (!id) return
     const res = await fetch('/api/shopping/make-smarter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ list_id: list.id }),
+      body: JSON.stringify({ list_id: id }),
     })
     if (res.ok) {
       const data = await res.json() as { items: ShoppingItem[]; categories: ShoppingCategory[] }
       setItems(data.items)
       setCategories(data.categories)
     }
-    setIsMakingSmarter(false)
   }
 
   async function handleCheck(id: string, checked: boolean) {
@@ -283,24 +281,9 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {list && (
         <div className="space-y-4">
           {/* List header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium text-gray-900">{list.name}</p>
-              <p className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</p>
-            </div>
-            <button
-              type="button"
-              onClick={makeSmarter}
-              disabled={isMakingSmarter || items.length === 0}
-              className="self-start flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isMakingSmarter ? (
-                <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Sparkles size={14} className="text-yellow-400" />
-              )}
-              Make smarter
-            </button>
+          <div>
+            <p className="text-sm font-medium text-gray-900">{list.name}</p>
+            <p className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</p>
           </div>
 
           {/* Items grouped by category */}
