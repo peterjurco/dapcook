@@ -10,6 +10,7 @@ export interface Database {
           invite_token: string
           preferred_units: 'metric' | 'imperial'
           created_at: string
+          last_sign_in_at: string | null
         }
         Insert: {
           id?: string
@@ -17,6 +18,7 @@ export interface Database {
           invite_token: string
           preferred_units?: 'metric' | 'imperial'
           created_at?: string
+          last_sign_in_at?: string | null
         }
         Update: {
           id?: string
@@ -24,6 +26,7 @@ export interface Database {
           invite_token?: string
           preferred_units?: 'metric' | 'imperial'
           created_at?: string
+          last_sign_in_at?: string | null
         }
         Relationships: []
       }
@@ -406,6 +409,33 @@ export interface Database {
         }
         Relationships: []
       }
+      ai_usage_logs: {
+        Row: {
+          id: string
+          household_id: string
+          feature: string
+          input_tokens: number
+          output_tokens: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          feature: string
+          input_tokens: number
+          output_tokens: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          feature?: string
+          input_tokens?: number
+          output_tokens?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -449,3 +479,4 @@ export type ShoppingList = Tables<'shopping_lists'>
 export type ShoppingItem = Tables<'shopping_items'>
 export type ChatMessage = Tables<'chat_messages'>
 export type WeekPlanRule = Tables<'week_plan_rules'>
+export type AiUsageLog = Tables<'ai_usage_logs'>
