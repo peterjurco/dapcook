@@ -41,7 +41,7 @@ export default async function AdminPage() {
     .from('households')
     .select(`
       id, name, created_at, last_sign_in_at,
-      recipes(id),
+      recipes(id, is_archived),
       ai_usage_logs(input_tokens, output_tokens)
     `)
     .order('last_sign_in_at', { ascending: false, nullsFirst: false })
@@ -69,7 +69,7 @@ export default async function AdminPage() {
     name: h.name,
     created_at: h.created_at,
     last_sign_in_at: h.last_sign_in_at,
-    recipe_count: Array.isArray(h.recipes) ? h.recipes.length : 0,
+    recipe_count: Array.isArray(h.recipes) ? h.recipes.filter((r: { is_archived: boolean }) => !r.is_archived).length : 0,
     total_input_tokens: Array.isArray(h.ai_usage_logs)
       ? h.ai_usage_logs.reduce((sum: number, l: { input_tokens: number }) => sum + l.input_tokens, 0)
       : 0,
