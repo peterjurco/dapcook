@@ -16,7 +16,6 @@ vi.mock('@anthropic-ai/sdk', () => ({
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn(() => ({})) }))
 vi.mock('./log-usage', () => ({ logAiUsage: vi.fn() }))
 
-import Anthropic from '@anthropic-ai/sdk'
 import { logAiUsage } from './log-usage'
 import { transformRecipe } from './transform-recipe'
 import type { RecipeContent } from './transform-recipe'
