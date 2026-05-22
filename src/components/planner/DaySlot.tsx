@@ -24,6 +24,8 @@ interface DaySlotProps {
   onAddCustom: (dayOfWeek: number, label: string) => void
   onDelete: (slotId: string) => void
   onSpanChange: (slotId: string, delta: number) => void
+  onSpanPreview: (slotId: string, newSpan: number) => void
+  onSpanCommit: (slotId: string, newSpan: number) => void
 }
 
 export function DaySlot({
@@ -40,6 +42,8 @@ export function DaySlot({
   onAddCustom,
   onDelete,
   onSpanChange,
+  onSpanPreview,
+  onSpanCommit,
 }: DaySlotProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${dayOfWeek}`, data: { dayOfWeek } })
 
@@ -69,7 +73,8 @@ export function DaySlot({
             <SlotCard
               slot={slot}
               onDelete={() => onDelete(slot.id)}
-              onSpanChange={(delta) => onSpanChange(slot.id, delta)}
+              onSpanPreview={(newSpan) => onSpanPreview(slot.id, newSpan)}
+              onSpanCommit={(newSpan) => onSpanCommit(slot.id, newSpan)}
               maxSpanDays={maxSpanDays}
             />
           ) : (

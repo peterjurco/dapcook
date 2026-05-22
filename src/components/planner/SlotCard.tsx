@@ -4,19 +4,23 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, ChevronRight } from 'lucide-react'
+import { GripVertical, X, GripHorizontal } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
 interface SlotCardProps {
   slot: MealSlotWithRecipe
   onDelete: () => void
-  onSpanChange: (delta: number) => void
-  maxSpanDays: number // how many days remain in the week from this slot
+  /** Called on every column boundary crossed during drag — update state only, no API */
+  onSpanPreview: (newSpan: number) => void
+  /** Called on mouseup — persist the final span to the API */
+  onSpanCommit: (newSpan: number) => void
+  maxSpanDays: number
 }
 
-export function SlotCard({ slot, onDelete, onSpanChange, maxSpanDays }: SlotCardProps) {
+export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanDays }: SlotCardProps) {
   const [confirming, setConfirming] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
@@ -28,6 +32,49 @@ export function SlotCard({ slot, onDelete, onSpanChange, maxSpanDays }: SlotCard
     : undefined
 
   const canExpand = slot.span_days < maxSpanDays && slot.span_days < 7
+
+  function handleResizeMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    e.preventDefault()
+    e.stopPropagation() // don't let dnd-kit pick this up as a move drag
+
+    // Use the card element (parent of the resize handle) to measure column width
+    const cardEl = e.currentTarget.parentElement as HTMLElement
+    const cardWidth = cardEl.getBoundingClientRect().width
+    const columnWidth = cardWidth + 12 // gap-3 = 12px
+
+    const startX = e.clientX
+    const startSpan = slot.span_days
+    let liveSpan = startSpan
+
+    setIsResizing(true)
+    document.body.style.cursor = 'ew-resize'
+    document.body.style.userSelect = 'none'
+
+    function onMouseMove(e: MouseEvent) {
+      const dx = e.clientX - startX
+      // Snap at 40% into the next column in either direction
+      const daysToAdd = Math.floor((dx + columnWidth * 0.4) / columnWidth)
+      const newSpan = Math.max(1, Math.min(maxSpanDays, startSpan + daysToAdd))
+      if (newSpan !== liveSpan) {
+        liveSpan = newSpan
+        onSpanPreview(newSpan)
+      }
+    }
+
+    function onMouseUp() {
+      setIsResizing(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      if (liveSpan !== startSpan) {
+        onSpanCommit(liveSpan)
+      }
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }
 
   return (
     <>
@@ -54,8 +101,8 @@ export function SlotCard({ slot, onDelete, onSpanChange, maxSpanDays }: SlotCard
           )}
         </Link>
 
-        {/* Title — links to recipe */}
-        <div className="px-2 py-1.5 pr-7">
+        {/* Title */}
+        <div className="px-2 py-1.5 pr-6">
           <Link
             href={`/recipes/${slot.recipe_id}`}
             className="text-xs font-medium text-gray-900 line-clamp-2 leading-snug hover:text-blue-600 transition-colors"
@@ -67,12 +114,12 @@ export function SlotCard({ slot, onDelete, onSpanChange, maxSpanDays }: SlotCard
           )}
         </div>
 
-        {/* Drag handle */}
+        {/* Move drag handle */}
         <button
           {...attributes}
           {...listeners}
           className="absolute top-1.5 left-1.5 p-0.5 rounded bg-white/80 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-          aria-label="Drag to reorder"
+          aria-label="Drag to move"
         >
           <GripVertical size={12} />
         </button>
@@ -87,18 +134,20 @@ export function SlotCard({ slot, onDelete, onSpanChange, maxSpanDays }: SlotCard
           <X size={12} />
         </button>
 
-        {/* Right-edge extend handle — bleeds into the gap to the next column */}
+        {/* Resize handle — drag right/left to extend or shrink span */}
         {canExpand && (
-          <button
-            type="button"
-            onClick={() => onSpanChange(1)}
-            title="Extend to next day"
-            aria-label="Extend to next day"
-            className="absolute top-0 bottom-0 right-[-10px] w-8 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-l from-blue-100/90 via-blue-50/60 to-transparent rounded-r-lg z-10 cursor-col-resize hover:from-blue-200/90 hover:via-blue-100/70"
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className={`absolute top-0 bottom-0 right-[-10px] w-7 flex flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
+              isResizing
+                ? 'opacity-100 bg-gradient-to-l from-blue-200/90 via-blue-100/60 to-transparent'
+                : 'opacity-0 group-hover:opacity-100 bg-gradient-to-l from-blue-100/90 via-blue-50/60 to-transparent hover:from-blue-200/90'
+            }`}
+            title="Drag to extend across days"
+            aria-label="Drag to extend across days"
           >
-            <ChevronRight size={16} className="text-blue-500" />
-            <span className="text-[9px] font-medium text-blue-500 leading-none">+day</span>
-          </button>
+            <GripHorizontal size={12} className={isResizing ? 'text-blue-600' : 'text-blue-400'} />
+          </div>
         )}
       </div>
 

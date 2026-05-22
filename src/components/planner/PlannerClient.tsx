@@ -107,6 +107,20 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     })
   }
 
+  // Called on every column boundary crossed during resize drag — no API call
+  function handleSpanPreview(slotId: string, newSpan: number) {
+    setSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, span_days: newSpan } : s))
+  }
+
+  // Called once on mouseup — persists the final span
+  async function handleSpanCommit(slotId: string, newSpan: number) {
+    await fetch(`/api/planner/slots/${slotId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ span_days: newSpan }),
+    })
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     setActiveSlot(null)
     const { active, over } = event
@@ -241,6 +255,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                   onAddCustom={handleAddCustom}
                   onDelete={handleDelete}
                   onSpanChange={handleSpanChange}
+                  onSpanPreview={handleSpanPreview}
+                  onSpanCommit={handleSpanCommit}
                 />
               )
             })}
@@ -253,7 +269,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                 <SlotCard
                   slot={activeSlot}
                   onDelete={() => {}}
-                  onSpanChange={() => {}}
+                  onSpanPreview={() => {}}
+                  onSpanCommit={() => {}}
                   maxSpanDays={1}
                 />
               ) : (
