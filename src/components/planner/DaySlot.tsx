@@ -4,6 +4,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { Plus } from 'lucide-react'
 import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
+import { ContinuationBlock } from './ContinuationBlock'
 import { RecipeSearch } from './RecipeSearch'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import type { Recipe } from '@/types/database'
@@ -75,11 +76,11 @@ export function DaySlot({
             <CustomLabelCard slot={slot} onDelete={() => onDelete(slot.id)} />
           )
         ) : coveredBy ? (
-          <div className="h-full rounded-lg bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center px-2 py-4">
-            <p className="text-xs text-gray-400 text-center leading-tight">
-              ← {coveredBy.recipe?.title ?? coveredBy.custom_label ?? 'continues'}
-            </p>
-          </div>
+          <ContinuationBlock
+            slot={coveredBy}
+            isLastDay={coveredBy.day_of_week + coveredBy.span_days - 1 === dayOfWeek}
+            onShrink={() => onSpanChange(coveredBy.id, -1)}
+          />
         ) : (
           <div className="h-full relative">
             {isSearchOpen ? (
