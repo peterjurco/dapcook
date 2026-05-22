@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -11,9 +11,9 @@ import type { MealSlotWithRecipe } from '@/types/planner'
 interface SlotCardProps {
   slot: MealSlotWithRecipe
   onDelete: () => void
-  /** Called on every column boundary crossed during drag — update state only, no API */
+  /** Called on every column boundary crossed during drag — updates state only, no API */
   onSpanPreview: (newSpan: number) => void
-  /** Called on mouseup — persist the final span to the API */
+  /** Called once on mouseup — persists the final span to the API */
   onSpanCommit: (newSpan: number) => void
   maxSpanDays: number
 }
@@ -21,6 +21,8 @@ interface SlotCardProps {
 export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanDays }: SlotCardProps) {
   const [confirming, setConfirming] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
+  // Overlay div is manipulated directly during drag to avoid React re-renders at 60fps
+  const overlayRef = useRef<HTMLDivElement>(null)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
@@ -32,28 +34,47 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
     : undefined
 
   const canExpand = slot.span_days < maxSpanDays && slot.span_days < 7
+  const showResizeHandle = canExpand || slot.span_days > 1
 
   function handleResizeMouseDown(e: React.MouseEvent<HTMLDivElement>) {
     e.preventDefault()
-    e.stopPropagation() // don't let dnd-kit pick this up as a move drag
+    e.stopPropagation() // prevent dnd-kit from treating this as a move drag
 
-    // Use the card element (parent of the resize handle) to measure column width
     const cardEl = e.currentTarget.parentElement as HTMLElement
-    const cardWidth = cardEl.getBoundingClientRect().width
-    const columnWidth = cardWidth + 12 // gap-3 = 12px
+    const cardRect = cardEl.getBoundingClientRect()
+    const columnWidth = cardRect.width + 12 // gap-3 = 12px
 
     const startX = e.clientX
     const startSpan = slot.span_days
     let liveSpan = startSpan
 
+    // Position and show the overlay
+    if (overlayRef.current) {
+      const el = overlayRef.current
+      el.style.display = 'block'
+      el.style.left = `${cardRect.right}px`
+      el.style.top = `${cardRect.top}px`
+      el.style.height = `${cardRect.height}px`
+      el.style.width = '0px'
+    }
+
     setIsResizing(true)
     document.body.style.cursor = 'ew-resize'
     document.body.style.userSelect = 'none'
 
-    function onMouseMove(e: MouseEvent) {
-      const dx = e.clientX - startX
-      // Snap at 40% into the next column in either direction
-      const daysToAdd = Math.floor((dx + columnWidth * 0.4) / columnWidth)
+    function onMouseMove(ev: MouseEvent) {
+      const dx = ev.clientX - startX
+
+      // Update overlay width directly — no React re-render, smooth 60fps
+      if (overlayRef.current) {
+        const w = Math.max(0, ev.clientX - cardRect.right)
+        overlayRef.current.style.width = `${w}px`
+        // Dim it when dragging back past origin
+        overlayRef.current.style.opacity = dx >= 0 ? '1' : '0.3'
+      }
+
+      // Snap span at 50% into each column (Math.round)
+      const daysToAdd = Math.round(dx / columnWidth)
       const newSpan = Math.max(1, Math.min(maxSpanDays, startSpan + daysToAdd))
       if (newSpan !== liveSpan) {
         liveSpan = newSpan
@@ -65,8 +86,14 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
       setIsResizing(false)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+
+      if (overlayRef.current) {
+        overlayRef.current.style.display = 'none'
+      }
+
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
+
       if (liveSpan !== startSpan) {
         onSpanCommit(liveSpan)
       }
@@ -128,14 +155,14 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/80 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/80 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10"
           aria-label="Remove from plan"
         >
           <X size={12} />
         </button>
 
-        {/* Resize handle — drag right/left to extend or shrink span */}
-        {canExpand && (
+        {/* Resize handle — drag right to extend, left to shrink */}
+        {showResizeHandle && (
           <div
             onMouseDown={handleResizeMouseDown}
             className={`absolute top-0 bottom-0 right-[-10px] w-7 flex flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
@@ -143,13 +170,20 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
                 ? 'opacity-100 bg-gradient-to-l from-blue-200/90 via-blue-100/60 to-transparent'
                 : 'opacity-0 group-hover:opacity-100 bg-gradient-to-l from-blue-100/90 via-blue-50/60 to-transparent hover:from-blue-200/90'
             }`}
-            title="Drag to extend across days"
-            aria-label="Drag to extend across days"
+            title="Drag to extend or shrink across days"
+            aria-label="Drag to extend or shrink across days"
           >
             <GripHorizontal size={12} className={isResizing ? 'text-blue-600' : 'text-blue-400'} />
           </div>
         )}
       </div>
+
+      {/* Drag overlay — fixed positioned, tracks cursor live during resize drag */}
+      <div
+        ref={overlayRef}
+        className="fixed pointer-events-none z-50 bg-blue-200/50 border-2 border-blue-300 border-dashed rounded-r-lg"
+        style={{ display: 'none' }}
+      />
 
       {confirming && (
         <ConfirmModal
