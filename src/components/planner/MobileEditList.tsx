@@ -36,8 +36,8 @@ interface MobileEditListProps {
   onReorder: (activeId: string, overId: string) => void
   onDelete: (slotId: string) => void
   onSpanChange: (slotId: string, newSpan: number) => void
-  onAddRecipe: (dayOfWeek: number, recipe: Recipe) => void
-  onAddCustom: (dayOfWeek: number, label: string) => void
+  onAddRecipe: (dayOfWeek: number, recipe: Recipe) => Promise<void>
+  onAddCustom: (dayOfWeek: number, label: string) => Promise<void>
 }
 
 function SortableItem({
@@ -45,6 +45,7 @@ function SortableItem({
   onDelete,
   onSpanChange,
   isSearchOpen,
+  isLoading,
   onOpenSearch,
   onCloseSearch,
   onAddRecipe,
@@ -54,6 +55,7 @@ function SortableItem({
   onDelete: () => void
   onSpanChange: (newSpan: number) => void
   isSearchOpen: boolean
+  isLoading: boolean
   onOpenSearch: () => void
   onCloseSearch: () => void
   onAddRecipe: (recipe: Recipe) => void
@@ -80,6 +82,18 @@ function SortableItem({
   const title = slot?.recipe?.title ?? slot?.custom_label ?? 'Meal'
 
   if (!isFilled) {
+    if (isLoading) {
+      return (
+        <div
+          ref={setNodeRef}
+          style={style}
+          className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 h-[52px]"
+        >
+          <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">{item.dayLabel}</p>
+        </div>
+      )
+    }
     if (isSearchOpen) {
       return (
         <div ref={setNodeRef} style={style} className="relative">
@@ -195,6 +209,7 @@ export function MobileEditList({
   onAddCustom,
 }: MobileEditListProps) {
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
+  const [loadingDay, setLoadingDay] = useState<number | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -208,6 +223,18 @@ export function MobileEditList({
     }
   }
 
+  async function handleAddRecipe(dayOfWeek: number, recipe: Recipe) {
+    setLoadingDay(dayOfWeek)
+    await onAddRecipe(dayOfWeek, recipe)
+    setLoadingDay(null)
+  }
+
+  async function handleAddCustom(dayOfWeek: number, label: string) {
+    setLoadingDay(dayOfWeek)
+    await onAddCustom(dayOfWeek, label)
+    setLoadingDay(null)
+  }
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={weekItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
@@ -219,10 +246,11 @@ export function MobileEditList({
               onDelete={() => item.slot && onDelete(item.slot.id)}
               onSpanChange={(newSpan) => item.slot && onSpanChange(item.slot.id, newSpan)}
               isSearchOpen={openSearchDay === item.dayOfWeek}
+              isLoading={loadingDay === item.dayOfWeek}
               onOpenSearch={() => setOpenSearchDay(item.dayOfWeek)}
               onCloseSearch={() => setOpenSearchDay(null)}
-              onAddRecipe={(recipe) => onAddRecipe(item.dayOfWeek, recipe)}
-              onAddCustom={(label) => onAddCustom(item.dayOfWeek, label)}
+              onAddRecipe={(recipe) => handleAddRecipe(item.dayOfWeek, recipe)}
+              onAddCustom={(label) => handleAddCustom(item.dayOfWeek, label)}
             />
           ))}
         </div>
