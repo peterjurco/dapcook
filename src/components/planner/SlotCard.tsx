@@ -147,7 +147,7 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/80 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+          className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/80 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-20"
           aria-label="Remove from plan"
         >
           <X size={12} />
