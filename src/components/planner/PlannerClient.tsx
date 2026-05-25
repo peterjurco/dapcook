@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart, Pencil, X } from 'lucide-react'
+import { usePostHog } from 'posthog-js/react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { DayHeader } from './DayHeader'
 import { DaySlot } from './DaySlot'
@@ -24,6 +25,7 @@ interface PlannerClientProps {
 
 export function PlannerClient({ weekStart }: PlannerClientProps) {
   const router = useRouter()
+  const posthog = usePostHog()
   const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(null)
   const [slots, setSlots] = useState<MealSlotWithRecipe[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,6 +73,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     if (res.ok) {
       const slot = await res.json() as MealSlotWithRecipe
       setSlots((prev) => [...prev, slot])
+      posthog.capture('meal_planned')
       if (!weekPlan) loadWeek() // refresh to get weekPlan
     }
   }
