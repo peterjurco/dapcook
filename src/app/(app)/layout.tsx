@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
+import { PostHogIdentifier } from '@/components/providers/PostHogIdentifier'
 import type { Profile } from '@/types/database'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,8 +24,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const isAdmin = user.email === process.env.ADMIN_EMAIL
 
   return (
-    <AppShell user={user} profile={profile} isAdmin={isAdmin}>
-      {children}
-    </AppShell>
+    <>
+      <PostHogIdentifier userId={user.id} email={user.email ?? ''} />
+      <AppShell user={user} profile={profile} isAdmin={isAdmin}>
+        {children}
+      </AppShell>
+    </>
   )
 }

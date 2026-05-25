@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BookOpen, Calendar, ShoppingCart, Settings, LogOut, Shield } from 'lucide-react'
+import { usePostHog } from 'posthog-js/react'
 import { cn } from '@/lib/utils/cn'
 import { signOut } from '@/lib/auth/actions'
 import type { User } from '@supabase/supabase-js'
@@ -30,6 +31,7 @@ interface AppShellProps {
 
 export function AppShell({ user, profile, isAdmin = false, children }: AppShellProps) {
   const pathname = usePathname()
+  const posthog = usePostHog()
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-50">
@@ -89,7 +91,7 @@ export function AppShell({ user, profile, isAdmin = false, children }: AppShellP
               {profile.display_name ?? user.email}
             </span>
           </div>
-          <form action={signOut}>
+          <form action={signOut} onSubmit={() => posthog.reset()}>
             <button
               type="submit"
               className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"

@@ -90,7 +90,7 @@ export async function createHousehold(name: string) {
     return { error: 'Failed to link household to profile' }
   }
 
-  redirect('/recipes')
+  redirect('/recipes?ob=1')
 }
 
 export async function joinHousehold(inviteToken: string) {
@@ -119,5 +119,5 @@ export async function joinHousehold(inviteToken: string) {
     return { error: 'Failed to join household' }
   }
 
-  redirect('/recipes')
+  redirect('/recipes?ob=1')
 }
