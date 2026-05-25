@@ -61,7 +61,7 @@ export function WeekNav({ weekStart }: WeekNavProps) {
         <button
           type="button"
           onClick={() => navigate(nextWeekStart(weekStart))}
-          className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
         >
           <CalendarDays size={14} />
           Plan next week

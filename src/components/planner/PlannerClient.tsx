@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, CalendarDays } from 'lucide-react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { DayHeader } from './DayHeader'
 import { DaySlot } from './DaySlot'
@@ -14,6 +14,8 @@ import {
   getWeekDays,
   formatDayLabel,
   toDateString,
+  isCurrentWeek,
+  nextWeekStart,
 } from '@/lib/utils/week'
 import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
 import type { Recipe, WeekPlan, WeekPlanRule } from '@/types/database'
@@ -395,6 +397,20 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
               <ShoppingCart size={14} />
             )}
             Generate shopping list
+          </button>
+        </div>
+      )}
+
+      {/* Plan next week — mobile only, shown at the bottom below all recipes */}
+      {isCurrentWeek(weekStart) && (
+        <div className="sm:hidden mt-4">
+          <button
+            type="button"
+            onClick={() => router.push(`/planner?week=${toDateString(nextWeekStart(weekStart))}`)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors"
+          >
+            <CalendarDays size={16} />
+            Plan next week
           </button>
         </div>
       )}
