@@ -187,7 +187,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {/* Generate controls */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-          <div className="flex-1 flex items-center gap-3">
+          <div className="flex-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">From</label>
               <input
