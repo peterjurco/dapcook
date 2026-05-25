@@ -1,7 +1,7 @@
 'use client'
 
 import { useDroppable } from '@dnd-kit/core'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
 import { RecipeSearch } from './RecipeSearch'
@@ -60,9 +60,41 @@ export function DaySlot({
 
   return (
     <div className={`min-w-0 ${colSpanClass}`}>
-      {/* Mobile date label — shown above each slot, hidden on desktop */}
-      <div className={`md:hidden mb-1 text-xs font-semibold uppercase tracking-wide ${mobileIsToday ? 'text-blue-600' : 'text-gray-400'}`}>
-        {mobileDateLabel}
+      {/* Mobile header — date title + span buttons, hidden on desktop */}
+      <div className="md:hidden flex items-center justify-between mb-2">
+        <p className={`text-base font-semibold ${mobileIsToday ? 'text-blue-600' : 'text-gray-700'}`}>
+          {mobileDateLabel}
+        </p>
+        {slot && (
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                const newSpan = slot.span_days - 1
+                onSpanPreview(slot.id, newSpan)
+                onSpanCommit(slot.id, newSpan)
+              }}
+              disabled={slot.span_days <= 1}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              aria-label="Shrink by one day"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const newSpan = slot.span_days + 1
+                onSpanPreview(slot.id, newSpan)
+                onSpanCommit(slot.id, newSpan)
+              }}
+              disabled={slot.span_days >= maxSpanDays}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              aria-label="Extend by one day"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
       <div
         ref={setNodeRef}
