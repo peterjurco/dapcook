@@ -158,11 +158,15 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     await fetch(`/api/shopping/rules/${id}`, { method: 'DELETE' })
   }
 
+  const grouped = groupItems(items, categories)
+
   function getListLines() {
-    return items.map((item) => {
-      const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
-      return qty ? `${qty} ${item.name}` : item.name
-    })
+    return grouped.flatMap((group) =>
+      group.items.map((item) => {
+        const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
+        return qty ? `${qty} ${item.name}` : item.name
+      })
+    )
   }
 
   async function copyToClipboard() {
@@ -182,8 +186,6 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-
-  const grouped = groupItems(items, categories)
 
   return (
     <div className="max-w-xl mx-auto px-6 py-10 overflow-x-hidden">
