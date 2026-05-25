@@ -408,35 +408,39 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
               const items: React.ReactNode[] = []
               let dow = 1
               while (dow <= 7) {
-                const slot = slotByDay.get(dow) ?? null
-                const maxSpanDays = 8 - dow
+                // Snapshot dow into a const so closures below capture the
+                // per-iteration value, not the shared `let` variable which
+                // equals 8 after the loop finishes.
+                const d = dow
+                const slot = slotByDay.get(d) ?? null
+                const maxSpanDays = 8 - d
                 // Clamp span to remaining days in the week
                 const span = Math.min(slot?.span_days ?? 1, maxSpanDays)
 
                 // Mobile date label: "Mon 25" or "Mon 25 – Wed 27"
-                const startDate = weekDays[dow - 1]
+                const startDate = weekDays[d - 1]
                 const { weekday: startWd, day: startDay } = formatDayLabel(startDate)
                 let mobileDateLabel = `${startWd} ${startDay}`
                 if (span > 1) {
-                  const endDate = weekDays[Math.min(dow + span - 2, 6)]
+                  const endDate = weekDays[Math.min(d + span - 2, 6)]
                   const { weekday: endWd, day: endDay } = formatDayLabel(endDate)
                   mobileDateLabel += ` – ${endWd} ${endDay}`
                 }
                 // Highlight if today falls anywhere in this slot's range
-                const mobileIsToday = Array.from({ length: span }, (_, i) => dow + i)
-                  .some((d) => toDateString(weekDays[d - 1]) === toDateString(today))
+                const mobileIsToday = Array.from({ length: span }, (_, i) => d + i)
+                  .some((day) => toDateString(weekDays[day - 1]) === toDateString(today))
 
                 items.push(
                   <DaySlot
-                    key={dow}
-                    dayOfWeek={dow}
+                    key={d}
+                    dayOfWeek={d}
                     slot={slot}
                     gridColSpan={span}
                     maxSpanDays={maxSpanDays}
                     mobileDateLabel={mobileDateLabel}
                     mobileIsToday={mobileIsToday}
-                    isSearchOpen={openSearchDay === dow}
-                    onOpenSearch={() => setOpenSearchDay(dow)}
+                    isSearchOpen={openSearchDay === d}
+                    onOpenSearch={() => setOpenSearchDay(d)}
                     onCloseSearch={() => setOpenSearchDay(null)}
                     onAddRecipe={handleAddRecipe}
                     onAddCustom={handleAddCustom}
