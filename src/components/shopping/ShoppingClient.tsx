@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ShoppingCart, Sparkles, Copy, Plus, X, Check } from 'lucide-react'
+import { ShoppingCart, Sparkles, Copy, Plus, X, Check, Share2 } from 'lucide-react'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { ShoppingList, ShoppingItem, ShoppingCategory, ShoppingRule } from '@/types/database'
@@ -150,11 +150,23 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     await fetch(`/api/shopping/rules/${id}`, { method: 'DELETE' })
   }
 
-  async function copyToClipboard() {
-    const lines = items.map((item) => {
+  function getListLines() {
+    return items.map((item) => {
       const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
       return qty ? `${qty} ${item.name}` : item.name
     })
+  }
+
+  async function shareList() {
+    try {
+      await navigator.share({ text: getListLines().join('\n') })
+    } catch {
+      // user cancelled or share failed — do nothing
+    }
+  }
+
+  async function copyToClipboard() {
+    const lines = getListLines()
     const text = lines.join('\n')
     const html = `<ul>${lines.map((l) => `<li>${l.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</li>`).join('')}</ul>`
     try {
@@ -288,14 +300,26 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
               <p className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</p>
             </div>
             {items.length > 0 && (
-              <button
-                type="button"
-                onClick={copyToClipboard}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
-              >
-                {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
-                {copied ? 'Copied!' : 'Copy list'}
-              </button>
+              <div className="flex items-center gap-2">
+                {typeof navigator !== 'undefined' && 'share' in navigator && (
+                  <button
+                    type="button"
+                    onClick={shareList}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                  >
+                    <Share2 size={15} />
+                    Share
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={copyToClipboard}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                >
+                  {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
+                  {copied ? 'Copied!' : 'Copy list'}
+                </button>
+              </div>
             )}
           </div>
 
