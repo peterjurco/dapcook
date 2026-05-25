@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart } from 'lucide-react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
+import { DayHeader } from './DayHeader'
 import { DaySlot } from './DaySlot'
 import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
@@ -211,14 +212,22 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       <WeekNav weekStart={weekStart} />
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded mb-2 mx-auto w-8" />
-              <div className="h-6 bg-gray-200 rounded mb-2 mx-auto w-6" />
-              <div className="h-32 bg-gray-100 rounded-xl" />
-            </div>
-          ))}
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mb-2">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="animate-pulse text-center">
+                <div className="h-4 bg-gray-200 rounded mb-2 mx-auto w-8" />
+                <div className="h-6 bg-gray-200 rounded mb-2 mx-auto w-6" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-32 bg-gray-100 rounded-xl" />
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <DndContext
@@ -229,37 +238,49 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           }}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+          {/* Day headers — always 7 × 1-column */}
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mb-2">
             {weekDays.map((date, index) => {
               const dow = index + 1
               const isToday = toDateString(date) === toDateString(today)
-              const slot = slotByDay.get(dow) ?? null
-              const coveredBy = coveredBySlot.get(dow) ?? null
-
-              // How many days remain in the week from this day (for span control)
-              const maxSpanDays = 8 - dow
-
-              return (
-                <DaySlot
-                  key={dow}
-                  dayLabel={formatDayLabel(date)}
-                  dayOfWeek={dow}
-                  slot={slot}
-                  coveredBy={coveredBy}
-                  isToday={isToday}
-                  maxSpanDays={maxSpanDays}
-                  isSearchOpen={openSearchDay === dow}
-                  onOpenSearch={() => setOpenSearchDay(dow)}
-                  onCloseSearch={() => setOpenSearchDay(null)}
-                  onAddRecipe={handleAddRecipe}
-                  onAddCustom={handleAddCustom}
-                  onDelete={handleDelete}
-                  onSpanChange={handleSpanChange}
-                  onSpanPreview={handleSpanPreview}
-                  onSpanCommit={handleSpanCommit}
-                />
-              )
+              const { weekday, day } = formatDayLabel(date)
+              return <DayHeader key={dow} weekday={weekday} day={day} isToday={isToday} />
             })}
+          </div>
+
+          {/* Slot areas — spanning grid: a meal with span_days=N occupies N columns */}
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+            {(() => {
+              const items: React.ReactNode[] = []
+              let dow = 1
+              while (dow <= 7) {
+                const slot = slotByDay.get(dow) ?? null
+                const maxSpanDays = 8 - dow
+                // Clamp span to remaining days in the week
+                const span = Math.min(slot?.span_days ?? 1, maxSpanDays)
+
+                items.push(
+                  <DaySlot
+                    key={dow}
+                    dayOfWeek={dow}
+                    slot={slot}
+                    gridColSpan={span}
+                    maxSpanDays={maxSpanDays}
+                    isSearchOpen={openSearchDay === dow}
+                    onOpenSearch={() => setOpenSearchDay(dow)}
+                    onCloseSearch={() => setOpenSearchDay(null)}
+                    onAddRecipe={handleAddRecipe}
+                    onAddCustom={handleAddCustom}
+                    onDelete={handleDelete}
+                    onSpanChange={handleSpanChange}
+                    onSpanPreview={handleSpanPreview}
+                    onSpanCommit={handleSpanCommit}
+                  />
+                )
+                dow += span
+              }
+              return items
+            })()}
           </div>
 
           {/* Drag overlay */}

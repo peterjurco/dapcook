@@ -112,8 +112,8 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
           isDragging ? 'shadow-lg ring-2 ring-gray-300' : 'border-gray-200'
         }`}
       >
-        {/* Thumbnail — links to recipe */}
-        <Link href={`/recipes/${slot.recipe_id}`} className="block aspect-[4/3] bg-gray-100 overflow-hidden rounded-t-lg">
+        {/* Thumbnail — links to recipe. Fixed height so it stays compact even when spanning multiple columns */}
+        <Link href={`/recipes/${slot.recipe_id}`} className="block h-32 bg-gray-100 overflow-hidden rounded-t-lg">
           {slot.recipe?.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -136,9 +136,6 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
           >
             {slot.recipe?.title ?? 'Recipe'}
           </Link>
-          {slot.span_days > 1 && (
-            <p className="text-xs text-gray-400 mt-0.5">{slot.span_days} days</p>
-          )}
         </div>
 
         {/* Move drag handle */}

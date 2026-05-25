@@ -4,18 +4,15 @@ import { useDroppable } from '@dnd-kit/core'
 import { Plus } from 'lucide-react'
 import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
-import { ContinuationBlock } from './ContinuationBlock'
 import { RecipeSearch } from './RecipeSearch'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import type { Recipe } from '@/types/database'
 
 interface DaySlotProps {
-  dayLabel: { weekday: string; day: number }
   dayOfWeek: number // 1–7
   slot: MealSlotWithRecipe | null
-  /** True if this day is covered by a span from a previous slot */
-  coveredBy: MealSlotWithRecipe | null
-  isToday: boolean
+  /** How many grid columns this slot occupies */
+  gridColSpan: number
   maxSpanDays: number
   isSearchOpen: boolean
   onOpenSearch: () => void
@@ -29,11 +26,9 @@ interface DaySlotProps {
 }
 
 export function DaySlot({
-  dayLabel,
   dayOfWeek,
   slot,
-  coveredBy,
-  isToday,
+  gridColSpan,
   maxSpanDays,
   isSearchOpen,
   onOpenSearch,
@@ -47,25 +42,12 @@ export function DaySlot({
 }: DaySlotProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${dayOfWeek}`, data: { dayOfWeek } })
 
-  const isEmpty = !slot && !coveredBy
-
   return (
-    <div className="flex flex-col min-w-0">
-      {/* Day header */}
-      <div className={`text-center mb-2 ${isToday ? 'text-gray-900' : 'text-gray-500'}`}>
-        <p className={`text-xs font-medium uppercase tracking-wide ${isToday ? 'text-blue-600' : ''}`}>
-          {dayLabel.weekday}
-        </p>
-        <p className={`text-lg font-semibold leading-tight ${isToday ? 'text-blue-600' : ''}`}>
-          {dayLabel.day}
-        </p>
-      </div>
-
-      {/* Slot area */}
+    <div style={{ gridColumn: `span ${gridColSpan}` }} className="min-w-0">
       <div
         ref={setNodeRef}
-        className={`relative flex-1 min-h-[130px] rounded-xl transition-colors ${
-          isOver && isEmpty ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
+        className={`relative min-h-[130px] rounded-xl transition-colors ${
+          isOver && !slot ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
         }`}
       >
         {slot ? (
@@ -80,14 +62,8 @@ export function DaySlot({
           ) : (
             <CustomLabelCard slot={slot} onDelete={() => onDelete(slot.id)} />
           )
-        ) : coveredBy ? (
-          <ContinuationBlock
-            slot={coveredBy}
-            isLastDay={coveredBy.day_of_week + coveredBy.span_days - 1 === dayOfWeek}
-            onShrink={() => onSpanChange(coveredBy.id, -1)}
-          />
         ) : (
-          <div className="h-full relative">
+          <div className="h-full">
             {isSearchOpen ? (
               <RecipeSearch
                 onSelectRecipe={(recipe) => { onCloseSearch(); onAddRecipe(dayOfWeek, recipe) }}
