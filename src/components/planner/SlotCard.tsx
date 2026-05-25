@@ -42,7 +42,11 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
 
     const cardEl = e.currentTarget.parentElement as HTMLElement
     const cardRect = cardEl.getBoundingClientRect()
-    const columnWidth = cardRect.width + 12 // gap-3 = 12px
+    // When the card spans N days its width is N*col + (N-1)*gap, so invert that
+    // to get a single-column step size for accurate snap in both directions.
+    const GAP = 12 // gap-3
+    const singleColWidth = (cardRect.width - (slot.span_days - 1) * GAP) / slot.span_days
+    const columnWidth = singleColWidth + GAP
 
     const startX = e.clientX
     const startSpan = slot.span_days
