@@ -95,45 +95,47 @@ function SortableItem({
         <GripVertical size={22} />
       </button>
 
-      {/* Middle: two-row container */}
-      <div className="flex-1 min-w-0 py-3 flex flex-col gap-2">
-        {/* Row 1: day label + span chevrons */}
-        <div className="flex items-center gap-2">
-          <p className="text-base font-bold text-gray-700 flex-1 leading-none">{item.dayLabel}</p>
-          <button
-            type="button"
-            onClick={() => onSpanChange(slot!.span_days - 1)}
-            disabled={slot!.span_days <= 1}
-            className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-            aria-label="Shrink by one day"
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onSpanChange(slot!.span_days + 1)}
-            disabled={slot!.span_days >= item.maxSpanDays}
-            className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-            aria-label="Extend by one day"
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
+      {/* Middle: image + right-side two-row text */}
+      <div className="flex-1 min-w-0 py-3 flex items-center gap-3">
+        {/* Thumbnail */}
+        {slot!.recipe?.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={slot!.recipe.image_url}
+            alt={title}
+            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-lg">🍽️</span>
+          </div>
+        )}
 
-        {/* Row 2: thumbnail + recipe name */}
-        <div className="flex items-center gap-2">
-          {slot!.recipe?.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={slot!.recipe.image_url}
-              alt={title}
-              className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg">🍽️</span>
-            </div>
-          )}
+        {/* Right side: day label + chevrons / recipe name */}
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
+          {/* Row 1: day label + chevrons */}
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-gray-500 leading-none">{item.dayLabel}</p>
+            <button
+              type="button"
+              onClick={() => onSpanChange(slot!.span_days - 1)}
+              disabled={slot!.span_days <= 1}
+              className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+              aria-label="Shrink by one day"
+            >
+              <ChevronLeft size={12} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSpanChange(slot!.span_days + 1)}
+              disabled={slot!.span_days >= item.maxSpanDays}
+              className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+              aria-label="Extend by one day"
+            >
+              <ChevronRight size={12} />
+            </button>
+          </div>
+          {/* Row 2: recipe name */}
           <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{title}</p>
         </div>
       </div>
