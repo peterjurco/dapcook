@@ -94,18 +94,75 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     await fetch(`/api/planner/slots/${slotId}`, { method: 'DELETE' })
   }
 
+  // Compute which slots get pushed (and how far) when slotId grows to newSpan.
+  // Uses explicit slotDay so the result is correct even when the closure's
+  // span_days is already stale (updated by a prior preview call).
+  function computeDisplacements(
+    allSlots: MealSlotWithRecipe[],
+    slotId: string,
+    slotDay: number,
+    newSpan: number,
+  ): Map<string, number> {
+    const updates = new Map<string, number>()
+    const later = allSlots
+      .filter((s) => s.id !== slotId && s.day_of_week > slotDay)
+      .sort((a, b) => a.day_of_week - b.day_of_week)
+    let nextFree = slotDay + newSpan
+    for (const s of later) {
+      if (s.day_of_week < nextFree) {
+        if (nextFree <= 7) updates.set(s.id, nextFree)
+        nextFree = nextFree + s.span_days
+      } else {
+        break // gap — cascade stops
+      }
+    }
+    return updates
+  }
+
   // Called on every column boundary crossed during resize drag — no API call
   function handleSpanPreview(slotId: string, newSpan: number) {
     setSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, span_days: newSpan } : s))
   }
 
-  // Called once on mouseup — persists the final span
+  // Called once on mouseup / button tap — persists the final span and cascades displaced slots
   async function handleSpanCommit(slotId: string, newSpan: number) {
-    await fetch(`/api/planner/slots/${slotId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ span_days: newSpan }),
-    })
+    const slot = slots.find((s) => s.id === slotId)
+    if (!slot) return
+
+    // Compute displacements from the closure's slots — other slots are still at
+    // their original positions (preview only updates the dragged slot's span_days)
+    const displacements = computeDisplacements(slots, slotId, slot.day_of_week, newSpan)
+
+    if (displacements.size > 0) {
+      setSlots((prev) => prev
+        .filter((s) => {
+          const d = displacements.get(s.id)
+          return d === undefined || d <= 7
+        })
+        .map((s) => {
+          const d = displacements.get(s.id)
+          return d !== undefined ? { ...s, day_of_week: d } : s
+        })
+      )
+    }
+
+    const promises: Promise<Response>[] = [
+      fetch(`/api/planner/slots/${slotId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ span_days: newSpan }),
+      }),
+    ]
+    for (const [id, day] of Array.from(displacements.entries())) {
+      if (day <= 7) {
+        promises.push(fetch(`/api/planner/slots/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day_of_week: day }),
+        }))
+      }
+    }
+    await Promise.all(promises)
   }
 
   function handleDragEnd(event: DragEndEvent) {

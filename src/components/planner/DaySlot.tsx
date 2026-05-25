@@ -46,8 +46,20 @@ export function DaySlot({
 }: DaySlotProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${dayOfWeek}`, data: { dayOfWeek } })
 
+  // Tailwind col-span classes written explicitly so JIT picks them up.
+  // Only applied at md+ — on mobile the single-column grid ignores col-span.
+  const colSpanClass = (
+    gridColSpan === 7 ? 'md:col-span-7' :
+    gridColSpan === 6 ? 'md:col-span-6' :
+    gridColSpan === 5 ? 'md:col-span-5' :
+    gridColSpan === 4 ? 'md:col-span-4' :
+    gridColSpan === 3 ? 'md:col-span-3' :
+    gridColSpan === 2 ? 'md:col-span-2' :
+    'md:col-span-1'
+  )
+
   return (
-    <div style={{ gridColumn: `span ${gridColSpan}` }} className="min-w-0">
+    <div className={`min-w-0 ${colSpanClass}`}>
       {/* Mobile date label — shown above each slot, hidden on desktop */}
       <div className={`md:hidden mb-1 text-xs font-semibold uppercase tracking-wide ${mobileIsToday ? 'text-blue-600' : 'text-gray-400'}`}>
         {mobileDateLabel}
