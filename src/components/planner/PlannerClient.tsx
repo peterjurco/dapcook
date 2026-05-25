@@ -9,7 +9,6 @@ import { DaySlot } from './DaySlot'
 import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
 import { WeekNav } from './WeekNav'
-import { WeekRulesPanel } from './WeekRulesPanel'
 import { MobileEditList, arrayMove } from './MobileEditList'
 import {
   getWeekDays,
@@ -17,7 +16,7 @@ import {
   toDateString,
 } from '@/lib/utils/week'
 import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
-import type { Recipe, WeekPlan, WeekPlanRule } from '@/types/database'
+import type { Recipe, WeekPlan } from '@/types/database'
 
 interface PlannerClientProps {
   weekStart: Date
@@ -27,7 +26,6 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const router = useRouter()
   const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(null)
   const [slots, setSlots] = useState<MealSlotWithRecipe[]>([])
-  const [weekRules, setWeekRules] = useState<WeekPlanRule[]>([])
   const [loading, setLoading] = useState(true)
   const [activeSlot, setActiveSlot] = useState<MealSlotWithRecipe | null>(null)
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
@@ -45,7 +43,6 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       const data = await res.json() as WeekData
       setWeekPlan(data.weekPlan)
       setSlots(data.slots)
-      setWeekRules(data.weekRules)
     }
     setLoading(false)
   }, [weekStartStr])
