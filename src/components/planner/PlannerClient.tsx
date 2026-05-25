@@ -170,32 +170,37 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   }
 
   function handleMobileReorder(activeId: string, overId: string) {
-    const sorted = [...slots].sort((a, b) => a.day_of_week - b.day_of_week)
-    const days = sorted.map((s) => s.day_of_week)
-    const oldIndex = sorted.findIndex((s) => s.id === activeId)
-    const newIndex = sorted.findIndex((s) => s.id === overId)
+    // Work across all 7 day positions so empty slots are valid drop targets
+    const allDays = weekDays.map((_, i) => {
+      const dow = i + 1
+      const slot = slotByDay.get(dow) ?? null
+      return { id: slot ? slot.id : `day-${dow}`, dow, slot }
+    })
+
+    const oldIndex = allDays.findIndex((d) => d.id === activeId)
+    const newIndex = allDays.findIndex((d) => d.id === overId)
     if (oldIndex === -1 || newIndex === -1) return
 
-    const reordered = arrayMove(sorted, oldIndex, newIndex)
-    // Reassign the original day slots to the reordered meals
-    const updates = reordered.map((slot, i) => ({ id: slot.id, day: days[i] }))
+    const reordered = arrayMove(allDays, oldIndex, newIndex)
 
-    // Optimistic update
+    // Slots whose day_of_week changed
+    const updates = reordered
+      .map((item, i) => ({ item, newDay: i + 1 }))
+      .filter(({ item, newDay }) => item.slot && item.slot.day_of_week !== newDay)
+      .map(({ item, newDay }) => ({ id: item.slot!.id, day: newDay }))
+
+    if (updates.length === 0) return
+
     setSlots((prev) => prev.map((s) => {
       const u = updates.find((u) => u.id === s.id)
       return u ? { ...s, day_of_week: u.day } : s
     }))
 
-    // Persist only changed slots
-    Promise.all(
-      updates
-        .filter(({ id, day }) => sorted.find((s) => s.id === id)?.day_of_week !== day)
-        .map(({ id, day }) => fetch(`/api/planner/slots/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ day_of_week: day }),
-        }))
-    )
+    Promise.all(updates.map(({ id, day }) => fetch(`/api/planner/slots/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ day_of_week: day }),
+    })))
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -283,16 +288,30 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   const weekDays = getWeekDays(weekStart)
 
+  // Build the full 7-day list used by mobile edit mode (includes empty slots)
+  const weekItems = weekDays.map((date, i) => {
+    const dow = i + 1
+    const slot = slotByDay.get(dow) ?? null
+    const { weekday, day: dayNum } = formatDayLabel(date)
+    return {
+      id: slot ? slot.id : `day-${dow}`,
+      dayOfWeek: dow,
+      slot,
+      dayLabel: `${weekday} ${dayNum}`,
+    }
+  })
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <WeekNav weekStart={weekStart} />
-        {/* Edit/reorder toggle — mobile only */}
-        {!loading && slots.length > 0 && (
+      <WeekNav weekStart={weekStart} />
+
+      {/* Edit/reorder toggle — mobile only, below week selector */}
+      {!loading && slots.length > 0 && (
+        <div className="md:hidden flex justify-end mb-4 -mt-2">
           <button
             type="button"
             onClick={() => setIsMobileEditMode((v) => !v)}
-            className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               isMobileEditMode
                 ? 'bg-gray-900 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -301,8 +320,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             {isMobileEditMode ? <X size={15} /> : <Pencil size={15} />}
             {isMobileEditMode ? 'Done' : 'Edit'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {loading ? (
         <div>
@@ -331,6 +350,15 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
               </div>
             ))}
           </div>
+        </div>
+      ) : isMobileEditMode ? (
+        /* Mobile edit mode — replaces the normal slot list */
+        <div className="md:hidden">
+          <MobileEditList
+            weekItems={weekItems}
+            onReorder={handleMobileReorder}
+            onDelete={handleDelete}
+          />
         </div>
       ) : (
         <DndContext
@@ -446,17 +474,6 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             )}
             Generate shopping list
           </button>
-        </div>
-      )}
-
-      {/* Mobile edit / reorder list */}
-      {isMobileEditMode && !loading && (
-        <div className="md:hidden mt-2">
-          <MobileEditList
-            slots={slots}
-            onReorder={handleMobileReorder}
-            onDelete={handleDelete}
-          />
         </div>
       )}
 

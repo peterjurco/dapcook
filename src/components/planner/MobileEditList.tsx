@@ -19,18 +19,22 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Trash2 } from 'lucide-react'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
+export interface WeekItem {
+  /** slot.id for filled days; 'day-N' for empty days */
+  id: string
+  dayOfWeek: number
+  slot: MealSlotWithRecipe | null
+  dayLabel: string
+}
+
 interface MobileEditListProps {
-  slots: MealSlotWithRecipe[]
+  weekItems: WeekItem[]
   onReorder: (activeId: string, overId: string) => void
   onDelete: (slotId: string) => void
 }
 
-interface SortableItemProps {
-  slot: MealSlotWithRecipe
-  onDelete: () => void
-}
-
-function SortableItem({ slot, onDelete }: SortableItemProps) {
+function SortableItem({ item, onDelete }: { item: WeekItem, onDelete: () => void }) {
+  const isFilled = item.slot !== null
   const {
     attributes,
     listeners,
@@ -38,16 +42,30 @@ function SortableItem({ slot, onDelete }: SortableItemProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: slot.id })
+  } = useSortable({ id: item.id, disabled: !isFilled })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 10 : undefined,
-    opacity: isDragging ? 0.75 : 1,
+    opacity: isDragging ? 0.7 : 1,
   }
 
-  const title = slot.recipe?.title ?? slot.custom_label ?? 'Meal'
+  const slot = item.slot
+  const title = slot?.recipe?.title ?? slot?.custom_label ?? 'Meal'
+
+  if (!isFilled) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200"
+      >
+        <p className="text-sm font-semibold text-gray-400">{item.dayLabel}</p>
+        <p className="text-xs text-gray-300 ml-auto">empty</p>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -68,10 +86,10 @@ function SortableItem({ slot, onDelete }: SortableItemProps) {
       </button>
 
       {/* Thumbnail */}
-      {slot.recipe?.image_url ? (
+      {slot!.recipe?.image_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={slot.recipe.image_url}
+          src={slot!.recipe.image_url}
           alt={title}
           className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
         />
@@ -81,13 +99,12 @@ function SortableItem({ slot, onDelete }: SortableItemProps) {
         </div>
       )}
 
-      {/* Title */}
+      {/* Title + day */}
       <div className="flex-1 min-w-0 py-4">
-        <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
-          {title}
-        </p>
-        {slot.span_days > 1 && (
-          <p className="text-xs text-gray-400 mt-0.5">{slot.span_days} days</p>
+        <p className="text-xs text-gray-400 mb-0.5">{item.dayLabel}</p>
+        <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{title}</p>
+        {slot!.span_days > 1 && (
+          <p className="text-xs text-gray-400 mt-0.5">{slot!.span_days} days</p>
         )}
       </div>
 
@@ -104,9 +121,7 @@ function SortableItem({ slot, onDelete }: SortableItemProps) {
   )
 }
 
-export function MobileEditList({ slots, onReorder, onDelete }: MobileEditListProps) {
-  const sorted = [...slots].sort((a, b) => a.day_of_week - b.day_of_week)
-
+export function MobileEditList({ weekItems, onReorder, onDelete }: MobileEditListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } }),
@@ -119,21 +134,15 @@ export function MobileEditList({ slots, onReorder, onDelete }: MobileEditListPro
     }
   }
 
-  if (sorted.length === 0) {
-    return (
-      <p className="text-sm text-gray-400 text-center py-8">No meals planned this week.</p>
-    )
-  }
-
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={sorted.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={weekItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-3">
-          {sorted.map((slot) => (
+          {weekItems.map((item) => (
             <SortableItem
-              key={slot.id}
-              slot={slot}
-              onDelete={() => onDelete(slot.id)}
+              key={item.id}
+              item={item}
+              onDelete={() => item.slot && onDelete(item.slot.id)}
             />
           ))}
         </div>
@@ -142,5 +151,4 @@ export function MobileEditList({ slots, onReorder, onDelete }: MobileEditListPro
   )
 }
 
-// Re-export arrayMove so PlannerClient can import it from here
 export { arrayMove }
