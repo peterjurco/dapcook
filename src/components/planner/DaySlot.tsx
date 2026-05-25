@@ -61,7 +61,7 @@ export function DaySlot({
   return (
     <div className={`min-w-0 ${colSpanClass}`}>
       {/* Mobile header — date title + span buttons, hidden on desktop */}
-      <div className="md:hidden flex items-center justify-between mb-5">
+      <div className="md:hidden flex items-center justify-between mb-1">
         <p className={`text-xl font-bold ${mobileIsToday ? 'text-blue-600' : 'text-gray-800'}`}>
           {mobileDateLabel}
         </p>
