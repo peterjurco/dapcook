@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -21,8 +21,6 @@ interface SlotCardProps {
 export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanDays }: SlotCardProps) {
   const [confirming, setConfirming] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
-  // Overlay div is manipulated directly during drag to avoid React re-renders at 60fps
-  const overlayRef = useRef<HTMLDivElement>(null)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
@@ -52,31 +50,12 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
     const startSpan = slot.span_days
     let liveSpan = startSpan
 
-    // Position and show the overlay
-    if (overlayRef.current) {
-      const el = overlayRef.current
-      el.style.display = 'block'
-      el.style.left = `${cardRect.right}px`
-      el.style.top = `${cardRect.top}px`
-      el.style.height = `${cardRect.height}px`
-      el.style.width = '0px'
-    }
-
     setIsResizing(true)
     document.body.style.cursor = 'ew-resize'
     document.body.style.userSelect = 'none'
 
     function onMouseMove(ev: MouseEvent) {
       const dx = ev.clientX - startX
-
-      // Update overlay width directly — no React re-render, smooth 60fps
-      if (overlayRef.current) {
-        const w = Math.max(0, ev.clientX - cardRect.right)
-        overlayRef.current.style.width = `${w}px`
-        // Dim it when dragging back past origin
-        overlayRef.current.style.opacity = dx >= 0 ? '1' : '0.3'
-      }
-
       // Snap span at 50% into each column (Math.round)
       const daysToAdd = Math.round(dx / columnWidth)
       const newSpan = Math.max(1, Math.min(maxSpanDays, startSpan + daysToAdd))
@@ -90,10 +69,6 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
       setIsResizing(false)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
-
-      if (overlayRef.current) {
-        overlayRef.current.style.display = 'none'
-      }
 
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
@@ -113,7 +88,7 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
         ref={setNodeRef}
         style={style}
         className={`relative h-full flex flex-col bg-white border rounded-lg shadow-sm group ${
-          isDragging ? 'shadow-lg ring-2 ring-gray-300' : 'border-gray-200'
+          isDragging ? 'shadow-lg ring-2 ring-gray-300' : isResizing ? 'border-gray-400 shadow-md' : 'border-gray-200'
         }`}
       >
         {/* Thumbnail — links to recipe. Fixed height so it stays compact even when spanning multiple columns */}
@@ -168,23 +143,16 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
             onMouseDown={handleResizeMouseDown}
             className={`absolute top-0 bottom-0 right-[-10px] w-7 flex flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
               isResizing
-                ? 'opacity-100 bg-gradient-to-l from-blue-200/90 via-blue-100/60 to-transparent'
-                : 'opacity-0 group-hover:opacity-100 bg-gradient-to-l from-blue-100/90 via-blue-50/60 to-transparent hover:from-blue-200/90'
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100'
             }`}
             title="Drag to extend or shrink across days"
             aria-label="Drag to extend or shrink across days"
           >
-            <GripHorizontal size={12} className={isResizing ? 'text-blue-600' : 'text-blue-400'} />
+            <GripHorizontal size={12} className="text-gray-400" />
           </div>
         )}
       </div>
-
-      {/* Drag overlay — fixed positioned, tracks cursor live during resize drag */}
-      <div
-        ref={overlayRef}
-        className="fixed pointer-events-none z-50 bg-blue-200/50 border-2 border-blue-300 border-dashed rounded-r-lg"
-        style={{ display: 'none' }}
-      />
 
       {confirming && (
         <ConfirmModal
