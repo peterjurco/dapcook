@@ -167,16 +167,6 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-xl font-semibold text-gray-900">Shopping List</h1>
-        {list && items.length > 0 && (
-          <button
-            type="button"
-            onClick={copyToClipboard}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-            {copied ? 'Copied!' : 'Copy list'}
-          </button>
-        )}
       </div>
 
       {/* Generate controls */}
@@ -281,9 +271,21 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {list && (
         <div className="space-y-4">
           {/* List header */}
-          <div>
-            <p className="text-sm font-medium text-gray-900">{list.name}</p>
-            <p className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900">{list.name}</p>
+              <p className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</p>
+            </div>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+              >
+                {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
+                {copied ? 'Copied!' : 'Copy list'}
+              </button>
+            )}
           </div>
 
           {/* Items grouped by category */}
