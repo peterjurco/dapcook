@@ -5,9 +5,16 @@ import { PostHogIdentifier } from './PostHogIdentifier'
 const mockCapture = vi.fn()
 const mockIdentify = vi.fn()
 const mockReplace = vi.fn()
+const mockOptOut = vi.fn()
+const mockOptIn = vi.fn()
 
 vi.mock('posthog-js/react', () => ({
-  usePostHog: () => ({ capture: mockCapture, identify: mockIdentify }),
+  usePostHog: () => ({
+    capture: mockCapture,
+    identify: mockIdentify,
+    opt_out_capturing: mockOptOut,
+    opt_in_capturing: mockOptIn,
+  }),
   PostHogProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
@@ -48,5 +55,17 @@ describe('PostHogIdentifier', () => {
     mockSearchParams.set('ob', '1')
     render(<PostHogIdentifier userId="user-123" email="test@example.com" />)
     expect(mockReplace).toHaveBeenCalledWith('/recipes')
+  })
+
+  it('opts out of capturing when optOut is true', () => {
+    render(<PostHogIdentifier userId="user-123" email="admin@example.com" optOut />)
+    expect(mockOptOut).toHaveBeenCalled()
+    expect(mockIdentify).not.toHaveBeenCalled()
+  })
+
+  it('opts in and identifies when optOut is false', () => {
+    render(<PostHogIdentifier userId="user-123" email="test@example.com" optOut={false} />)
+    expect(mockOptIn).toHaveBeenCalled()
+    expect(mockIdentify).toHaveBeenCalledWith('user-123', { email: 'test@example.com' })
   })
 })

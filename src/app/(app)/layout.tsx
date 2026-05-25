@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <>
-      {user.email && <PostHogIdentifier userId={user.id} email={user.email} />}
+      {user.email && <PostHogIdentifier userId={user.id} email={user.email} optOut={isAdmin} />}
       <AppShell user={user} profile={profile} isAdmin={isAdmin}>
         {children}
       </AppShell>

@@ -7,17 +7,23 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 interface Props {
   userId: string
   email: string
+  optOut?: boolean
 }
 
-function PostHogIdentifierInner({ userId, email }: Props) {
+function PostHogIdentifierInner({ userId, email, optOut }: Props) {
   const posthog = usePostHog()
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
 
   useEffect(() => {
+    if (optOut) {
+      posthog.opt_out_capturing()
+      return
+    }
+    posthog.opt_in_capturing()
     posthog.identify(userId, { email })
-  }, [posthog, userId, email])
+  }, [posthog, userId, email, optOut])
 
   useEffect(() => {
     if (searchParams.get('ob') !== '1') return
