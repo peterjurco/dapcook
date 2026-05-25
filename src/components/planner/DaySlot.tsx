@@ -68,7 +68,7 @@ export function DaySlot({
       </div>
       <div
         ref={setNodeRef}
-        className={`relative md:min-h-[130px] rounded-xl transition-colors ${
+        className={`relative rounded-xl transition-colors ${
           isOver && !slot ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
         }`}
       >
@@ -85,28 +85,33 @@ export function DaySlot({
             <CustomLabelCard slot={slot} onDelete={() => onDelete(slot.id)} />
           )
         ) : (
-          /* Empty slot — interactive only on desktop */
-          <div className="hidden md:block h-full">
-            {isSearchOpen ? (
-              <RecipeSearch
-                onSelectRecipe={(recipe) => { onCloseSearch(); onAddRecipe(dayOfWeek, recipe) }}
-                onSelectCustom={(label) => { onCloseSearch(); onAddCustom(dayOfWeek, label) }}
-                onClose={onCloseSearch}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={onOpenSearch}
-                className={`w-full h-full min-h-[130px] flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed transition-colors group ${
-                  isOver
-                    ? 'border-blue-300 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <Plus size={16} className="text-gray-300 group-hover:text-gray-400" />
-              </button>
-            )}
-          </div>
+          <>
+            {/* Mobile: dashed placeholder, no interaction */}
+            <div className="md:hidden min-h-[130px] rounded-xl border-2 border-dashed border-gray-200" />
+
+            {/* Desktop: clickable + RecipeSearch */}
+            <div className="hidden md:block h-full">
+              {isSearchOpen ? (
+                <RecipeSearch
+                  onSelectRecipe={(recipe) => { onCloseSearch(); onAddRecipe(dayOfWeek, recipe) }}
+                  onSelectCustom={(label) => { onCloseSearch(); onAddCustom(dayOfWeek, label) }}
+                  onClose={onCloseSearch}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenSearch}
+                  className={`w-full h-full min-h-[130px] flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed transition-colors group ${
+                    isOver
+                      ? 'border-blue-300 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <Plus size={16} className="text-gray-300 group-hover:text-gray-400" />
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
