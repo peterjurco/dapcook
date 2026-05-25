@@ -170,24 +170,22 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   }
 
   function handleMobileReorder(activeId: string, overId: string) {
-    // Work across all 7 day positions so empty slots are valid drop targets
-    const allDays = weekDays.map((_, i) => {
-      const dow = i + 1
-      const slot = slotByDay.get(dow) ?? null
-      return { id: slot ? slot.id : `day-${dow}`, dow, slot }
-    })
-
-    const oldIndex = allDays.findIndex((d) => d.id === activeId)
-    const newIndex = allDays.findIndex((d) => d.id === overId)
+    // Reorder within the collapsed list; greedily re-assign start days after the move
+    const oldIndex = weekItems.findIndex((i) => i.id === activeId)
+    const newIndex = weekItems.findIndex((i) => i.id === overId)
     if (oldIndex === -1 || newIndex === -1) return
 
-    const reordered = arrayMove(allDays, oldIndex, newIndex)
+    const reordered = arrayMove(weekItems, oldIndex, newIndex)
 
-    // Slots whose day_of_week changed
-    const updates = reordered
-      .map((item, i) => ({ item, newDay: i + 1 }))
-      .filter(({ item, newDay }) => item.slot && item.slot.day_of_week !== newDay)
-      .map(({ item, newDay }) => ({ id: item.slot!.id, day: newDay }))
+    const updates: { id: string; day: number }[] = []
+    let currentDay = 1
+    for (const item of reordered) {
+      const span = item.slot ? Math.min(item.slot.span_days, 8 - currentDay) : 1
+      if (item.slot && item.slot.day_of_week !== currentDay && currentDay <= 7) {
+        updates.push({ id: item.slot.id, day: currentDay })
+      }
+      currentDay += span
+    }
 
     if (updates.length === 0) return
 
@@ -201,6 +199,11 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ day_of_week: day }),
     })))
+  }
+
+  async function handleMobileSpanChange(slotId: string, newSpan: number) {
+    handleSpanPreview(slotId, newSpan)
+    await handleSpanCommit(slotId, newSpan)
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -288,18 +291,33 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   const weekDays = getWeekDays(weekStart)
 
-  // Build the full 7-day list used by mobile edit mode (includes empty slots)
-  const weekItems = weekDays.map((date, i) => {
-    const dow = i + 1
-    const slot = slotByDay.get(dow) ?? null
-    const { weekday, day: dayNum } = formatDayLabel(date)
-    return {
-      id: slot ? slot.id : `day-${dow}`,
-      dayOfWeek: dow,
-      slot,
-      dayLabel: `${weekday} ${dayNum}`,
+  // Build the collapsed list used by mobile edit mode.
+  // Multi-day slots appear once (with a date-range label); covered days are skipped.
+  const weekItems: import('./MobileEditList').WeekItem[] = []
+  {
+    let dow = 1
+    while (dow <= 7) {
+      const slot = slotByDay.get(dow) ?? null
+      const maxSpanDays = 8 - dow
+      const span = slot ? Math.min(slot.span_days, maxSpanDays) : 1
+      const startDate = weekDays[dow - 1]
+      const { weekday: startWd, day: startDay } = formatDayLabel(startDate)
+      let dayLabel = `${startWd} ${startDay}`
+      if (slot && span > 1) {
+        const endDate = weekDays[dow + span - 2]
+        const { weekday: endWd, day: endDay } = formatDayLabel(endDate)
+        dayLabel += ` – ${endWd} ${endDay}`
+      }
+      weekItems.push({
+        id: slot ? slot.id : `day-${dow}`,
+        dayOfWeek: dow,
+        slot,
+        dayLabel,
+        maxSpanDays,
+      })
+      dow += span
     }
-  })
+  }
 
   return (
     <div>
@@ -358,6 +376,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             weekItems={weekItems}
             onReorder={handleMobileReorder}
             onDelete={handleDelete}
+            onSpanChange={handleMobileSpanChange}
           />
         </div>
       ) : (

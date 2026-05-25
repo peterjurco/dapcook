@@ -16,7 +16,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Trash2 } from 'lucide-react'
+import { GripVertical, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
 export interface WeekItem {
@@ -25,15 +25,25 @@ export interface WeekItem {
   dayOfWeek: number
   slot: MealSlotWithRecipe | null
   dayLabel: string
+  maxSpanDays: number
 }
 
 interface MobileEditListProps {
   weekItems: WeekItem[]
   onReorder: (activeId: string, overId: string) => void
   onDelete: (slotId: string) => void
+  onSpanChange: (slotId: string, newSpan: number) => void
 }
 
-function SortableItem({ item, onDelete }: { item: WeekItem, onDelete: () => void }) {
+function SortableItem({
+  item,
+  onDelete,
+  onSpanChange,
+}: {
+  item: WeekItem
+  onDelete: () => void
+  onSpanChange: (newSpan: number) => void
+}) {
   const isFilled = item.slot !== null
   const {
     attributes,
@@ -61,7 +71,7 @@ function SortableItem({ item, onDelete }: { item: WeekItem, onDelete: () => void
         style={style}
         className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200"
       >
-        <p className="text-sm font-semibold text-gray-400">{item.dayLabel}</p>
+        <p className="text-base font-bold text-gray-400">{item.dayLabel}</p>
         <p className="text-xs text-gray-300 ml-auto">empty</p>
       </div>
     )
@@ -100,12 +110,31 @@ function SortableItem({ item, onDelete }: { item: WeekItem, onDelete: () => void
       )}
 
       {/* Title + day */}
-      <div className="flex-1 min-w-0 py-4">
-        <p className="text-xs text-gray-400 mb-0.5">{item.dayLabel}</p>
+      <div className="flex-1 min-w-0 py-3">
+        <p className="text-base font-bold text-gray-700 mb-0.5">{item.dayLabel}</p>
         <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{title}</p>
-        {slot!.span_days > 1 && (
-          <p className="text-xs text-gray-400 mt-0.5">{slot!.span_days} days</p>
-        )}
+      </div>
+
+      {/* Span controls */}
+      <div className="flex flex-col items-center gap-1 pr-1 py-3 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => onSpanChange(slot!.span_days + 1)}
+          disabled={slot!.span_days >= item.maxSpanDays}
+          className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          aria-label="Extend by one day"
+        >
+          <ChevronRight size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onSpanChange(slot!.span_days - 1)}
+          disabled={slot!.span_days <= 1}
+          className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          aria-label="Shrink by one day"
+        >
+          <ChevronLeft size={16} />
+        </button>
       </div>
 
       {/* Delete */}
@@ -121,7 +150,7 @@ function SortableItem({ item, onDelete }: { item: WeekItem, onDelete: () => void
   )
 }
 
-export function MobileEditList({ weekItems, onReorder, onDelete }: MobileEditListProps) {
+export function MobileEditList({ weekItems, onReorder, onDelete, onSpanChange }: MobileEditListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } }),
@@ -143,6 +172,7 @@ export function MobileEditList({ weekItems, onReorder, onDelete }: MobileEditLis
               key={item.id}
               item={item}
               onDelete={() => item.slot && onDelete(item.slot.id)}
+              onSpanChange={(newSpan) => item.slot && onSpanChange(item.slot.id, newSpan)}
             />
           ))}
         </div>

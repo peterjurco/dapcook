@@ -1,7 +1,7 @@
 'use client'
 
 import { useDroppable } from '@dnd-kit/core'
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
 import { RecipeSearch } from './RecipeSearch'
@@ -60,41 +60,11 @@ export function DaySlot({
 
   return (
     <div className={`min-w-0 ${colSpanClass}`}>
-      {/* Mobile header — date title + span buttons, hidden on desktop */}
-      <div className="md:hidden flex items-center justify-between mb-1">
+      {/* Mobile header — date title only, hidden on desktop */}
+      <div className="md:hidden mb-1">
         <p className={`text-xl font-bold ${mobileIsToday ? 'text-blue-600' : 'text-gray-800'}`}>
           {mobileDateLabel}
         </p>
-        {slot && (
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                const newSpan = slot.span_days - 1
-                onSpanPreview(slot.id, newSpan)
-                onSpanCommit(slot.id, newSpan)
-              }}
-              disabled={slot.span_days <= 1}
-              className="flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-              aria-label="Shrink by one day"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const newSpan = slot.span_days + 1
-                onSpanPreview(slot.id, newSpan)
-                onSpanCommit(slot.id, newSpan)
-              }}
-              disabled={slot.span_days >= maxSpanDays}
-              className="flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-              aria-label="Extend by one day"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        )}
       </div>
       <div
         ref={setNodeRef}
