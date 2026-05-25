@@ -11,7 +11,7 @@ vi.mock('posthog-js/react', () => ({
   PostHogProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
-const mockSearchParams = new URLSearchParams()
+let mockSearchParams = new URLSearchParams()
 let mockPathname = '/recipes'
 
 vi.mock('next/navigation', () => ({
@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockSearchParams.delete('ob')
+  mockSearchParams = new URLSearchParams()
   mockPathname = '/recipes'
 })
 
@@ -35,6 +35,7 @@ describe('PostHogIdentifier', () => {
   it('does not fire onboarding_completed without ?ob=1', () => {
     render(<PostHogIdentifier userId="user-123" email="test@example.com" />)
     expect(mockCapture).not.toHaveBeenCalledWith('onboarding_completed')
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 
   it('fires onboarding_completed when ?ob=1 is present', () => {

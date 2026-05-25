@@ -91,15 +91,17 @@ export function AppShell({ user, profile, isAdmin = false, children }: AppShellP
               {profile.display_name ?? user.email}
             </span>
           </div>
-          <form action={signOut} onSubmit={() => posthog.reset()}>
-            <button
-              type="submit"
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <LogOut size={14} />
-              Sign out
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={async () => {
+              posthog.reset()
+              await signOut()
+            }}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <LogOut size={14} />
+            Sign out
+          </button>
         </div>
       </aside>
 
