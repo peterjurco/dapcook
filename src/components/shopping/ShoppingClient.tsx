@@ -178,7 +178,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const grouped = groupItems(items, categories)
 
   return (
-    <div className="max-w-xl mx-auto px-6 py-10">
+    <div className="max-w-xl mx-auto px-6 py-10 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-xl font-semibold text-gray-900">Shopping List</h1>
@@ -187,8 +187,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {/* Generate controls */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-          <div className="flex-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex-1">
+          <div className="flex-1 min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex-1 min-w-0">
               <label className="text-xs text-gray-500 mb-1 block">From</label>
               <input
                 type="date"
@@ -197,7 +197,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
                 className="w-full text-sm px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
               />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <label className="text-xs text-gray-500 mb-1 block">To</label>
               <input
                 type="date"
