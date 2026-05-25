@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2, Loader2 } from 'lucide-react'
+import { usePostHog } from 'posthog-js/react'
 
 interface Props {
   recipeId: string
@@ -10,6 +11,7 @@ interface Props {
 
 export function DeleteRecipeButton({ recipeId }: Props) {
   const router = useRouter()
+  const posthog = usePostHog()
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -17,6 +19,7 @@ export function DeleteRecipeButton({ recipeId }: Props) {
     setDeleting(true)
     const res = await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' })
     if (res.ok) {
+      posthog.capture('recipe_deleted')
       router.push('/recipes')
       router.refresh()
     } else {
