@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -16,8 +17,10 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { GripVertical, Trash2, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { RecipeSearch } from './RecipeSearch'
 import type { MealSlotWithRecipe } from '@/types/planner'
+import type { Recipe } from '@/types/database'
 
 export interface WeekItem {
   /** slot.id for filled days; 'day-N' for empty days */
@@ -33,16 +36,28 @@ interface MobileEditListProps {
   onReorder: (activeId: string, overId: string) => void
   onDelete: (slotId: string) => void
   onSpanChange: (slotId: string, newSpan: number) => void
+  onAddRecipe: (dayOfWeek: number, recipe: Recipe) => void
+  onAddCustom: (dayOfWeek: number, label: string) => void
 }
 
 function SortableItem({
   item,
   onDelete,
   onSpanChange,
+  isSearchOpen,
+  onOpenSearch,
+  onCloseSearch,
+  onAddRecipe,
+  onAddCustom,
 }: {
   item: WeekItem
   onDelete: () => void
   onSpanChange: (newSpan: number) => void
+  isSearchOpen: boolean
+  onOpenSearch: () => void
+  onCloseSearch: () => void
+  onAddRecipe: (recipe: Recipe) => void
+  onAddCustom: (label: string) => void
 }) {
   const isFilled = item.slot !== null
   const {
@@ -65,6 +80,17 @@ function SortableItem({
   const title = slot?.recipe?.title ?? slot?.custom_label ?? 'Meal'
 
   if (!isFilled) {
+    if (isSearchOpen) {
+      return (
+        <div ref={setNodeRef} style={style} className="relative">
+          <RecipeSearch
+            onSelectRecipe={(recipe) => { onCloseSearch(); onAddRecipe(recipe) }}
+            onSelectCustom={(label) => { onCloseSearch(); onAddCustom(label) }}
+            onClose={onCloseSearch}
+          />
+        </div>
+      )
+    }
     return (
       <div
         ref={setNodeRef}
@@ -72,7 +98,14 @@ function SortableItem({
         className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200"
       >
         <p className="text-base font-bold text-gray-400">{item.dayLabel}</p>
-        <p className="text-xs text-gray-300 ml-auto">empty</p>
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 transition-colors"
+          aria-label="Add meal"
+        >
+          <Plus size={16} />
+        </button>
       </div>
     )
   }
@@ -153,7 +186,16 @@ function SortableItem({
   )
 }
 
-export function MobileEditList({ weekItems, onReorder, onDelete, onSpanChange }: MobileEditListProps) {
+export function MobileEditList({
+  weekItems,
+  onReorder,
+  onDelete,
+  onSpanChange,
+  onAddRecipe,
+  onAddCustom,
+}: MobileEditListProps) {
+  const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } }),
@@ -176,6 +218,11 @@ export function MobileEditList({ weekItems, onReorder, onDelete, onSpanChange }:
               item={item}
               onDelete={() => item.slot && onDelete(item.slot.id)}
               onSpanChange={(newSpan) => item.slot && onSpanChange(item.slot.id, newSpan)}
+              isSearchOpen={openSearchDay === item.dayOfWeek}
+              onOpenSearch={() => setOpenSearchDay(item.dayOfWeek)}
+              onCloseSearch={() => setOpenSearchDay(null)}
+              onAddRecipe={(recipe) => onAddRecipe(item.dayOfWeek, recipe)}
+              onAddCustom={(label) => onAddCustom(item.dayOfWeek, label)}
             />
           ))}
         </div>

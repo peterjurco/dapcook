@@ -68,7 +68,7 @@ export function DaySlot({
       </div>
       <div
         ref={setNodeRef}
-        className={`relative min-h-[130px] rounded-xl transition-colors ${
+        className={`relative md:min-h-[130px] rounded-xl transition-colors ${
           isOver && !slot ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
         }`}
       >
@@ -85,7 +85,8 @@ export function DaySlot({
             <CustomLabelCard slot={slot} onDelete={() => onDelete(slot.id)} />
           )
         ) : (
-          <div className="h-full">
+          /* Empty slot — interactive only on desktop */
+          <div className="hidden md:block h-full">
             {isSearchOpen ? (
               <RecipeSearch
                 onSelectRecipe={(recipe) => { onCloseSearch(); onAddRecipe(dayOfWeek, recipe) }}

@@ -379,6 +379,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             onReorder={handleMobileReorder}
             onDelete={handleDelete}
             onSpanChange={handleMobileSpanChange}
+            onAddRecipe={handleAddRecipe}
+            onAddCustom={handleAddCustom}
           />
         </div>
       ) : (
