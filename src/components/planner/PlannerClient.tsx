@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, CalendarDays } from 'lucide-react'
+import { ShoppingCart, CalendarDays, Pencil, X } from 'lucide-react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { DayHeader } from './DayHeader'
 import { DaySlot } from './DaySlot'
@@ -10,6 +10,7 @@ import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
 import { WeekNav } from './WeekNav'
 import { WeekRulesPanel } from './WeekRulesPanel'
+import { MobileEditList, arrayMove } from './MobileEditList'
 import {
   getWeekDays,
   formatDayLabel,
@@ -33,6 +34,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const [activeSlot, setActiveSlot] = useState<MealSlotWithRecipe | null>(null)
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
   const [isGeneratingList, setIsGeneratingList] = useState(false)
+  const [isMobileEditMode, setIsMobileEditMode] = useState(false)
 
   const weekStartStr = toDateString(weekStart)
   const today = new Date()
@@ -167,6 +169,35 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     await Promise.all(promises)
   }
 
+  function handleMobileReorder(activeId: string, overId: string) {
+    const sorted = [...slots].sort((a, b) => a.day_of_week - b.day_of_week)
+    const days = sorted.map((s) => s.day_of_week)
+    const oldIndex = sorted.findIndex((s) => s.id === activeId)
+    const newIndex = sorted.findIndex((s) => s.id === overId)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(sorted, oldIndex, newIndex)
+    // Reassign the original day slots to the reordered meals
+    const updates = reordered.map((slot, i) => ({ id: slot.id, day: days[i] }))
+
+    // Optimistic update
+    setSlots((prev) => prev.map((s) => {
+      const u = updates.find((u) => u.id === s.id)
+      return u ? { ...s, day_of_week: u.day } : s
+    }))
+
+    // Persist only changed slots
+    Promise.all(
+      updates
+        .filter(({ id, day }) => sorted.find((s) => s.id === id)?.day_of_week !== day)
+        .map(({ id, day }) => fetch(`/api/planner/slots/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day_of_week: day }),
+        }))
+    )
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     setActiveSlot(null)
     const { active, over } = event
@@ -254,7 +285,24 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   return (
     <div>
-      <WeekNav weekStart={weekStart} />
+      <div className="flex items-center justify-between mb-1">
+        <WeekNav weekStart={weekStart} />
+        {/* Edit/reorder toggle — mobile only */}
+        {!loading && slots.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setIsMobileEditMode((v) => !v)}
+            className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              isMobileEditMode
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {isMobileEditMode ? <X size={15} /> : <Pencil size={15} />}
+            {isMobileEditMode ? 'Done' : 'Edit'}
+          </button>
+        )}
+      </div>
 
       {loading ? (
         <div>
@@ -398,6 +446,17 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             )}
             Generate shopping list
           </button>
+        </div>
+      )}
+
+      {/* Mobile edit / reorder list */}
+      {isMobileEditMode && !loading && (
+        <div className="md:hidden mt-2">
+          <MobileEditList
+            slots={slots}
+            onReorder={handleMobileReorder}
+            onDelete={handleDelete}
+          />
         </div>
       )}
 

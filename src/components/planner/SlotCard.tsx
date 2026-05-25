@@ -127,7 +127,7 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
         <div className="px-2 py-1.5 pr-6">
           <Link
             href={`/recipes/${slot.recipe_id}`}
-            className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug hover:text-blue-600 transition-colors"
+            className="text-base font-medium text-gray-900 line-clamp-2 leading-snug hover:text-blue-600 transition-colors"
           >
             {slot.recipe?.title ?? 'Recipe'}
           </Link>
