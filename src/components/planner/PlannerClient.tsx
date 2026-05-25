@@ -325,7 +325,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           <h1 className="text-xl font-semibold text-gray-900">Weekly Planner</h1>
           <p className="text-sm text-gray-500 mt-1">Plan your lunches for the week</p>
         </div>
-        {!loading && slots.length > 0 && (
+        {!loading && (
           <button
             type="button"
             onClick={() => setIsMobileEditMode((v) => !v)}
