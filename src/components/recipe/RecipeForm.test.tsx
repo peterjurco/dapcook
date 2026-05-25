@@ -10,9 +10,14 @@ import type { RecipeDraft } from '@/types/recipe'
 const mockPush = vi.fn()
 const mockBack = vi.fn()
 const mockRefresh = vi.fn()
+const mockCapture = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, back: mockBack, refresh: mockRefresh }),
+}))
+
+vi.mock('posthog-js/react', () => ({
+  usePostHog: () => ({ capture: mockCapture }),
 }))
 
 vi.mock('./ImageUpload', () => ({
@@ -272,5 +277,25 @@ describe('RecipeForm — cancel', () => {
     render(<RecipeForm />)
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(mockBack).toHaveBeenCalled()
+  })
+})
+
+// ── PostHog events ────────────────────────────────────────────────────────────
+
+describe('PostHog events', () => {
+  it('captures recipe_created after saving a new recipe', async () => {
+    mockFetchSuccess('recipe-456')
+    render(<RecipeForm />)
+    await userEvent.type(screen.getByLabelText(/title/i), 'New Recipe')
+    await userEvent.click(screen.getByRole('button', { name: /save recipe/i }))
+    await waitFor(() => expect(mockCapture).toHaveBeenCalledWith('recipe_created'))
+  })
+
+  it('does not capture recipe_created when editing an existing recipe', async () => {
+    mockFetchSuccess('r-1')
+    render(<RecipeForm recipe={sampleRecipe} />)
+    await userEvent.click(screen.getByRole('button', { name: /save changes/i }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalled())
+    expect(mockCapture).not.toHaveBeenCalledWith('recipe_created')
   })
 })

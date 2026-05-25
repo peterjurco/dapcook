@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePostHog } from 'posthog-js/react'
 import { ExternalLink, AlertTriangle } from 'lucide-react'
 import { IngredientEditor } from './IngredientEditor'
 import { StepEditor } from './StepEditor'
@@ -34,6 +35,7 @@ function parseQuantity(value: string): number | null {
 
 export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const router = useRouter()
+  const posthog = usePostHog()
   const isEdit = !!recipe
 
   // Initialise from recipe (edit), draft (import), or empty (new)
@@ -111,6 +113,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
     }
 
     const saved = await res.json() as { id: string }
+    if (!isEdit) posthog.capture('recipe_created')
     router.push(`/recipes/${saved.id}`)
     router.refresh()
   }
