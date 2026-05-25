@@ -59,7 +59,7 @@ export function DaySlot({
   )
 
   return (
-    <div className={`min-w-0 ${colSpanClass}`}>
+    <div className={`min-w-0 ${colSpanClass} md:flex md:flex-col`}>
       {/* Mobile header — date title only, hidden on desktop */}
       <div className="md:hidden mb-1">
         <p className={`text-xl font-bold ${mobileIsToday ? 'text-blue-600' : 'text-gray-800'}`}>
@@ -68,7 +68,7 @@ export function DaySlot({
       </div>
       <div
         ref={setNodeRef}
-        className={`relative rounded-xl transition-colors ${
+        className={`relative md:flex-1 rounded-xl transition-colors ${
           isOver && !slot ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
         }`}
       >
