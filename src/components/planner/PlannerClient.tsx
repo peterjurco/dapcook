@@ -470,17 +470,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
         </DndContext>
       )}
 
-      {weekPlan && (
-        <WeekRulesPanel
-          weekPlanId={weekPlan.id}
-          rules={weekRules}
-          onAdd={(rule) => setWeekRules((prev) => [...prev, rule])}
-          onDelete={(id) => setWeekRules((prev) => prev.filter((r) => r.id !== id))}
-          onToggle={(id, isActive) =>
-            setWeekRules((prev) => prev.map((r) => r.id === id ? { ...r, is_active: isActive } : r))
-          }
-        />
-      )}
+      {/* WeekRulesPanel hidden for now */}
 
       {slots.some((s) => s.recipe_id) && (
         <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
