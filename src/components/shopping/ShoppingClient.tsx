@@ -150,12 +150,23 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     await fetch(`/api/shopping/rules/${id}`, { method: 'DELETE' })
   }
 
-  function copyToClipboard() {
+  async function copyToClipboard() {
     const lines = items.map((item) => {
       const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
       return qty ? `${qty} ${item.name}` : item.name
     })
-    navigator.clipboard.writeText(lines.join('\n'))
+    const text = lines.join('\n')
+    const html = `<ul>${lines.map((l) => `<li>${l.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</li>`).join('')}</ul>`
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'text/html': new Blob([html], { type: 'text/html' }),
+        }),
+      ])
+    } catch {
+      await navigator.clipboard.writeText(text)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
