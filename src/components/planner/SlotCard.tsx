@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, GripHorizontal } from 'lucide-react'
+import { GripVertical, X, GripHorizontal, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
@@ -153,11 +153,11 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
           <X size={12} />
         </button>
 
-        {/* Resize handle — drag right to extend, left to shrink */}
+        {/* Resize handle — desktop only, drag right to extend / left to shrink */}
         {showResizeHandle && (
           <div
             onMouseDown={handleResizeMouseDown}
-            className={`absolute top-0 bottom-0 right-[-10px] w-7 flex flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
+            className={`hidden md:flex absolute top-0 bottom-0 right-[-10px] w-7 flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
               isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
             title="Drag to extend or shrink across days"
@@ -166,6 +166,31 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
             <GripHorizontal size={12} className="text-gray-400" />
           </div>
         )}
+
+        {/* Span controls — mobile only, tap +/− to extend or shrink */}
+        <div className="flex md:hidden items-center justify-between px-2 pb-1.5 pt-0.5 mt-auto">
+          <button
+            type="button"
+            onClick={() => { onSpanPreview(slot.span_days - 1); onSpanCommit(slot.span_days - 1) }}
+            disabled={slot.span_days <= 1}
+            className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            aria-label="Shrink by one day"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <span className="text-[10px] text-gray-400">
+            {slot.span_days > 1 ? `${slot.span_days} days` : 'Extend'}
+          </span>
+          <button
+            type="button"
+            onClick={() => { onSpanPreview(slot.span_days + 1); onSpanCommit(slot.span_days + 1) }}
+            disabled={slot.span_days >= maxSpanDays}
+            className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            aria-label="Extend by one day"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
       </div>
 
       {confirming && (
