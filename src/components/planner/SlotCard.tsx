@@ -40,15 +40,18 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
 
     const cardEl = e.currentTarget.parentElement as HTMLElement
     const cardRect = cardEl.getBoundingClientRect()
-    // When the card spans N days its width is N*col + (N-1)*gap, so invert that
-    // to get a single-column step size for accurate snap in both directions.
     const GAP = 12 // gap-3
     const singleColWidth = (cardRect.width - (slot.span_days - 1) * GAP) / slot.span_days
     const columnWidth = singleColWidth + GAP
 
     const startX = e.clientX
+    const startWidth = cardRect.width
     const startSpan = slot.span_days
     let liveSpan = startSpan
+
+    // Lock to pixel width and lift above adjacent slots so overflow is visible
+    cardEl.style.width = `${startWidth}px`
+    cardEl.style.zIndex = '20'
 
     setIsResizing(true)
     document.body.style.cursor = 'ew-resize'
@@ -56,26 +59,39 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
 
     function onMouseMove(ev: MouseEvent) {
       const dx = ev.clientX - startX
-      // Snap span at 50% into each column (Math.round)
+      // Stretch/shrink the card DOM element directly — no React re-render during drag
+      const maxWidth = maxSpanDays * singleColWidth + (maxSpanDays - 1) * GAP
+      const newWidth = Math.max(singleColWidth * 0.5, Math.min(maxWidth, startWidth + dx))
+      cardEl.style.width = `${newWidth}px`
+
+      // Track discrete snap so we know what to commit on mouseup
       const daysToAdd = Math.round(dx / columnWidth)
-      const newSpan = Math.max(1, Math.min(maxSpanDays, startSpan + daysToAdd))
-      if (newSpan !== liveSpan) {
-        liveSpan = newSpan
-        onSpanPreview(newSpan)
-      }
+      liveSpan = Math.max(1, Math.min(maxSpanDays, startSpan + daysToAdd))
     }
 
     function onMouseUp() {
-      setIsResizing(false)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
 
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
-
       if (liveSpan !== startSpan) {
+        // Snap the card to the exact snapped width so the transition to the new
+        // grid cell is invisible (card is already at that pixel width when React commits)
+        const snappedWidth = liveSpan * singleColWidth + (liveSpan - 1) * GAP
+        cardEl.style.width = `${snappedWidth}px`
+        onSpanPreview(liveSpan)
         onSpanCommit(liveSpan)
       }
+
+      // After React commits the new grid column span, clear the explicit width
+      // rAF fires after microtasks (where React flushes state), so the grid
+      // has already updated by the time we clear — no flash
+      requestAnimationFrame(() => {
+        cardEl.style.width = ''
+        cardEl.style.zIndex = ''
+        setIsResizing(false)
+      })
     }
 
     document.addEventListener('mousemove', onMouseMove)
@@ -142,9 +158,7 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
           <div
             onMouseDown={handleResizeMouseDown}
             className={`absolute top-0 bottom-0 right-[-10px] w-7 flex flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
-              isResizing
-                ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100'
+              isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
             title="Drag to extend or shrink across days"
             aria-label="Drag to extend or shrink across days"
