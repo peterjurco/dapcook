@@ -199,7 +199,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
       {loading ? (
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mb-2">
+          {/* Desktop skeleton: header row + card row */}
+          <div className="hidden md:grid grid-cols-7 gap-3 mb-2">
             {Array.from({ length: 7 }).map((_, i) => (
               <div key={i} className="animate-pulse text-center">
                 <div className="h-4 bg-gray-200 rounded mb-2 mx-auto w-8" />
@@ -207,9 +208,18 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+          <div className="hidden md:grid grid-cols-7 gap-3">
             {Array.from({ length: 7 }).map((_, i) => (
               <div key={i} className="animate-pulse">
+                <div className="h-32 bg-gray-100 rounded-xl" />
+              </div>
+            ))}
+          </div>
+          {/* Mobile skeleton: stacked label + card rows */}
+          <div className="md:hidden grid grid-cols-1 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-3 bg-gray-200 rounded mb-1.5 w-16" />
                 <div className="h-32 bg-gray-100 rounded-xl" />
               </div>
             ))}
@@ -224,8 +234,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           }}
           onDragEnd={handleDragEnd}
         >
-          {/* Day headers — always 7 × 1-column */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mb-2">
+          {/* Day headers — desktop only, always 7 × 1-column */}
+          <div className="hidden md:grid grid-cols-7 gap-3 mb-2">
             {weekDays.map((date, index) => {
               const dow = index + 1
               const isToday = toDateString(date) === toDateString(today)
@@ -245,6 +255,19 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                 // Clamp span to remaining days in the week
                 const span = Math.min(slot?.span_days ?? 1, maxSpanDays)
 
+                // Mobile date label: "Mon 25" or "Mon 25 – Wed 27"
+                const startDate = weekDays[dow - 1]
+                const { weekday: startWd, day: startDay } = formatDayLabel(startDate)
+                let mobileDateLabel = `${startWd} ${startDay}`
+                if (span > 1) {
+                  const endDate = weekDays[Math.min(dow + span - 2, 6)]
+                  const { weekday: endWd, day: endDay } = formatDayLabel(endDate)
+                  mobileDateLabel += ` – ${endWd} ${endDay}`
+                }
+                // Highlight if today falls anywhere in this slot's range
+                const mobileIsToday = Array.from({ length: span }, (_, i) => dow + i)
+                  .some((d) => toDateString(weekDays[d - 1]) === toDateString(today))
+
                 items.push(
                   <DaySlot
                     key={dow}
@@ -252,6 +275,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                     slot={slot}
                     gridColSpan={span}
                     maxSpanDays={maxSpanDays}
+                    mobileDateLabel={mobileDateLabel}
+                    mobileIsToday={mobileIsToday}
                     isSearchOpen={openSearchDay === dow}
                     onOpenSearch={() => setOpenSearchDay(dow)}
                     onCloseSearch={() => setOpenSearchDay(null)}

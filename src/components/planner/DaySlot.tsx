@@ -14,6 +14,10 @@ interface DaySlotProps {
   /** How many grid columns this slot occupies */
   gridColSpan: number
   maxSpanDays: number
+  /** Mobile-only date label, e.g. "Mon 25" or "Mon 25 – Wed 27" */
+  mobileDateLabel: string
+  /** Whether this slot's date range contains today (for mobile highlight) */
+  mobileIsToday: boolean
   isSearchOpen: boolean
   onOpenSearch: () => void
   onCloseSearch: () => void
@@ -29,6 +33,8 @@ export function DaySlot({
   slot,
   gridColSpan,
   maxSpanDays,
+  mobileDateLabel,
+  mobileIsToday,
   isSearchOpen,
   onOpenSearch,
   onCloseSearch,
@@ -42,6 +48,10 @@ export function DaySlot({
 
   return (
     <div style={{ gridColumn: `span ${gridColSpan}` }} className="min-w-0">
+      {/* Mobile date label — shown above each slot, hidden on desktop */}
+      <div className={`md:hidden mb-1 text-xs font-semibold uppercase tracking-wide ${mobileIsToday ? 'text-blue-600' : 'text-gray-400'}`}>
+        {mobileDateLabel}
+      </div>
       <div
         ref={setNodeRef}
         className={`relative min-h-[130px] rounded-xl transition-colors ${
