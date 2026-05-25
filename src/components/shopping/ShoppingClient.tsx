@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { ShoppingCart, Sparkles, Copy, Plus, X, Check } from 'lucide-react'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -40,6 +41,12 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const [newRule, setNewRule] = useState('')
   const [addingRule, setAddingRule] = useState(false)
 
+  const posthog = usePostHog()
+
+  useEffect(() => {
+    posthog.capture('shopping_list_viewed')
+  }, [posthog])
+
   async function generateList(confirmOverwrite = false) {
     setIsGenerating(true)
     const res = await fetch('/api/shopping/generate', {
@@ -64,6 +71,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
         setRecipeNames(listData.recipeNames)
       }
       await makeSmarter(data.list.id)
+      posthog.capture('shopping_list_generated')
     }
     setIsGenerating(false)
     setShowOverwriteConfirm(false)
