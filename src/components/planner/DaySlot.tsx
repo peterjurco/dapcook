@@ -20,7 +20,6 @@ interface DaySlotProps {
   onAddRecipe: (dayOfWeek: number, recipe: Recipe) => void
   onAddCustom: (dayOfWeek: number, label: string) => void
   onDelete: (slotId: string) => void
-  onSpanChange: (slotId: string, delta: number) => void
   onSpanPreview: (slotId: string, newSpan: number) => void
   onSpanCommit: (slotId: string, newSpan: number) => void
 }
@@ -36,7 +35,6 @@ export function DaySlot({
   onAddRecipe,
   onAddCustom,
   onDelete,
-  onSpanChange,
   onSpanPreview,
   onSpanCommit,
 }: DaySlotProps) {

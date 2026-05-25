@@ -94,20 +94,6 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     await fetch(`/api/planner/slots/${slotId}`, { method: 'DELETE' })
   }
 
-  async function handleSpanChange(slotId: string, delta: number) {
-    const slot = slots.find((s) => s.id === slotId)
-    if (!slot) return
-    const newSpan = Math.max(1, Math.min(7, slot.span_days + delta))
-    if (newSpan === slot.span_days) return
-
-    setSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, span_days: newSpan } : s))
-    await fetch(`/api/planner/slots/${slotId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ span_days: newSpan }),
-    })
-  }
-
   // Called on every column boundary crossed during resize drag — no API call
   function handleSpanPreview(slotId: string, newSpan: number) {
     setSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, span_days: newSpan } : s))
@@ -272,7 +258,6 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                     onAddRecipe={handleAddRecipe}
                     onAddCustom={handleAddCustom}
                     onDelete={handleDelete}
-                    onSpanChange={handleSpanChange}
                     onSpanPreview={handleSpanPreview}
                     onSpanCommit={handleSpanCommit}
                   />
