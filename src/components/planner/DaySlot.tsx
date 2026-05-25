@@ -18,6 +18,7 @@ interface DaySlotProps {
   mobileDateLabel: string
   /** Whether this slot's date range contains today (for mobile highlight) */
   mobileIsToday: boolean
+  isLoading: boolean
   isSearchOpen: boolean
   onOpenSearch: () => void
   onCloseSearch: () => void
@@ -35,6 +36,7 @@ export function DaySlot({
   maxSpanDays,
   mobileDateLabel,
   mobileIsToday,
+  isLoading,
   isSearchOpen,
   onOpenSearch,
   onCloseSearch,
@@ -84,6 +86,11 @@ export function DaySlot({
           ) : (
             <CustomLabelCard slot={slot} onDelete={() => onDelete(slot.id)} />
           )
+        ) : isLoading ? (
+          /* Loading: spinner while slot is being created */
+          <div className="h-full min-h-[130px] flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200">
+            <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : (
           <>
             {/* Mobile: dashed placeholder, no interaction */}

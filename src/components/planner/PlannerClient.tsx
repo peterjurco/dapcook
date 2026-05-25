@@ -31,6 +31,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const [loading, setLoading] = useState(true)
   const [activeSlot, setActiveSlot] = useState<MealSlotWithRecipe | null>(null)
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
+  const [addingToDay, setAddingToDay] = useState<number | null>(null)
   const [isGeneratingList, setIsGeneratingList] = useState(false)
   const [isMobileEditMode, setIsMobileEditMode] = useState(false)
 
@@ -65,6 +66,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   }
 
   async function handleAddRecipe(dayOfWeek: number, recipe: Recipe) {
+    setAddingToDay(dayOfWeek)
     const res = await fetch('/api/planner/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,9 +78,11 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       posthog.capture('meal_planned')
       if (!weekPlan) loadWeek() // refresh to get weekPlan
     }
+    setAddingToDay(null)
   }
 
   async function handleAddCustom(dayOfWeek: number, label: string) {
+    setAddingToDay(dayOfWeek)
     const res = await fetch('/api/planner/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -89,6 +93,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       setSlots((prev) => [...prev, slot])
       if (!weekPlan) loadWeek()
     }
+    setAddingToDay(null)
   }
 
   async function handleDelete(slotId: string) {
@@ -439,6 +444,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                     maxSpanDays={maxSpanDays}
                     mobileDateLabel={mobileDateLabel}
                     mobileIsToday={mobileIsToday}
+                    isLoading={addingToDay === d}
                     isSearchOpen={openSearchDay === d}
                     onOpenSearch={() => setOpenSearchDay(d)}
                     onCloseSearch={() => setOpenSearchDay(null)}
