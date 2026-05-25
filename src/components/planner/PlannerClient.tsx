@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, CalendarDays, Pencil, X } from 'lucide-react'
+import { ShoppingCart, Pencil, X } from 'lucide-react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { DayHeader } from './DayHeader'
 import { DaySlot } from './DaySlot'
@@ -15,8 +15,6 @@ import {
   getWeekDays,
   formatDayLabel,
   toDateString,
-  isCurrentWeek,
-  nextWeekStart,
 } from '@/lib/utils/week'
 import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
 import type { Recipe, WeekPlan, WeekPlanRule } from '@/types/database'
@@ -321,15 +319,17 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   return (
     <div>
-      <WeekNav weekStart={weekStart} />
-
-      {/* Edit/reorder toggle — mobile only, below week selector */}
-      {!loading && slots.length > 0 && (
-        <div className="md:hidden flex justify-end mb-4 -mt-2">
+      {/* Page heading + mobile edit toggle */}
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Weekly Planner</h1>
+          <p className="text-sm text-gray-500 mt-1">Plan your lunches for the week</p>
+        </div>
+        {!loading && slots.length > 0 && (
           <button
             type="button"
             onClick={() => setIsMobileEditMode((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               isMobileEditMode
                 ? 'bg-gray-900 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -338,8 +338,10 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             {isMobileEditMode ? <X size={15} /> : <Pencil size={15} />}
             {isMobileEditMode ? 'Done' : 'Edit'}
           </button>
-        </div>
-      )}
+        )}
+      </div>
+
+      <WeekNav weekStart={weekStart} />
 
       {loading ? (
         <div>
@@ -496,19 +498,6 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
         </div>
       )}
 
-      {/* Plan next week — mobile only, shown at the bottom below all recipes */}
-      {isCurrentWeek(weekStart) && (
-        <div className="sm:hidden mt-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/planner?week=${toDateString(nextWeekStart(weekStart))}`)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors"
-          >
-            <CalendarDays size={16} />
-            Plan next week
-          </button>
-        </div>
-      )}
     </div>
   )
 }

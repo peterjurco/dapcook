@@ -13,11 +13,6 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
 
   return (
     <div className="px-6 py-8 max-w-6xl mx-auto">
-      <div className="mb-3">
-        <h1 className="text-xl font-semibold text-gray-900">Weekly Planner</h1>
-        <p className="text-sm text-gray-500 mt-1">Plan your lunches for the week</p>
-      </div>
-
       <PlannerClient weekStart={weekStart} />
     </div>
   )
