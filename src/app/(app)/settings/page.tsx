@@ -4,6 +4,7 @@ import { InviteLink } from '@/components/settings/InviteLink'
 import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagsEditor } from '@/components/settings/TagsEditor'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
+import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
 import { TranslationSettings } from '@/components/settings/TranslationSettings'
 import { signOut } from '@/lib/auth/actions'
@@ -26,13 +27,14 @@ export default async function SettingsPage() {
 
   if (!profile?.household_id) redirect('/onboarding')
 
-  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }, { data: shoppingCategories }] = await Promise.all([
+  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }, { data: shoppingCategories }, { data: shoppingRules }] = await Promise.all([
     supabase.from('households').select('*').eq('id', profile.household_id).single(),
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
     supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
     supabase.from('recipes').select('id, tags').eq('household_id', profile.household_id).eq('is_archived', false),
     supabase.from('tags').select('name, color').eq('household_id', profile.household_id),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
+    supabase.from('shopping_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
   ])
 
   // Compute tag usage counts server-side
@@ -121,6 +123,17 @@ export default async function SettingsPage() {
             Categories group items on your shopping list. Order them to match your supermarket layout. If none are defined, the AI will generate them automatically.
           </p>
           <ShoppingCategoriesEditor initialCategories={shoppingCategories ?? []} />
+        </div>
+      </section>
+
+      {/* Shopping rules */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Shopping rules</h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="text-xs text-gray-400 mb-4">
+            These rules are passed to the AI when generating a shopping list. Use them to exclude ingredients or adjust how items are merged.
+          </p>
+          <ShoppingRulesEditor initialRules={shoppingRules ?? []} />
         </div>
       </section>
 
