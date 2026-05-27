@@ -140,7 +140,7 @@ export function ShoppingItemRow({
             {/* Clicking the text enters inline edit mode */}
             <span
               onClick={startEdit}
-              className={`flex-1 min-w-0 text-sm transition-colors duration-150 cursor-text select-none ${
+              className={`flex-1 min-w-0 text-base transition-colors duration-150 cursor-text select-none ${
                 isVisuallyChecked ? 'line-through text-gray-400' : 'text-gray-900'
               }`}
             >
@@ -150,10 +150,10 @@ export function ShoppingItemRow({
               {item.name}
             </span>
 
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {item.source_recipe_ids.length > 0 && (
-                <div className="relative group/tooltip">
-                  <Info size={12} className="text-gray-300 cursor-default" />
+                <div className="relative group/tooltip opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Info size={13} className="text-gray-300 cursor-default" />
                   <div className="absolute z-20 bottom-full right-0 mb-1.5 hidden group-hover/tooltip:block">
                     <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 w-max max-w-[180px] break-words">
                       {item.source_recipe_ids.map((id) => recipeNames[id] ?? 'Unknown recipe').join(', ')}
@@ -165,10 +165,10 @@ export function ShoppingItemRow({
               <button
                 type="button"
                 onClick={() => onDelete(item.id)}
-                className="text-gray-300 hover:text-red-500"
+                className="text-gray-300 hover:text-red-500 transition-colors"
                 title="Delete"
               >
-                <X size={14} />
+                <X size={18} />
               </button>
             </div>
           </div>
