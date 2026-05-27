@@ -90,7 +90,12 @@ export async function POST(request: NextRequest) {
   // Save AI-invented categories so they're ready for the main shopping list
   if (result.newCategories.length > 0) {
     await supabase.from('shopping_categories').insert(
-      result.newCategories.map(({ id: _id, created_at: _c, ...rest }) => rest)
+      result.newCategories.map((cat) => ({
+        household_id: cat.household_id,
+        name: cat.name,
+        color: cat.color,
+        sort_order: cat.sort_order,
+      }))
     )
   }
 
