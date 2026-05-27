@@ -6,6 +6,7 @@ export interface SlotRecipe {
   image_url: string | null
   cook_time_min: number | null
   prep_time_min: number | null
+  servings: number | null
 }
 
 export interface MealSlotWithRecipe extends MealSlot {

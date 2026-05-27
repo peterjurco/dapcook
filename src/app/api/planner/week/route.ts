@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
   // Fetch slots with recipe data
   const { data: slots } = await supabase
     .from('meal_slots')
-    .select('*, recipe:recipes(id, title, image_url, cook_time_min, prep_time_min)')
+    .select('*, recipe:recipes(id, title, image_url, cook_time_min, prep_time_min, servings)')
     .eq('week_plan_id', weekPlan.id)
     .order('day_of_week')
 
