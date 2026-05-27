@@ -105,14 +105,16 @@ export function ShoppingItemRow({
               onChange={handleCheckChange}
               className="w-4 h-4 rounded border-gray-300 text-gray-900 cursor-pointer flex-shrink-0"
             />
-            {/* Inline transparent input — blur saves, Escape cancels */}
+            {/* Inline transparent input — blur saves, Escape cancels.
+                font-size: 16px prevents iOS Safari from zooming on focus. */}
             <input
               autoFocus
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onBlur={save}
               onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel() }}
-              className="flex-1 min-w-0 text-sm bg-transparent border-0 border-b border-gray-300 focus:border-gray-700 focus:outline-none text-gray-900 pb-px"
+              style={{ fontSize: '16px' }}
+              className="flex-1 min-w-0 bg-transparent border-0 focus:outline-none text-gray-900"
             />
           </div>
         ) : (

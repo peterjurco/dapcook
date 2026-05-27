@@ -137,21 +137,39 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     if (oldIndex === -1 || newIndex === -1) return
 
     const reordered = arrayMove(visibles, oldIndex, newIndex)
+    const draggedId = String(active.id)
+
+    // Infer new category: inherit from the item above the drop position,
+    // or from the item below if dropped at the very top.
+    const itemAbove = newIndex > 0 ? reordered[newIndex - 1] : null
+    const newCategory = itemAbove
+      ? itemAbove.category
+      : (reordered[newIndex + 1]?.category ?? null)
+    const categoryChanged = reordered[newIndex].category !== newCategory
 
     // Optimistic update
-    setItems([...reordered.map((item, i) => ({ ...item, sort_order: i })), ...hiddens])
+    setItems([
+      ...reordered.map((item, i) => ({
+        ...item,
+        sort_order: i,
+        ...(item.id === draggedId && categoryChanged ? { category: newCategory } : {}),
+      })),
+      ...hiddens,
+    ])
 
-    // Persist only changed positions
+    // Persist changed positions and/or category
     await Promise.all(
-      reordered.flatMap((item, i) =>
-        item.sort_order !== i
-          ? [fetch(`/api/shopping/items/${item.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ sort_order: i }),
-            })]
-          : []
-      )
+      reordered.flatMap((item, i) => {
+        const patches: Record<string, unknown> = {}
+        if (item.sort_order !== i) patches.sort_order = i
+        if (item.id === draggedId && categoryChanged) patches.category = newCategory
+        if (Object.keys(patches).length === 0) return []
+        return [fetch(`/api/shopping/items/${item.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patches),
+        })]
+      })
     )
   }
 
