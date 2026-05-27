@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ShoppingCart, Pencil, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
@@ -33,6 +33,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const [addingToDay, setAddingToDay] = useState<number | null>(null)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [isMobileEditMode, setIsMobileEditMode] = useState(false)
+  const slotGridRef = useRef<HTMLDivElement>(null)
 
   const weekStartStr = toDateString(weekStart)
   const today = new Date()
@@ -210,16 +211,33 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveSlot(null)
-    const { active, over } = event
+    const { active, over, delta } = event
     if (!over) return
 
     const draggedSlot = active.data.current?.slot as MealSlotWithRecipe | undefined
-    const targetDay = over.data.current?.dayOfWeek as number | undefined
+    let targetDay = over.data.current?.dayOfWeek as number | undefined
 
-    if (!draggedSlot || !targetDay || draggedSlot.day_of_week === targetDay) return
+    if (!draggedSlot || !targetDay) return
 
     const sourceDay = draggedSlot.day_of_week
     const span = draggedSlot.span_days
+
+    // When a multi-day slot is dragged over one of its own covered columns,
+    // dnd-kit reports the start day (sourceDay) because there's no separate
+    // droppable for covered days. Fall back to computing the target column
+    // from the drag displacement so the user can move the slot right by one
+    // (e.g. Mon-Tue → Tue-Wed).
+    if (targetDay === sourceDay && span > 1 && slotGridRef.current) {
+      const gridRect = slotGridRef.current.getBoundingClientRect()
+      const GAP = 12 // gap-3 = 12 px
+      const colWidth = (gridRect.width - 6 * GAP) / 7
+      const colsMoved = Math.round(delta.x / colWidth)
+      if (colsMoved !== 0) {
+        targetDay = Math.max(1, Math.min(8 - span, sourceDay + colsMoved))
+      }
+    }
+
+    if (targetDay === sourceDay) return
     const movingRight = targetDay > sourceDay
 
     // Build new day assignments: insert A at target, shift displaced slots by span.
@@ -382,7 +400,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           </div>
 
           {/* Slot areas — spanning grid: a meal with span_days=N occupies N columns */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+          <div ref={slotGridRef} className="grid grid-cols-1 md:grid-cols-7 gap-3">
             {(() => {
               const items: React.ReactNode[] = []
               let dow = 1
