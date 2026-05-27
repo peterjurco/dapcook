@@ -250,7 +250,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
                               style={{ backgroundColor: colorMap.get(item.category)! }}
                             />
                           )}
-                          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                          <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
                             {currentCat}
                           </span>
                         </div>

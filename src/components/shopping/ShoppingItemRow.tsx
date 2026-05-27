@@ -76,16 +76,17 @@ export function ShoppingItemRow({
     : item.unit ?? null
 
   return (
-    // Grid trick: animates from natural height (1fr) to 0 without knowing the pixel value
+    // Grid trick: animates from natural height (1fr) to 0 without knowing the pixel value.
+    // overflow-hidden is on the INNER div so the tooltip (position:absolute, going upward)
+    // isn't clipped by the outer wrapper.
     <div
-      className="overflow-hidden"
       style={{
         display: 'grid',
         gridTemplateRows: isCollapsing ? '0fr' : '1fr',
         transition: isCollapsing ? 'grid-template-rows 0.25s ease-in-out' : undefined,
       }}
     >
-      <div className="min-h-0">
+      <div className="overflow-hidden min-h-0">
         {editing ? (
           <div className="flex items-center gap-2 py-2 px-1">
             {/* Drag handle */}
@@ -116,9 +117,18 @@ export function ShoppingItemRow({
               style={{ fontSize: '16px' }}
               className="flex-1 min-w-0 bg-transparent border-0 focus:outline-none text-gray-900"
             />
+            {/* Cancel — onMouseDown+preventDefault keeps focus on input so onBlur/save doesn't fire */}
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); cancel() }}
+              className="text-gray-300 hover:text-gray-700 transition-colors flex-shrink-0"
+              aria-label="Cancel edit"
+            >
+              <X size={18} />
+            </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2 py-2 px-1 group">
+          <div className="flex items-center gap-2 py-2 px-1">
             {/* Drag handle */}
             <button
               type="button"
@@ -152,10 +162,11 @@ export function ShoppingItemRow({
 
             <div className="flex items-center gap-2 flex-shrink-0">
               {item.source_recipe_ids.length > 0 && (
-                <div className="relative group/tooltip opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Info size={13} className="text-gray-300 cursor-default" />
-                  <div className="absolute z-20 bottom-full right-0 mb-1.5 hidden group-hover/tooltip:block">
-                    <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 w-max max-w-[180px] break-words">
+                <div className="relative group/tooltip">
+                  <Info size={15} className="text-gray-300 cursor-default" />
+                  {/* Tooltip rendered above: z-50 ensures it floats over sibling rows */}
+                  <div className="absolute z-50 bottom-full right-0 mb-2 hidden group-hover/tooltip:block">
+                    <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 w-max max-w-[200px] break-words shadow-lg">
                       {item.source_recipe_ids.map((id) => recipeNames[id] ?? 'Unknown recipe').join(', ')}
                       <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-900" />
                     </div>
