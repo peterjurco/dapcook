@@ -90,6 +90,10 @@ export async function createHousehold(name: string) {
     return { error: 'Failed to link household to profile' }
   }
 
+  await supabase
+    .from('shopping_lists')
+    .insert({ household_id: householdId, name: 'Shopping list' })
+
   redirect('/recipes?ob=1')
 }
 
