@@ -82,7 +82,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     setAddingItem(false)
   }
 
-  const grouped = groupItems(items, categories)
+  const visibleItems = items.filter((item) => !item.is_checked)
+  const grouped = groupItems(visibleItems, categories)
 
   function getListLines() {
     return grouped.flatMap((group) =>
@@ -122,8 +123,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       <div className="space-y-4">
         {/* List header */}
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</p>
-          {items.length > 0 && (
+          <p className="text-xs text-gray-400">{visibleItems.length} item{visibleItems.length !== 1 ? 's' : ''}</p>
+          {visibleItems.length > 0 && (
             <button
               type="button"
               onClick={copyToClipboard}
@@ -137,7 +138,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
 
         {/* Items grouped by category */}
         <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-50">
-          {items.length === 0 && !addingItem ? (
+          {visibleItems.length === 0 && !addingItem ? (
             <p className="text-sm text-gray-400 px-4 py-8 text-center">
               Your shopping list is empty. Add items manually or generate from the planner.
             </p>
