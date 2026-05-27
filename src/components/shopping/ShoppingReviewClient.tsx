@@ -203,7 +203,6 @@ export function ShoppingReviewClient() {
                 <ShoppingItemRow
                   key={item.id}
                   item={item}
-                  categories={categories}
                   recipeNames={{}}
                   onCheck={handleCheck}
                   onUpdate={handleUpdate}
