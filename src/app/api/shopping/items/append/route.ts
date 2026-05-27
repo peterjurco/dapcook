@@ -55,7 +55,12 @@ export async function POST(request: NextRequest) {
 
   const startOrder = (maxItem?.sort_order ?? -1) + 1
 
-  const toInsert = body.items.map((item, i) => ({
+  const validItems = body.items.filter((item) => typeof item.name === 'string' && item.name.trim().length > 0)
+  if (validItems.length === 0) {
+    return NextResponse.json({ error: 'No valid items to insert' }, { status: 400 })
+  }
+
+  const toInsert = validItems.map((item, i) => ({
     shopping_list_id: listId as string,
     name: item.name,
     quantity: item.quantity ?? null,
