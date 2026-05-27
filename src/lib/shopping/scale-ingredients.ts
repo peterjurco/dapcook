@@ -4,7 +4,6 @@ export interface ScaledItem {
   name: string
   quantity: number | null
   unit: string | null
-  source_recipe_id: string
 }
 
 /**
@@ -21,6 +20,5 @@ export function scaleIngredients(
     name: ing.name,
     quantity: ing.quantity != null ? Number((ing.quantity * scale).toFixed(3)) : null,
     unit: ing.unit || null,
-    source_recipe_id: '',
   }))
 }
