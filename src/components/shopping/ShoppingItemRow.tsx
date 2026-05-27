@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { X, Pencil, Check, Info } from 'lucide-react'
+import { X, Pencil, Check, Info, GripVertical } from 'lucide-react'
 import type { ShoppingItem, ShoppingCategory } from '@/types/database'
 
 interface Props {
@@ -11,13 +11,20 @@ interface Props {
   onCheck: (id: string, checked: boolean) => void
   onUpdate: (id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) => void
   onDelete: (id: string) => void
+  /** Spread onto the grip button to enable drag-to-reorder */
+  dragHandleListeners?: Record<string, unknown>
+  dragHandleAttributes?: Record<string, unknown>
 }
 
 // Exit animation states for checking off an item:
 // idle → crossed (strikethrough, 350ms pause) → collapsing (height→0, 250ms) → onCheck fires
 type ExitState = 'idle' | 'crossed' | 'collapsing'
 
-export function ShoppingItemRow({ item, categories, recipeNames, onCheck, onUpdate, onDelete }: Props) {
+export function ShoppingItemRow({
+  item, categories, recipeNames,
+  onCheck, onUpdate, onDelete,
+  dragHandleListeners, dragHandleAttributes,
+}: Props) {
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(item.name)
   const [editQty, setEditQty] = useState(item.quantity != null ? String(item.quantity) : '')
@@ -83,7 +90,9 @@ export function ShoppingItemRow({ item, categories, recipeNames, onCheck, onUpda
     >
       <div className="min-h-0">
         {editing ? (
-          <div className="flex items-center gap-2 py-1.5 px-1">
+          <div className="flex items-center gap-2 py-1 px-1">
+            {/* Spacer matching grip width */}
+            <div className="w-4 flex-shrink-0" />
             <div className="w-4 flex-shrink-0" />
             <input
               autoFocus
@@ -97,7 +106,7 @@ export function ShoppingItemRow({ item, categories, recipeNames, onCheck, onUpda
               value={editQty}
               onChange={(e) => setEditQty(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel() }}
-              className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
+              className="w-14 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
               placeholder="Qty"
               type="number"
               step="any"
@@ -106,14 +115,14 @@ export function ShoppingItemRow({ item, categories, recipeNames, onCheck, onUpda
               value={editUnit}
               onChange={(e) => setEditUnit(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel() }}
-              className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
+              className="w-14 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
               placeholder="Unit"
             />
             {categories.length > 0 && (
               <select
                 value={editCategory}
                 onChange={(e) => setEditCategory(e.target.value)}
-                className="text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300 max-w-[120px]"
+                className="text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300 max-w-[100px]"
               >
                 <option value="">Other</option>
                 {categories.map((c) => (
@@ -129,7 +138,18 @@ export function ShoppingItemRow({ item, categories, recipeNames, onCheck, onUpda
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 py-1.5 px-1 group">
+          <div className="flex items-center gap-2 py-1 px-1 group">
+            {/* Drag handle */}
+            <button
+              type="button"
+              className="text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+              aria-label="Drag to reorder"
+              {...(dragHandleListeners ?? {})}
+              {...(dragHandleAttributes ?? {})}
+            >
+              <GripVertical size={14} />
+            </button>
+
             <input
               type="checkbox"
               checked={isVisuallyChecked}
@@ -183,7 +203,6 @@ export function ShoppingItemRow({ item, categories, recipeNames, onCheck, onUpda
 }
 
 function formatQty(qty: number): string {
-  // Show as integer if whole, otherwise up to 3 significant decimal places
   if (Number.isInteger(qty)) return String(qty)
   const rounded = parseFloat(qty.toPrecision(3))
   return String(rounded)

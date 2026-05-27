@@ -3,6 +3,21 @@
 import { useState, useEffect } from 'react'
 import { usePostHog } from 'posthog-js/react'
 import { Copy, Plus, X, Check } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
 
@@ -13,15 +28,41 @@ interface Props {
   initialRecipeNames: Record<string, string>
 }
 
-interface GroupedItems {
-  category: string
-  color: string | null
-  items: ShoppingItem[]
+interface SortableRowProps {
+  item: ShoppingItem
+  categories: ShoppingCategory[]
+  recipeNames: Record<string, string>
+  onCheck: (id: string, checked: boolean) => void
+  onUpdate: (id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) => void
+  onDelete: (id: string) => void
+}
+
+function SortableRow({ item, ...rowProps }: SortableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    zIndex: isDragging ? 10 : undefined,
+    position: isDragging ? 'relative' as const : undefined,
+  }
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ShoppingItemRow
+        item={item}
+        dragHandleListeners={listeners}
+        dragHandleAttributes={attributes as unknown as Record<string, unknown>}
+        {...rowProps}
+      />
+    </div>
+  )
 }
 
 export function ShoppingClient({ initialList, initialItems, initialCategories, initialRecipeNames }: Props) {
   const [list] = useState<ShoppingList | null>(initialList)
-  const [items, setItems] = useState<ShoppingItem[]>(initialItems)
+  const [items, setItems] = useState<ShoppingItem[]>(() =>
+    [...initialItems].sort((a, b) => a.sort_order - b.sort_order)
+  )
   const [categories] = useState<ShoppingCategory[]>(initialCategories)
   const [recipeNames] = useState<Record<string, string>>(initialRecipeNames)
   const [copied, setCopied] = useState(false)
@@ -31,6 +72,10 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const [newItemUnit, setNewItemUnit] = useState('')
 
   const posthog = usePostHog()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
 
   useEffect(() => {
     posthog.capture('shopping_list_viewed')
@@ -82,16 +127,47 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     setAddingItem(false)
   }
 
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const visibles = items.filter((item) => !item.is_checked)
+    const hiddens = items.filter((item) => item.is_checked)
+    const oldIndex = visibles.findIndex((item) => item.id === active.id)
+    const newIndex = visibles.findIndex((item) => item.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(visibles, oldIndex, newIndex)
+
+    // Optimistic update
+    setItems([...reordered.map((item, i) => ({ ...item, sort_order: i })), ...hiddens])
+
+    // Persist only changed positions
+    await Promise.all(
+      reordered.flatMap((item, i) =>
+        item.sort_order !== i
+          ? [fetch(`/api/shopping/items/${item.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sort_order: i }),
+            })]
+          : []
+      )
+    )
+  }
+
   const visibleItems = items.filter((item) => !item.is_checked)
-  const grouped = groupItems(visibleItems, categories)
+  const colorMap = new Map(categories.map((c) => [c.name, c.color]))
+
+  // Show category headers only when there are 2+ distinct effective categories
+  const distinctCats = new Set(visibleItems.map((i) => i.category ?? 'Other'))
+  const showHeaders = distinctCats.size > 1
 
   function getListLines() {
-    return grouped.flatMap((group) =>
-      group.items.map((item) => {
-        const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
-        return qty ? `${qty} ${item.name}` : item.name
-      })
-    )
+    return visibleItems.map((item) => {
+      const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
+      return qty ? `${qty} ${item.name}` : item.name
+    })
   }
 
   async function copyToClipboard() {
@@ -113,141 +189,119 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }
 
   return (
-    <div className="max-w-xl mx-auto px-6 py-10 overflow-x-hidden">
+    <div className="max-w-xl mx-auto px-0 sm:px-6 py-10 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-1 px-4 sm:px-0">
         <h1 className="text-xl font-semibold text-gray-900">Shopping List</h1>
+        {visibleItems.length > 0 && (
+          <button
+            type="button"
+            onClick={copyToClipboard}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+          >
+            {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
+            {copied ? 'Copied!' : 'Copy list'}
+          </button>
+        )}
       </div>
+      <p className="text-xs text-gray-400 mb-4 px-4 sm:px-0">
+        {visibleItems.length} item{visibleItems.length !== 1 ? 's' : ''}
+      </p>
 
-      {/* List */}
-      <div className="space-y-4">
-        {/* List header */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs text-gray-400">{visibleItems.length} item{visibleItems.length !== 1 ? 's' : ''}</p>
-          {visibleItems.length > 0 && (
+      {/* List card — full-width on mobile, rounded on sm+ */}
+      <div className="bg-white border-y sm:border border-gray-200 sm:rounded-xl divide-y divide-gray-50">
+        {visibleItems.length === 0 && !addingItem ? (
+          <p className="text-sm text-gray-400 px-4 py-8 text-center">
+            Your shopping list is empty. Add items manually or generate from the planner.
+          </p>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={visibleItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+              <div className="px-3 pb-1">
+                {visibleItems.map((item, index) => {
+                  const prevItem = index > 0 ? visibleItems[index - 1] : null
+                  const currentCat = item.category ?? 'Other'
+                  const prevCat = prevItem ? (prevItem.category ?? 'Other') : null
+                  const showHeader = showHeaders && currentCat !== prevCat
+                  return (
+                    <div key={item.id}>
+                      {showHeader && (
+                        <div className={`${index > 0 ? 'pt-3' : 'pt-3'} pb-1 flex items-center gap-1.5`}>
+                          {item.category && colorMap.get(item.category) && (
+                            <span
+                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: colorMap.get(item.category)! }}
+                            />
+                          )}
+                          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                            {currentCat}
+                          </span>
+                        </div>
+                      )}
+                      <SortableRow
+                        item={item}
+                        categories={categories}
+                        recipeNames={recipeNames}
+                        onCheck={handleCheck}
+                        onUpdate={handleUpdate}
+                        onDelete={handleDelete}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+
+        {/* Add item row */}
+        <div className="px-4 py-2">
+          {addingItem ? (
+            <div className="flex items-center gap-2 py-1">
+              <input
+                autoFocus
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem(); if (e.key === 'Escape') { setAddingItem(false) } }}
+                placeholder="Item name"
+                className="flex-1 min-w-0 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+              <input
+                value={newItemQty}
+                onChange={(e) => setNewItemQty(e.target.value)}
+                placeholder="Qty"
+                type="number"
+                step="any"
+                className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+              <input
+                value={newItemUnit}
+                onChange={(e) => setNewItemUnit(e.target.value)}
+                placeholder="Unit"
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem() }}
+                className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+              <button type="button" onClick={handleAddItem} className="text-gray-500 hover:text-gray-900 flex-shrink-0">
+                <Check size={14} />
+              </button>
+              <button type="button" onClick={() => setAddingItem(false)} className="text-gray-400 hover:text-gray-700 flex-shrink-0">
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
-              onClick={copyToClipboard}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+              onClick={() => setAddingItem(true)}
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors py-1"
             >
-              {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
-              {copied ? 'Copied!' : 'Copy list'}
+              <Plus size={14} />
+              Add item
             </button>
           )}
-        </div>
-
-        {/* Items grouped by category */}
-        <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-50">
-          {visibleItems.length === 0 && !addingItem ? (
-            <p className="text-sm text-gray-400 px-4 py-8 text-center">
-              Your shopping list is empty. Add items manually or generate from the planner.
-            </p>
-          ) : (
-            grouped.map((group) => (
-              <div key={group.category}>
-                {group.category !== 'Other' || grouped.length > 1 ? (
-                  <div className="px-4 pt-3 pb-1 flex items-center gap-1.5">
-                    {group.color && (
-                      <span
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: group.color }}
-                      />
-                    )}
-                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{group.category}</span>
-                  </div>
-                ) : null}
-                <div className="px-3 pb-1">
-                  {group.items.map((item) => (
-                    <ShoppingItemRow
-                      key={item.id}
-                      item={item}
-                      categories={categories}
-                      recipeNames={recipeNames}
-                      onCheck={handleCheck}
-                      onUpdate={handleUpdate}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-
-          {/* Add item row */}
-          <div className="px-4 py-2">
-            {addingItem ? (
-              <div className="flex items-center gap-2 py-1">
-                <input
-                  autoFocus
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem(); if (e.key === 'Escape') { setAddingItem(false) } }}
-                  placeholder="Item name"
-                  className="flex-1 min-w-0 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
-                />
-                <input
-                  value={newItemQty}
-                  onChange={(e) => setNewItemQty(e.target.value)}
-                  placeholder="Qty"
-                  type="number"
-                  step="any"
-                  className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
-                />
-                <input
-                  value={newItemUnit}
-                  onChange={(e) => setNewItemUnit(e.target.value)}
-                  placeholder="Unit"
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem() }}
-                  className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
-                />
-                <button type="button" onClick={handleAddItem} className="text-gray-500 hover:text-gray-900 flex-shrink-0">
-                  <Check size={14} />
-                </button>
-                <button type="button" onClick={() => setAddingItem(false)} className="text-gray-400 hover:text-gray-700 flex-shrink-0">
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingItem(true)}
-                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors py-1"
-              >
-                <Plus size={14} />
-                Add item
-              </button>
-            )}
-          </div>
         </div>
       </div>
     </div>
   )
-}
-
-function groupItems(items: ShoppingItem[], categories: ShoppingCategory[]): GroupedItems[] {
-  const categoryOrder = new Map(categories.map((c, i) => [c.name, i]))
-  const colorMap = new Map(categories.map((c) => [c.name, c.color]))
-
-  // Sort items by category order, then alphabetically within
-  const sorted = [...items].sort((a, b) => {
-    const ai = a.category ? (categoryOrder.get(a.category) ?? 999) : 999
-    const bi = b.category ? (categoryOrder.get(b.category) ?? 999) : 999
-    if (ai !== bi) return ai - bi
-    return a.name.localeCompare(b.name)
-  })
-
-  const groups = new Map<string, ShoppingItem[]>()
-  for (const item of sorted) {
-    const cat = item.category && categoryOrder.has(item.category) ? item.category : 'Other'
-    if (!groups.has(cat)) groups.set(cat, [])
-    groups.get(cat)!.push(item)
-  }
-
-  return Array.from(groups.entries()).map(([category, groupItems]) => ({
-    category,
-    color: colorMap.get(category) ?? null,
-    items: groupItems,
-  }))
 }
 
 function formatQty(qty: number): string {
