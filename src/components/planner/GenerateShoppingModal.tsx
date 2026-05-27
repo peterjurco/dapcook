@@ -89,6 +89,16 @@ export function GenerateShoppingModal({ slots, weekStart, onClose }: Props) {
 
       const data = await res.json() as { items: unknown[]; categories: unknown[] }
       sessionStorage.setItem('shopping_preview', JSON.stringify(data))
+
+      // Persist portions so the planner can show them next to meal names
+      try {
+        const saved = JSON.parse(localStorage.getItem('recipe_portions') ?? '{}') as Record<string, number>
+        for (const e of activeEntries) saved[e.recipeId] = e.portions
+        localStorage.setItem('recipe_portions', JSON.stringify(saved))
+      } catch {
+        // ignore storage errors
+      }
+
       router.push('/shopping/review')
     } catch {
       setError('Network error. Please try again.')

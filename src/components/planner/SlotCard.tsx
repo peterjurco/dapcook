@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -21,6 +21,20 @@ interface SlotCardProps {
 export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanDays }: SlotCardProps) {
   const [confirming, setConfirming] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
+  const [savedPortions, setSavedPortions] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!slot.recipe_id) return
+    try {
+      const raw = localStorage.getItem('recipe_portions')
+      if (raw) {
+        const data = JSON.parse(raw) as Record<string, number>
+        setSavedPortions(data[slot.recipe_id] ?? null)
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [slot.recipe_id])
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
@@ -130,6 +144,9 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
             className="text-base font-medium text-gray-900 line-clamp-2 leading-snug hover:text-blue-600 transition-colors"
           >
             {slot.recipe?.title ?? 'Recipe'}
+            {savedPortions != null && (
+              <span className="text-gray-400 text-xs font-normal ml-1">({savedPortions})</span>
+            )}
           </Link>
         </div>
 
