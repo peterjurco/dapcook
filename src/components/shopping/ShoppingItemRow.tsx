@@ -225,13 +225,11 @@ export function ShoppingItemRow({
               <span
                 onClick={startEdit}
                 className={`flex-1 min-w-0 text-base transition-colors duration-150 select-none ${
-                  saving
-                    ? 'text-gray-400 cursor-default'
-                    : saveError
-                      ? 'text-gray-900 cursor-text'
-                      : isVisuallyChecked
-                        ? 'line-through text-gray-400 cursor-text'
-                        : 'text-gray-900 cursor-text'
+                  saveError
+                    ? 'text-gray-900 cursor-text'
+                    : isVisuallyChecked
+                      ? 'line-through text-gray-400 cursor-text'
+                      : 'text-gray-900 cursor-text'
                 }`}
               >
                 {displayQty && (
@@ -241,12 +239,7 @@ export function ShoppingItemRow({
               </span>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Saving spinner */}
-                {saving && (
-                  <span className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                )}
-
-                {item.source_recipe_ids.length > 0 && !saving && !saveError && (
+                {item.source_recipe_ids.length > 0 && !saveError && (
                   <div className="relative group/tooltip">
                     <Info size={15} className="text-gray-300 cursor-default" />
                     {/* Tooltip rendered above: z-50 ensures it floats over sibling rows */}
@@ -259,16 +252,14 @@ export function ShoppingItemRow({
                   </div>
                 )}
 
-                {!saving && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(item.id)}
-                    className="text-gray-300 hover:text-red-500 transition-colors"
-                    title="Delete"
-                  >
-                    <X size={18} />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onDelete(item.id)}
+                  className="text-gray-300 hover:text-red-500 transition-colors"
+                  title="Delete"
+                >
+                  <X size={18} />
+                </button>
               </div>
             </div>
 
