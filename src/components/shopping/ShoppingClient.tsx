@@ -61,9 +61,15 @@ function SortableRow({ item, ...rowProps }: SortableRowProps) {
 
 export function ShoppingClient({ initialList, initialItems, initialCategories, initialRecipeNames }: Props) {
   const [list] = useState<ShoppingList | null>(initialList)
-  const [items, setItems] = useState<ShoppingItem[]>(() =>
-    [...initialItems].sort((a, b) => a.sort_order - b.sort_order)
-  )
+  const [items, setItems] = useState<ShoppingItem[]>(() => {
+    const catOrder = new Map(initialCategories.map((c, i) => [c.name, i]))
+    return [...initialItems].sort((a, b) => {
+      const ai = a.category ? (catOrder.get(a.category) ?? 999) : 999
+      const bi = b.category ? (catOrder.get(b.category) ?? 999) : 999
+      if (ai !== bi) return ai - bi
+      return a.sort_order - b.sort_order
+    })
+  })
   const [categories] = useState<ShoppingCategory[]>(initialCategories)
   const [recipeNames] = useState<Record<string, string>>(initialRecipeNames)
   const [copied, setCopied] = useState(false)
