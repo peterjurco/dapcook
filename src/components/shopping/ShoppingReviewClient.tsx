@@ -110,11 +110,21 @@ export function ShoppingReviewClient() {
     const toAdd = items.filter((item) => !item.is_checked)
     if (toAdd.length === 0) return
     setIsAdding(true)
+
+    // Sort by category order so items arrive grouped — prevents duplicate
+    // category headers in the main shopping list.
+    const categoryOrder = new Map(categories.map((c, i) => [c.name, i]))
+    const sorted = [...toAdd].sort((a, b) => {
+      const ai = a.category ? (categoryOrder.get(a.category) ?? 999) : 999
+      const bi = b.category ? (categoryOrder.get(b.category) ?? 999) : 999
+      return ai - bi
+    })
+
     const res = await fetch('/api/shopping/items/append', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: toAdd.map((item) => ({
+        items: sorted.map((item) => ({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit,
