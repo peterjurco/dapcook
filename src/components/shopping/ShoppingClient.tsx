@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { usePostHog } from 'posthog-js/react'
-import { Copy, Plus, X, Check } from 'lucide-react'
+import { Copy, Check } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -67,10 +67,6 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const [categories] = useState<ShoppingCategory[]>(initialCategories)
   const [recipeNames] = useState<Record<string, string>>(initialRecipeNames)
   const [copied, setCopied] = useState(false)
-  const [addingItem, setAddingItem] = useState(false)
-  const [newItemName, setNewItemName] = useState('')
-  const [newItemQty, setNewItemQty] = useState('')
-  const [newItemUnit, setNewItemUnit] = useState('')
 
   const posthog = usePostHog()
 
@@ -160,29 +156,6 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       next.splice(idx + 1, 0, pendingItem)
       return next
     })
-  }
-
-  async function handleAddItem() {
-    if (!list || !newItemName.trim()) return
-    const qty = newItemQty !== '' ? parseFloat(newItemQty) : null
-    const res = await fetch('/api/shopping/items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        list_id: list.id,
-        name: newItemName.trim(),
-        quantity: isNaN(qty as number) ? null : qty,
-        unit: newItemUnit.trim() || null,
-      }),
-    })
-    if (res.ok) {
-      const created = await res.json() as ShoppingItem
-      setItems((prev) => [...prev, created])
-    }
-    setNewItemName('')
-    setNewItemQty('')
-    setNewItemUnit('')
-    setAddingItem(false)
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -286,8 +259,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       </p>
 
       {/* List card — full-width on mobile, rounded on sm+ */}
-      <div className="bg-white border-y sm:border border-gray-200 sm:rounded-xl divide-y divide-gray-50">
-        {visibleItems.length === 0 && !addingItem ? (
+      <div className="sm:bg-white sm:border sm:border-gray-200 sm:rounded-xl divide-y divide-gray-50">
+        {visibleItems.length === 0 ? (
           <p className="text-sm text-gray-400 px-4 py-8 text-center">
             Your shopping list is empty. Add items manually or generate from the planner.
           </p>
@@ -331,52 +304,6 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
             </SortableContext>
           </DndContext>
         )}
-
-        {/* Add item row */}
-        <div className="px-4 py-2">
-          {addingItem ? (
-            <div className="flex items-center gap-2 py-1">
-              <input
-                autoFocus
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem(); if (e.key === 'Escape') { setAddingItem(false) } }}
-                placeholder="Item name"
-                className="flex-1 min-w-0 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
-              />
-              <input
-                value={newItemQty}
-                onChange={(e) => setNewItemQty(e.target.value)}
-                placeholder="Qty"
-                type="number"
-                step="any"
-                className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
-              />
-              <input
-                value={newItemUnit}
-                onChange={(e) => setNewItemUnit(e.target.value)}
-                placeholder="Unit"
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem() }}
-                className="w-16 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
-              />
-              <button type="button" onClick={handleAddItem} className="text-gray-500 hover:text-gray-900 flex-shrink-0">
-                <Check size={14} />
-              </button>
-              <button type="button" onClick={() => setAddingItem(false)} className="text-gray-400 hover:text-gray-700 flex-shrink-0">
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAddingItem(true)}
-              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors py-1"
-            >
-              <Plus size={14} />
-              Add item
-            </button>
-          )}
-        </div>
       </div>
     </div>
   )

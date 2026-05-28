@@ -162,12 +162,12 @@ export function ShoppingItemRow({
             {/* Drag handle */}
             <button
               type="button"
-              className="text-gray-300 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+              className="self-stretch flex items-center text-gray-300 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
               aria-label="Drag to reorder"
               {...(dragHandleListeners ?? {})}
               {...(dragHandleAttributes ?? {})}
             >
-              <GripVertical size={14} />
+              <GripVertical size={18} />
             </button>
             {/* Checkbox */}
             <input
@@ -206,12 +206,12 @@ export function ShoppingItemRow({
               {/* Drag handle */}
               <button
                 type="button"
-                className="text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+                className="self-stretch flex items-center text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
                 aria-label="Drag to reorder"
                 {...(dragHandleListeners ?? {})}
                 {...(dragHandleAttributes ?? {})}
               >
-                <GripVertical size={14} />
+                <GripVertical size={18} />
               </button>
 
               <input
