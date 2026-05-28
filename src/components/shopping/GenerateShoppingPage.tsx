@@ -45,17 +45,23 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
   }
 
   const [entries, setEntries] = useState<RecipeEntry[]>(Array.from(recipeMap.values()))
+  // Raw text state lets the input be temporarily empty while the user is typing
+  const [portionsText, setPortionsText] = useState<Record<string, string>>(() =>
+    Object.fromEntries(Array.from(recipeMap.values()).map((e) => [e.recipeId, String(e.portions)]))
+  )
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const activeEntries = entries.filter((e) => !e.removed)
 
-  function updatePortions(recipeId: string, value: string) {
-    const num = parseInt(value, 10)
-    if (isNaN(num) || num < 1) return
-    setEntries((prev) =>
-      prev.map((e) => (e.recipeId === recipeId ? { ...e, portions: num } : e))
-    )
+  function updatePortions(recipeId: string, raw: string) {
+    setPortionsText((prev) => ({ ...prev, [recipeId]: raw }))
+    const num = parseInt(raw, 10)
+    if (!isNaN(num) && num >= 1) {
+      setEntries((prev) =>
+        prev.map((e) => (e.recipeId === recipeId ? { ...e, portions: num } : e))
+      )
+    }
   }
 
   function toggleRemove(recipeId: string) {
@@ -158,7 +164,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
                   <input
                     type="number"
                     min={1}
-                    value={entry.portions}
+                    value={portionsText[entry.recipeId] ?? String(entry.portions)}
                     onChange={(e) => updatePortions(entry.recipeId, e.target.value)}
                     style={{ fontSize: '16px' }}
                     className="w-16 text-sm text-center px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
