@@ -111,20 +111,17 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
           unit: null,
         }),
       })
-      if (res.ok) {
-        const created = await res.json() as ShoppingItem
-        const targetOrder = pendingItem.sort_order
-        await fetch(`/api/shopping/items/${created.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sort_order: targetOrder }),
-        })
-        setItems((prev) => prev.map((i) =>
-          i.id === id ? { ...created, sort_order: targetOrder } : i
-        ))
-      } else {
-        setItems((prev) => prev.filter((i) => i.id !== id))
-      }
+      if (!res.ok) throw new Error('Failed to save item')
+      const created = await res.json() as ShoppingItem
+      const targetOrder = pendingItem.sort_order
+      await fetch(`/api/shopping/items/${created.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sort_order: targetOrder }),
+      })
+      setItems((prev) => prev.map((i) =>
+        i.id === id ? { ...created, sort_order: targetOrder } : i
+      ))
       return
     }
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, ...changes } : item))
