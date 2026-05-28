@@ -145,7 +145,7 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
           >
             {slot.recipe?.title ?? 'Recipe'}
             {savedPortions != null && (
-              <span className="text-gray-400 text-xs font-normal ml-1">({savedPortions})</span>
+              <span className="text-gray-400 text-xs font-normal ml-1">({savedPortions} portions)</span>
             )}
           </Link>
         </div>
