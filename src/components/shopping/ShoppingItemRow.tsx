@@ -203,7 +203,7 @@ export function ShoppingItemRow({
           </div>
         ) : (
           <div>
-            <div className="flex items-center gap-2 py-2 px-1">
+            <div className="flex items-start gap-2 py-2 px-1">
               {/* Drag handle */}
               <button
                 type="button"
@@ -219,7 +219,7 @@ export function ShoppingItemRow({
                 type="checkbox"
                 checked={isVisuallyChecked}
                 onChange={handleCheckChange}
-                className="w-4 h-4 rounded border-gray-300 text-gray-900 cursor-pointer flex-shrink-0"
+                className="w-4 h-4 mt-1 rounded border-gray-300 text-gray-900 cursor-pointer flex-shrink-0"
               />
 
               {/* Clicking the text enters inline edit mode */}
@@ -239,7 +239,7 @@ export function ShoppingItemRow({
                 {displayName}
               </span>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 mt-1 flex-shrink-0">
                 {item.source_recipe_ids.length > 0 && !saveError && (
                   <div className="relative group/tooltip">
                     <Info size={15} className="text-gray-300 cursor-default" />
