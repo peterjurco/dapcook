@@ -107,7 +107,7 @@ export function GenerateShoppingModal({ slots, weekStart, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pb-16 sm:pb-0">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40"
