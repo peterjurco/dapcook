@@ -1,7 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Check, Pencil, Plus, ChevronUp, ChevronDown } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { X, Check, Pencil, Plus, GripVertical } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { ShoppingCategory } from '@/types/database'
 
@@ -18,6 +33,129 @@ interface Props {
   initialCategories: ShoppingCategory[]
 }
 
+interface RowProps {
+  cat: ShoppingCategory
+  editingId: string | null
+  renameValue: string
+  colorPickerFor: string | null
+  onRenameStart: (id: string, name: string) => void
+  onRenameChange: (value: string) => void
+  onRenameSubmit: (id: string) => void
+  onRenameCancel: () => void
+  onColorPickerToggle: (id: string) => void
+  onColorChange: (id: string, color: string | null) => void
+  onDeleteRequest: (id: string) => void
+}
+
+function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    zIndex: isDragging ? 10 : undefined,
+    position: isDragging ? 'relative' as const : undefined,
+  }
+
+  const {
+    editingId, renameValue, colorPickerFor,
+    onRenameStart, onRenameChange, onRenameSubmit, onRenameCancel,
+    onColorPickerToggle, onColorChange, onDeleteRequest,
+  } = rowProps
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 py-1.5 group">
+      {/* Drag handle */}
+      <button
+        type="button"
+        className="text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+        aria-label="Drag to reorder"
+        {...listeners}
+        {...attributes}
+      >
+        <GripVertical size={14} />
+      </button>
+
+      {/* Color dot */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => onColorPickerToggle(cat.id)}
+          className="w-5 h-5 rounded-full border border-gray-200 hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all flex-shrink-0"
+          style={{ backgroundColor: cat.color ?? '#e5e7eb' }}
+          title="Change color"
+        />
+        {colorPickerFor === cat.id && (
+          <div className="absolute z-10 top-7 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-wrap gap-1.5 w-56">
+            {PALETTE.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => onColorChange(cat.id, c)}
+                className="w-6 h-6 rounded-full hover:scale-110 transition-transform relative"
+                style={{ backgroundColor: c }}
+              >
+                {cat.color === c && (
+                  <Check size={12} className="absolute inset-0 m-auto text-white" strokeWidth={3} />
+                )}
+              </button>
+            ))}
+            {cat.color && (
+              <button
+                type="button"
+                onClick={() => onColorChange(cat.id, null)}
+                className="w-6 h-6 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
+                title="Remove color"
+              >
+                <X size={10} className="text-gray-400" />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Name / rename input */}
+      {editingId === cat.id ? (
+        <input
+          autoFocus
+          value={renameValue}
+          onChange={(e) => onRenameChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onRenameSubmit(cat.id)
+            if (e.key === 'Escape') onRenameCancel()
+          }}
+          onBlur={() => onRenameSubmit(cat.id)}
+          className="flex-1 text-sm px-2 py-0.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
+        />
+      ) : (
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <span className="text-sm text-gray-900 font-medium" style={cat.color ? { color: cat.color } : undefined}>
+            {cat.name}
+          </span>
+          <button
+            type="button"
+            onClick={() => onRenameStart(cat.id, cat.name)}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-700"
+            title="Rename"
+          >
+            <Pencil size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* Delete */}
+      <button
+        type="button"
+        onClick={() => onDeleteRequest(cat.id)}
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 flex-shrink-0"
+        title="Delete"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  )
+}
+
 export function ShoppingCategoriesEditor({ initialCategories }: Props) {
   const [categories, setCategories] = useState<ShoppingCategory[]>(initialCategories)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -26,6 +164,10 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [addName, setAddName] = useState('')
   const [addingNew, setAddingNew] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
 
   async function handleRename(id: string) {
     const newName = renameValue.trim()
@@ -63,31 +205,29 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
     setDeleteTarget(null)
   }
 
-  async function handleMove(id: string, direction: 'up' | 'down') {
-    const idx = categories.findIndex((c) => c.id === id)
-    const newIdx = direction === 'up' ? idx - 1 : idx + 1
-    if (newIdx < 0 || newIdx >= categories.length) return
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
 
-    const reordered = [...categories]
-    ;[reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]]
+    const oldIndex = categories.findIndex((c) => c.id === active.id)
+    const newIndex = categories.findIndex((c) => c.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
 
-    // Update sort_order values
+    const reordered = arrayMove(categories, oldIndex, newIndex)
     const updated = reordered.map((c, i) => ({ ...c, sort_order: i }))
     setCategories(updated)
 
-    // Persist both swapped items
-    await Promise.all([
-      fetch(`/api/shopping/categories/${updated[idx].id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sort_order: updated[idx].sort_order }),
-      }),
-      fetch(`/api/shopping/categories/${updated[newIdx].id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sort_order: updated[newIdx].sort_order }),
-      }),
-    ])
+    // Persist only changed sort_orders
+    const original = new Map(categories.map((c) => [c.id, c.sort_order]))
+    await Promise.all(
+      updated
+        .filter((c) => original.get(c.id) !== c.sort_order)
+        .map((c) => fetch(`/api/shopping/categories/${c.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sort_order: c.sort_order }),
+        }))
+    )
   }
 
   async function handleAdd() {
@@ -115,108 +255,28 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
         </p>
       )}
 
-      <div className="space-y-1">
-        {categories.map((cat, idx) => (
-          <div key={cat.id} className="flex items-center gap-2 py-1.5 group">
-            {/* Up/down reorder */}
-            <div className="flex flex-col gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                type="button"
-                onClick={() => handleMove(cat.id, 'up')}
-                disabled={idx === 0}
-                className="text-gray-300 hover:text-gray-600 disabled:opacity-0"
-              >
-                <ChevronUp size={12} />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMove(cat.id, 'down')}
-                disabled={idx === categories.length - 1}
-                className="text-gray-300 hover:text-gray-600 disabled:opacity-0"
-              >
-                <ChevronDown size={12} />
-              </button>
-            </div>
-
-            {/* Color dot */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setColorPickerFor(colorPickerFor === cat.id ? null : cat.id)}
-                className="w-5 h-5 rounded-full border border-gray-200 hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all flex-shrink-0"
-                style={{ backgroundColor: cat.color ?? '#e5e7eb' }}
-                title="Change color"
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1">
+            {categories.map((cat) => (
+              <SortableCategoryRow
+                key={cat.id}
+                cat={cat}
+                editingId={editingId}
+                renameValue={renameValue}
+                colorPickerFor={colorPickerFor}
+                onRenameStart={(id, name) => { setEditingId(id); setRenameValue(name) }}
+                onRenameChange={setRenameValue}
+                onRenameSubmit={handleRename}
+                onRenameCancel={() => setEditingId(null)}
+                onColorPickerToggle={(id) => setColorPickerFor(colorPickerFor === id ? null : id)}
+                onColorChange={handleColorChange}
+                onDeleteRequest={setDeleteTarget}
               />
-              {colorPickerFor === cat.id && (
-                <div className="absolute z-10 top-7 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-wrap gap-1.5 w-56">
-                  {PALETTE.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => handleColorChange(cat.id, c)}
-                      className="w-6 h-6 rounded-full hover:scale-110 transition-transform relative"
-                      style={{ backgroundColor: c }}
-                    >
-                      {cat.color === c && (
-                        <Check size={12} className="absolute inset-0 m-auto text-white" strokeWidth={3} />
-                      )}
-                    </button>
-                  ))}
-                  {cat.color && (
-                    <button
-                      type="button"
-                      onClick={() => handleColorChange(cat.id, null)}
-                      className="w-6 h-6 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
-                      title="Remove color"
-                    >
-                      <X size={10} className="text-gray-400" />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Name / rename input */}
-            {editingId === cat.id ? (
-              <input
-                autoFocus
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleRename(cat.id)
-                  if (e.key === 'Escape') setEditingId(null)
-                }}
-                onBlur={() => handleRename(cat.id)}
-                className="flex-1 text-sm px-2 py-0.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-300"
-              />
-            ) : (
-              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                <span className="text-sm text-gray-900 font-medium" style={cat.color ? { color: cat.color } : undefined}>
-                  {cat.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => { setEditingId(cat.id); setRenameValue(cat.name) }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-700"
-                  title="Rename"
-                >
-                  <Pencil size={12} />
-                </button>
-              </div>
-            )}
-
-            {/* Delete */}
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(cat.id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 flex-shrink-0"
-              title="Delete"
-            >
-              <X size={14} />
-            </button>
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Add new */}
       {addingNew ? (
