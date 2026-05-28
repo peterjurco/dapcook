@@ -34,7 +34,7 @@ export function AppShell({ user, profile, isAdmin = false, children }: AppShellP
   const posthog = usePostHog()
 
   return (
-    <div className="flex flex-col md:flex-row md:h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-dvh md:h-screen bg-gray-50">
       {/* Sidebar — desktop only */}
       <aside className="hidden md:flex w-56 flex-shrink-0 bg-white border-r border-gray-200 flex-col">
         <div className="px-4 py-5 border-b border-gray-200">
