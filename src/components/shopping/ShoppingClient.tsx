@@ -209,9 +209,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const visibleItems = items.filter((item) => !item.is_checked)
   const colorMap = new Map(categories.map((c) => [c.name, c.color]))
 
-  // Show category headers only when there are 2+ distinct effective categories
   const distinctCats = new Set(visibleItems.map((i) => i.category ?? 'Other'))
-  const showHeaders = distinctCats.size > 1
+  const showHeaders = distinctCats.size >= 1
 
   function getListLines() {
     return visibleItems.map((item) => {
