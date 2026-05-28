@@ -45,6 +45,7 @@ export function ShoppingItemRow({
   const [saveError, setSaveError] = useState<string | null>(null)
   const saveRef = useRef(false)
   const [exitState, setExitState] = useState<ExitState>('idle')
+  const [deleteHovered, setDeleteHovered] = useState(false)
 
   function handleCheckChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.checked) {
@@ -255,7 +256,9 @@ export function ShoppingItemRow({
                 <button
                   type="button"
                   onClick={() => onDelete(item.id)}
-                  className="text-gray-300 hover:text-red-500 transition-colors"
+                  onMouseEnter={() => setDeleteHovered(true)}
+                  onMouseLeave={() => setDeleteHovered(false)}
+                  className={`transition-colors ${deleteHovered ? 'text-red-500' : 'text-gray-300'}`}
                   title="Delete"
                 >
                   <X size={18} />
