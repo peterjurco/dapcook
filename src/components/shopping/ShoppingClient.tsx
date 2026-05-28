@@ -34,6 +34,8 @@ interface SortableRowProps {
   onCheck: (id: string, checked: boolean) => void
   onUpdate: (id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) => void
   onDelete: (id: string) => void
+  isNewItem?: boolean
+  onCreateBelow?: (id: string) => void
 }
 
 function SortableRow({ item, ...rowProps }: SortableRowProps) {
@@ -90,6 +92,41 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }
 
   async function handleUpdate(id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) {
+    if (id.startsWith('pending-')) {
+      // Pending item: POST to create for real, then PATCH sort_order to keep position
+      if (!changes.name?.trim()) {
+        setItems((prev) => prev.filter((item) => item.id !== id))
+        return
+      }
+      const pendingItem = items.find((i) => i.id === id)
+      if (!list || !pendingItem) return
+      const res = await fetch('/api/shopping/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          list_id: list.id,
+          name: changes.name.trim(),
+          category: pendingItem.category,
+          quantity: null,
+          unit: null,
+        }),
+      })
+      if (res.ok) {
+        const created = await res.json() as ShoppingItem
+        const targetOrder = pendingItem.sort_order
+        await fetch(`/api/shopping/items/${created.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sort_order: targetOrder }),
+        })
+        setItems((prev) => prev.map((i) =>
+          i.id === id ? { ...created, sort_order: targetOrder } : i
+        ))
+      } else {
+        setItems((prev) => prev.filter((i) => i.id !== id))
+      }
+      return
+    }
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, ...changes } : item))
     await fetch(`/api/shopping/items/${id}`, {
       method: 'PATCH',
@@ -100,7 +137,32 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
 
   async function handleDelete(id: string) {
     setItems((prev) => prev.filter((item) => item.id !== id))
-    await fetch(`/api/shopping/items/${id}`, { method: 'DELETE' })
+    if (!id.startsWith('pending-')) {
+      await fetch(`/api/shopping/items/${id}`, { method: 'DELETE' })
+    }
+  }
+
+  function handleCreateBelow(afterId: string) {
+    const afterItem = items.find((i) => i.id === afterId)
+    if (!afterItem) return
+    const pendingItem: ShoppingItem = {
+      id: `pending-${Date.now()}`,
+      shopping_list_id: list?.id ?? '',
+      name: '',
+      quantity: null,
+      unit: null,
+      category: afterItem.category,
+      is_checked: false,
+      sort_order: afterItem.sort_order + 0.5,
+      source_recipe_ids: [],
+    }
+    setItems((prev) => {
+      const idx = prev.findIndex((i) => i.id === afterId)
+      if (idx === -1) return [...prev, pendingItem]
+      const next = [...prev]
+      next.splice(idx + 1, 0, pendingItem)
+      return next
+    })
   }
 
   async function handleAddItem() {
@@ -157,9 +219,10 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       ...hiddens,
     ])
 
-    // Persist changed positions and/or category
+    // Persist changed positions and/or category (skip unsaved pending items)
     await Promise.all(
       reordered.flatMap((item, i) => {
+        if (item.id.startsWith('pending-')) return []
         const patches: Record<string, unknown> = {}
         if (item.sort_order !== i) patches.sort_order = i
         if (item.id === draggedId && categoryChanged) patches.category = newCategory
@@ -261,6 +324,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
                         onCheck={handleCheck}
                         onUpdate={handleUpdate}
                         onDelete={handleDelete}
+                        isNewItem={item.id.startsWith('pending-')}
+                        onCreateBelow={handleCreateBelow}
                       />
                     </div>
                   )

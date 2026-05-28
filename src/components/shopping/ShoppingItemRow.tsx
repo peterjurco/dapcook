@@ -13,6 +13,13 @@ interface Props {
   /** Spread onto the grip button to enable drag-to-reorder */
   dragHandleListeners?: Record<string, unknown>
   dragHandleAttributes?: Record<string, unknown>
+  /**
+   * True for freshly created items: starts in edit mode; cancel/empty-save
+   * calls onDelete (discards) instead of just closing the editor.
+   */
+  isNewItem?: boolean
+  /** Called after Enter-save — parent inserts a new blank item below. */
+  onCreateBelow?: (id: string) => void
 }
 
 // Exit animation states for checking off an item:
@@ -23,9 +30,16 @@ export function ShoppingItemRow({
   item, recipeNames,
   onCheck, onUpdate, onDelete,
   dragHandleListeners, dragHandleAttributes,
+  isNewItem, onCreateBelow,
 }: Props) {
-  const [editing, setEditing] = useState(false)
-  const [editText, setEditText] = useState('')
+  const [editing, setEditing] = useState(isNewItem ?? false)
+  const [editText, setEditText] = useState(() => {
+    if (isNewItem) return ''
+    const prefix = item.quantity != null
+      ? `${formatQty(item.quantity)}${item.unit ?? ''}`
+      : (item.unit ?? '')
+    return (prefix ? `${prefix} ${item.name}` : item.name).trim()
+  })
   const saveRef = useRef(false)
   const [exitState, setExitState] = useState<ExitState>('idle')
 
@@ -42,30 +56,45 @@ export function ShoppingItemRow({
   }
 
   function startEdit() {
-    // Combine qty + unit + name into a single editable string, matching the display
     const prefix = item.quantity != null
       ? `${formatQty(item.quantity)}${item.unit ?? ''}`
       : (item.unit ?? '')
-    const full = prefix ? `${prefix} ${item.name}` : item.name
+    const full = (prefix ? `${prefix} ${item.name}` : item.name).trim()
     setEditText(full)
     setEditing(true)
   }
 
-  function save() {
+  /**
+   * @param createBelow - true when triggered by Enter (not blur); calls onCreateBelow after save
+   */
+  function save(createBelow = false) {
     if (saveRef.current) return
     saveRef.current = true
     const trimmed = editText.trim()
+
+    // New item with empty name → discard
+    if (!trimmed && isNewItem) {
+      onDelete(item.id)
+      setTimeout(() => { saveRef.current = false }, 100)
+      return
+    }
+
     onUpdate(item.id, {
       name: trimmed || item.name,
       quantity: null,
       unit: null,
     })
     setEditing(false)
+    if (createBelow) onCreateBelow?.(item.id)
     setTimeout(() => { saveRef.current = false }, 100)
   }
 
   function cancel() {
-    setEditing(false)
+    if (isNewItem) {
+      onDelete(item.id)   // Discard empty new-item
+    } else {
+      setEditing(false)
+    }
   }
 
   const isVisuallyChecked = exitState !== 'idle' || item.is_checked
@@ -106,14 +135,17 @@ export function ShoppingItemRow({
               onChange={handleCheckChange}
               className="w-4 h-4 rounded border-gray-300 text-gray-900 cursor-pointer flex-shrink-0"
             />
-            {/* Inline transparent input — blur saves, Escape cancels.
+            {/* Inline transparent input — blur saves, Enter saves+creates-below, Escape cancels.
                 font-size: 16px prevents iOS Safari from zooming on focus. */}
             <input
               autoFocus
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
-              onBlur={save}
-              onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel() }}
+              onBlur={() => save()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); save(true) }
+                if (e.key === 'Escape') cancel()
+              }}
               style={{ fontSize: '16px' }}
               className="flex-1 min-w-0 bg-transparent border-0 focus:outline-none text-gray-900"
             />
