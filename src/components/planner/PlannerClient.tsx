@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { ShoppingCart, Pencil, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
-import { GenerateShoppingModal } from './GenerateShoppingModal'
 import { DayHeader } from './DayHeader'
 import { DaySlot } from './DaySlot'
 import { SlotCard } from './SlotCard'
@@ -25,13 +25,13 @@ interface PlannerClientProps {
 
 export function PlannerClient({ weekStart }: PlannerClientProps) {
   const posthog = usePostHog()
+  const router = useRouter()
   const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(null)
   const [slots, setSlots] = useState<MealSlotWithRecipe[]>([])
   const [loading, setLoading] = useState(true)
   const [activeSlot, setActiveSlot] = useState<MealSlotWithRecipe | null>(null)
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
   const [addingToDay, setAddingToDay] = useState<number | null>(null)
-  const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [isMobileEditMode, setIsMobileEditMode] = useState(false)
   const slotGridRef = useRef<HTMLDivElement>(null)
 
@@ -478,21 +478,13 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
         <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
           <button
             type="button"
-            onClick={() => setShowGenerateModal(true)}
+            onClick={() => router.push(`/shopping/generate?week=${weekStartStr}`)}
             className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
           >
             <ShoppingCart size={14} />
             Generate shopping list
           </button>
         </div>
-      )}
-
-      {showGenerateModal && (
-        <GenerateShoppingModal
-          slots={slots}
-          weekStart={weekStart}
-          onClose={() => setShowGenerateModal(false)}
-        />
       )}
 
     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { BulkTransformModal } from './BulkTransformModal'
+import { ConfirmTransformModal } from './ConfirmTransformModal'
 import { SUPPORTED_LANGUAGES } from '@/lib/constants/languages'
 
 interface Props {
@@ -10,14 +11,16 @@ interface Props {
   recipeIds: string[]
 }
 
+type Phase = 'idle' | 'confirm' | 'bulk'
+
 export function LanguageSelector({ initialValue, currentPreferredUnits, recipeIds }: Props) {
   const [value, setValue] = useState(initialValue)
-  const [showModal, setShowModal] = useState(false)
+  const [phase, setPhase] = useState<Phase>('idle')
   const [pendingLanguage, setPendingLanguage] = useState<string | null>(null)
 
   async function handleChange(newLang: string) {
     if (newLang === value) return
-    setValue(newLang)  // optimistic update
+    setValue(newLang)
 
     const res = await fetch('/api/household', {
       method: 'PATCH',
@@ -31,15 +34,16 @@ export function LanguageSelector({ initialValue, currentPreferredUnits, recipeId
     }
 
     if (recipeIds.length > 0) {
-      const confirmed = confirm(
-        `You have ${recipeIds.length} recipe${recipeIds.length === 1 ? '' : 's'}. Translate them now?`
-      )
-      if (confirmed) {
-        setPendingLanguage(newLang)
-        setShowModal(true)
-      }
+      setPendingLanguage(newLang)
+      setPhase('confirm')
     }
   }
+
+  const targetLangLabel = SUPPORTED_LANGUAGES.find((l) => l.code === pendingLanguage)?.label ?? pendingLanguage ?? ''
+
+  function handleConfirm() { setPhase('bulk') }
+  function handleCancel() { setPhase('idle'); setPendingLanguage(null) }
+  function handleBulkClose() { setPhase('idle'); setPendingLanguage(null) }
 
   return (
     <>
@@ -55,12 +59,22 @@ export function LanguageSelector({ initialValue, currentPreferredUnits, recipeId
         ))}
       </select>
 
-      {showModal && pendingLanguage && (
+      {phase === 'confirm' && pendingLanguage && (
+        <ConfirmTransformModal
+          recipeCount={recipeIds.length}
+          message={`Translate your recipes to ${targetLangLabel}?`}
+          confirmLabel="Translate all"
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
+      )}
+
+      {phase === 'bulk' && pendingLanguage && (
         <BulkTransformModal
           recipeIds={recipeIds}
           targetLanguage={pendingLanguage}
           targetUnits={currentPreferredUnits}
-          onClose={() => { setShowModal(false); setPendingLanguage(null) }}
+          onClose={handleBulkClose}
         />
       )}
     </>

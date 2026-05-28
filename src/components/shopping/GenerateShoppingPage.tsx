@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import { getWeekDays, formatDayLabel } from '@/lib/utils/week'
 
@@ -18,10 +18,9 @@ interface RecipeEntry {
 interface Props {
   slots: MealSlotWithRecipe[]
   weekStart: Date
-  onClose: () => void
 }
 
-export function GenerateShoppingModal({ slots, weekStart, onClose }: Props) {
+export function GenerateShoppingPage({ slots, weekStart }: Props) {
   const router = useRouter()
   const weekDays = getWeekDays(weekStart)
 
@@ -107,36 +106,29 @@ export function GenerateShoppingModal({ slots, weekStart, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pb-16 sm:pb-0">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <div className="max-w-xl mx-auto px-4 py-10 pb-28">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          type="button"
+          onClick={() => router.push('/planner')}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Planner
+        </button>
+        <h1 className="text-xl font-semibold text-gray-900">Generate shopping list</h1>
+      </div>
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] flex flex-col shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">Generate shopping list</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 transition-colors"
-            aria-label="Close"
-          >
-            <X size={18} />
+      {entries.length === 0 ? (
+        <p className="text-sm text-gray-500 text-center mt-20">
+          No recipes in this week&apos;s plan.{' '}
+          <button type="button" onClick={() => router.push('/planner')} className="underline hover:text-gray-900">
+            Go back to the planner
           </button>
-        </div>
-
-        {/* Recipe list */}
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
-          {entries.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-4">
-              No recipes in this week&apos;s plan.
-            </p>
-          )}
+        </p>
+      ) : (
+        <div className="space-y-3">
           {entries.map((entry) => (
             <div
               key={entry.recipeId}
@@ -168,6 +160,7 @@ export function GenerateShoppingModal({ slots, weekStart, onClose }: Props) {
                     min={1}
                     value={entry.portions}
                     onChange={(e) => updatePortions(entry.recipeId, e.target.value)}
+                    style={{ fontSize: '16px' }}
                     className="w-16 text-sm text-center px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
                   />
                 </div>
@@ -184,20 +177,22 @@ export function GenerateShoppingModal({ slots, weekStart, onClose }: Props) {
             </div>
           ))}
         </div>
+      )}
 
-        {/* Footer */}
-        <div className="px-5 pb-5 pt-3 border-t border-gray-100 space-y-2">
+      {/* Sticky footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4">
+        <div className="max-w-xl mx-auto space-y-2">
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button
             type="button"
             onClick={handleGenerate}
             disabled={isGenerating || activeEntries.length === 0}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isGenerating ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : null}
-            {isGenerating ? 'Generating…' : 'Generate'}
+            {isGenerating ? 'Generating…' : `Generate shopping list`}
           </button>
         </div>
       </div>
