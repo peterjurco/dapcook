@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
       // Step 2: Parse + household lookup in parallel
       send({ type: 'step', key: 'parsing', message: 'Reading ingredients and steps...' })
-      const { raw } = scrapeResult
+      const { raw, detectedLanguage } = scrapeResult
       const { rawIngredients, rawSteps, ...meta } = raw
 
       const [{ ingredients, steps }, existingTags, { data: household }] = await Promise.all([
@@ -77,7 +77,11 @@ export async function POST(request: NextRequest) {
         steps,
       }
 
-      if (!household?.translation_enabled) {
+      // Normalise to base language code: "en-US" → "en"
+      const pageLanguage = detectedLanguage?.split('-')[0]?.toLowerCase()
+      const alreadyInTargetLanguage = !!pageLanguage && pageLanguage === household?.preferred_language
+
+      if (!household?.translation_enabled || alreadyInTargetLanguage) {
         send({ type: 'done', draft: baseDraft })
         controller.close()
         return

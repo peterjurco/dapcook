@@ -8,6 +8,8 @@ export type ScrapeResult = {
     rawIngredients: string[]
     rawSteps: string[]
   }
+  /** BCP-47 language tag from the page's <html lang> attribute, e.g. "sk", "en-US" */
+  detectedLanguage?: string
 }
 
 export async function scrapeRecipe(url: string): Promise<ScrapeResult> {
@@ -29,6 +31,9 @@ export async function scrapeRecipe(url: string): Promise<ScrapeResult> {
   const html = await response.text()
   const $ = cheerio.load(html)
 
+  // Grab page language from <html lang="..."> (BCP-47, e.g. "sk", "en-US")
+  const detectedLanguage = $('html').attr('lang') ?? $('html').attr('xml:lang') ?? undefined
+
   // Collect all JSON-LD script tag contents
   const jsonLdContents: string[] = []
   $('script[type="application/ld+json"]').each((_, el) => {
@@ -38,9 +43,9 @@ export async function scrapeRecipe(url: string): Promise<ScrapeResult> {
 
   const jsonLdResult = parseJsonLd(jsonLdContents, url)
   if (jsonLdResult) {
-    return { raw: jsonLdResult }
+    return { raw: jsonLdResult, detectedLanguage }
   }
 
   // Fall back to OG/meta tags
-  return { raw: parseMetaFallback($, url) }
+  return { raw: parseMetaFallback($, url), detectedLanguage }
 }
