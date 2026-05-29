@@ -23,10 +23,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const isAdmin = user.email === process.env.ADMIN_EMAIL
 
+  const birthdayUser = process.env.BIRTHDAY_USER?.toLowerCase()
+  const birthdayDate = process.env.BIRTHDAY_DATE
+  const birthdayMessage = process.env.BIRTHDAY_MESSAGE
+  const birthdayConfig =
+    birthdayUser && birthdayDate && birthdayMessage && user.email?.toLowerCase() === birthdayUser
+      ? { date: birthdayDate, message: birthdayMessage }
+      : undefined
+
   return (
     <>
       {user.email && <PostHogIdentifier userId={user.id} email={user.email} optOut={isAdmin} />}
-      <AppShell user={user} profile={profile} isAdmin={isAdmin}>
+      <AppShell user={user} profile={profile} isAdmin={isAdmin} birthdayConfig={birthdayConfig}>
         {children}
       </AppShell>
     </>

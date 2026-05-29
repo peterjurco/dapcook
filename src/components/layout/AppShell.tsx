@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils/cn'
 import { signOut } from '@/lib/auth/actions'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
+import { BirthdayOverlay } from '@/components/ui/BirthdayOverlay'
 
 interface NavItem {
   href: string
@@ -26,15 +27,22 @@ interface AppShellProps {
   user: User
   profile: Profile
   isAdmin?: boolean
+  birthdayConfig?: { date: string; message: string }
   children: React.ReactNode
 }
 
-export function AppShell({ user, profile, isAdmin = false, children }: AppShellProps) {
+export function AppShell({ user, profile, isAdmin = false, birthdayConfig, children }: AppShellProps) {
   const pathname = usePathname()
   const posthog = usePostHog()
 
   return (
     <div className="flex flex-col md:flex-row min-h-dvh md:h-screen bg-gray-50">
+      {birthdayConfig && (
+        <BirthdayOverlay
+          birthdayDate={birthdayConfig.date}
+          birthdayMessage={birthdayConfig.message}
+        />
+      )}
       {/* Sidebar — desktop only */}
       <aside className="hidden md:flex w-56 flex-shrink-0 bg-white border-r border-gray-200 flex-col">
         <div className="px-4 py-5 border-b border-gray-200">
