@@ -1,9 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
-import { Clock, Users, CalendarPlus, Check, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { Clock, Users } from 'lucide-react'
+import { AddToPlanButton } from './AddToPlanButton'
 import type { Recipe } from '@/types/database'
 
 interface RecipeCardProps {
@@ -21,25 +20,6 @@ function formatTime(min: number | null): string | null {
 
 export function RecipeCard({ recipe, tagColors }: RecipeCardProps) {
   const totalTime = (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0)
-  const [addState, setAddState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
-
-  async function handleAddToPlan(e: React.MouseEvent) {
-    e.preventDefault() // don't navigate to recipe
-    if (addState !== 'idle') return
-    setAddState('loading')
-    const res = await fetch('/api/planner/slots/next-empty', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipe_id: recipe.id }),
-    })
-    if (res.ok) {
-      setAddState('done')
-      setTimeout(() => setAddState('idle'), 2000)
-    } else {
-      setAddState('error')
-      setTimeout(() => setAddState('idle'), 2500)
-    }
-  }
 
   return (
     <Link href={`/recipes/${recipe.id}`} className="group block">
@@ -63,27 +43,7 @@ export function RecipeCard({ recipe, tagColors }: RecipeCardProps) {
           )}
 
           {/* Add to plan button */}
-          <button
-            type="button"
-            onClick={handleAddToPlan}
-            disabled={addState === 'loading'}
-            className={cn(
-              'absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium shadow-sm transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100',
-              addState === 'done'
-                ? 'bg-green-500 text-white opacity-100'
-                : addState === 'error'
-                ? 'bg-red-500 text-white opacity-100'
-                : 'bg-white text-gray-700 hover:bg-gray-900 hover:text-white'
-            )}
-            title="Add to weekly plan"
-          >
-            {addState === 'loading' && <Loader2 size={11} className="animate-spin" />}
-            {addState === 'done' && <Check size={11} />}
-            {addState === 'error' && <span>Full</span>}
-            {addState === 'idle' && <CalendarPlus size={11} />}
-            {addState === 'idle' && 'Plan'}
-            {addState === 'done' && 'Added'}
-          </button>
+          <AddToPlanButton recipeId={recipe.id} variant="overlay" />
         </div>
 
         {/* Content */}

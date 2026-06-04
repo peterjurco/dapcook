@@ -34,10 +34,10 @@ const recipe = {
 } satisfies Recipe
 
 describe('RecipeCard', () => {
-  it('keeps the plan button visible on mobile and hover-revealed on larger screens', () => {
+  it('keeps the add to plan button visible on mobile and hover-revealed on larger screens', () => {
     render(<RecipeCard recipe={recipe} tagColors={{}} />)
 
-    const planButton = screen.getByRole('button', { name: /plan/i })
+    const planButton = screen.getByRole('button', { name: /add to plan/i })
 
     expect(planButton).toHaveClass('opacity-100')
     expect(planButton).toHaveClass('sm:opacity-0')

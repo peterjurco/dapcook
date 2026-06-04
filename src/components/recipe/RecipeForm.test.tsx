@@ -59,6 +59,7 @@ const sampleRecipe: Recipe = {
   notes: 'Great with coffee',
   is_archived: false,
   last_used_at: null,
+  title_normalized: 'test cake',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
 }
@@ -145,6 +146,14 @@ describe('RecipeForm — rendering', () => {
     expect(screen.getByText('dessert')).toBeInTheDocument()
     expect(screen.getByText('baking')).toBeInTheDocument()
   })
+
+  it('shows the delete action only in edit mode', () => {
+    const { rerender } = render(<RecipeForm />)
+    expect(screen.queryByRole('button', { name: /delete/i })).toBeNull()
+
+    rerender(<RecipeForm recipe={sampleRecipe} />)
+    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+  })
 })
 
 // ── validation ─────────────────────────────────────────────────────────────
@@ -154,7 +163,7 @@ describe('RecipeForm — validation', () => {
     render(<RecipeForm />)
     fireEvent.submit(screen.getByRole('button', { name: /save recipe/i }).closest('form')!)
     await waitFor(() => expect(screen.getByText(/title is required/i)).toBeInTheDocument())
-    expect(global.fetch).not.toHaveBeenCalled()
+    expect(global.fetch).not.toHaveBeenCalledWith('/api/recipes', expect.anything())
   })
 })
 
@@ -188,8 +197,9 @@ describe('RecipeForm — submission', () => {
     fireEvent.click(screen.getByRole('button', { name: /save recipe/i }))
 
     await waitFor(() => {
-      const call = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]
-      const body = JSON.parse(call[1].body as string) as { title: string }
+      const call = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(([url]) => url === '/api/recipes')
+      expect(call).toBeDefined()
+      const body = JSON.parse(call![1].body as string) as { title: string }
       expect(body.title).toBe('Cheese Soup')
     })
   })

@@ -8,6 +8,7 @@ import { IngredientEditor } from './IngredientEditor'
 import { StepEditor } from './StepEditor'
 import { ImageUpload } from './ImageUpload'
 import { TagInput } from './TagInput'
+import { DeleteRecipeButton } from './DeleteRecipeButton'
 import type { Recipe } from '@/types/database'
 import type { RecipeDraft, IngredientFormItem, Step } from '@/types/recipe'
 import type { TagData } from '@/app/api/tags/route'
@@ -282,21 +283,24 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
           <p className="text-sm text-red-600">{error}</p>
         )}
 
-        <div className="flex items-center gap-3 pb-8">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {saving ? 'Saving...' : isEdit ? 'Save changes' : 'Save recipe'}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Cancel
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-8">
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : isEdit ? 'Save changes' : 'Save recipe'}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+          {isEdit && <DeleteRecipeButton recipeId={recipe.id} />}
         </div>
       </div>
     </form>
