@@ -16,6 +16,7 @@ import {
   formatDayLabel,
   toDateString,
 } from '@/lib/utils/week'
+import { getCachedWeekData, setCachedWeekData, updateCachedWeekSlots } from './plannerWeekCache'
 import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
 import type { Recipe, WeekPlan } from '@/types/database'
 
@@ -26,29 +27,47 @@ interface PlannerClientProps {
 export function PlannerClient({ weekStart }: PlannerClientProps) {
   const posthog = usePostHog()
   const router = useRouter()
-  const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(null)
-  const [slots, setSlots] = useState<MealSlotWithRecipe[]>([])
-  const [loading, setLoading] = useState(true)
+  const weekStartStr = toDateString(weekStart)
+  const cachedWeekData = getCachedWeekData(weekStartStr)
+  const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(cachedWeekData?.weekPlan ?? null)
+  const [slots, setSlots] = useState<MealSlotWithRecipe[]>(cachedWeekData?.slots ?? [])
+  const [loading, setLoading] = useState(!cachedWeekData)
   const [activeSlot, setActiveSlot] = useState<MealSlotWithRecipe | null>(null)
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
   const [addingToDay, setAddingToDay] = useState<number | null>(null)
   const [isMobileEditMode, setIsMobileEditMode] = useState(false)
   const slotGridRef = useRef<HTMLDivElement>(null)
 
-  const weekStartStr = toDateString(weekStart)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   const loadWeek = useCallback(async () => {
-    setLoading(true)
+    const cached = getCachedWeekData(weekStartStr)
+    if (cached) {
+      setWeekPlan(cached.weekPlan)
+      setSlots(cached.slots)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
     const res = await fetch(`/api/planner/week?week=${weekStartStr}`)
     if (res.ok) {
       const data = await res.json() as WeekData
+      setCachedWeekData(weekStartStr, data)
       setWeekPlan(data.weekPlan)
       setSlots(data.slots)
     }
     setLoading(false)
   }, [weekStartStr])
+
+  const setSlotsAndCache = useCallback((update: (prev: MealSlotWithRecipe[]) => MealSlotWithRecipe[]) => {
+    setSlots((prev) => {
+      const next = update(prev)
+      updateCachedWeekSlots(weekStartStr, weekPlan, () => next)
+      return next
+    })
+  }, [weekPlan, weekStartStr])
 
   useEffect(() => {
     loadWeek()
@@ -74,7 +93,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     })
     if (res.ok) {
       const slot = await res.json() as MealSlotWithRecipe
-      setSlots((prev) => [...prev, slot])
+      setSlotsAndCache((prev) => [...prev, slot])
       posthog.capture('meal_planned')
       if (!weekPlan) loadWeek() // refresh to get weekPlan
     }
@@ -90,14 +109,14 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     })
     if (res.ok) {
       const slot = await res.json() as MealSlotWithRecipe
-      setSlots((prev) => [...prev, slot])
+      setSlotsAndCache((prev) => [...prev, slot])
       if (!weekPlan) loadWeek()
     }
     setAddingToDay(null)
   }
 
   async function handleDelete(slotId: string) {
-    setSlots((prev) => prev.filter((s) => s.id !== slotId))
+    setSlotsAndCache((prev) => prev.filter((s) => s.id !== slotId))
     await fetch(`/api/planner/slots/${slotId}`, { method: 'DELETE' })
   }
 
@@ -128,7 +147,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   // Called on every column boundary crossed during resize drag — no API call
   function handleSpanPreview(slotId: string, newSpan: number) {
-    setSlots((prev) => prev.map((s) => s.id === slotId ? { ...s, span_days: newSpan } : s))
+    setSlotsAndCache((prev) => prev.map((s) => s.id === slotId ? { ...s, span_days: newSpan } : s))
   }
 
   // Called once on mouseup / button tap — persists the final span and cascades displaced slots
@@ -141,7 +160,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     const displacements = computeDisplacements(slots, slotId, slot.day_of_week, newSpan)
 
     if (displacements.size > 0) {
-      setSlots((prev) => prev
+      setSlotsAndCache((prev) => prev
         .filter((s) => {
           const d = displacements.get(s.id)
           return d === undefined || d <= 7
@@ -192,7 +211,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
     if (updates.length === 0) return
 
-    setSlots((prev) => prev.map((s) => {
+    setSlotsAndCache((prev) => prev.map((s) => {
       const u = updates.find((u) => u.id === s.id)
       return u ? { ...s, day_of_week: u.day } : s
     }))
@@ -262,7 +281,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     const originalDays = new Map(slots.map((s) => [s.id, s.day_of_week]))
 
     // Optimistic update
-    setSlots((prev) => prev.map((s) => {
+    setSlotsAndCache((prev) => prev.map((s) => {
       const newDay = dayUpdates.get(s.id)
       return newDay !== undefined ? { ...s, day_of_week: newDay } : s
     }))
@@ -277,7 +296,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
     Promise.all(moves).catch(() => {
       // Revert all on error
-      setSlots((prev) => prev.map((s) => {
+      setSlotsAndCache((prev) => prev.map((s) => {
         const orig = originalDays.get(s.id)
         return orig !== undefined ? { ...s, day_of_week: orig } : s
       }))
