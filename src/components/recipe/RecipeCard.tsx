@@ -68,7 +68,7 @@ export function RecipeCard({ recipe, tagColors }: RecipeCardProps) {
             onClick={handleAddToPlan}
             disabled={addState === 'loading'}
             className={cn(
-              'absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium shadow-sm transition-all opacity-0 group-hover:opacity-100',
+              'absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium shadow-sm transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100',
               addState === 'done'
                 ? 'bg-green-500 text-white opacity-100'
                 : addState === 'error'
