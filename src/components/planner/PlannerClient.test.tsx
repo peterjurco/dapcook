@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlannerClient } from './PlannerClient'
@@ -158,7 +158,7 @@ describe('PlannerClient', () => {
     expect(screen.queryByRole('heading', { name: /nothing planned for this week/i })).toBeNull()
   })
 
-  it('places planner actions directly under the week picker for planned weeks', async () => {
+  it('places mobile planner actions in one row directly under the week picker', async () => {
     global.fetch = vi.fn().mockResolvedValue(response(weekData('Action Pasta')))
 
     render(<PlannerClient weekStart={new Date('2026-06-22T00:00:00.000Z')} />)
@@ -167,11 +167,29 @@ describe('PlannerClient', () => {
 
     const weekPicker = screen.getByRole('navigation')
     const actions = screen.getByRole('region', { name: /planner actions/i })
-    const generateButton = screen.getByRole('button', { name: /generate shopping list/i })
+    const generateButton = within(actions).getByRole('button', { name: /generate shopping list/i })
 
-    expect(actions).toContainElement(screen.getByRole('button', { name: /edit/i }))
+    expect(actions).toHaveClass('flex-row')
+    expect(actions).toHaveClass('md:hidden')
+    expect(actions).toContainElement(within(actions).getByRole('button', { name: /edit/i }))
     expect(actions).toContainElement(generateButton)
     expect(weekPicker.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(actions.compareDocumentPosition(screen.getByTestId('day-1')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('keeps the desktop shopping list action below the planner grid', async () => {
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Desktop Pasta')))
+
+    render(<PlannerClient weekStart={new Date('2026-06-29T00:00:00.000Z')} />)
+
+    expect(await screen.findByText('Desktop Pasta')).toBeInTheDocument()
+
+    const shoppingActions = screen.getByRole('region', { name: /shopping list actions/i })
+    expect(shoppingActions).toHaveClass('hidden')
+    expect(shoppingActions).toHaveClass('md:flex')
+    expect(shoppingActions).toContainElement(
+      within(shoppingActions).getByRole('button', { name: /generate shopping list/i })
+    )
+    expect(screen.getByTestId('day-1').compareDocumentPosition(shoppingActions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

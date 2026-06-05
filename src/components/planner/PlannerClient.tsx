@@ -492,6 +492,19 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
       {/* WeekRulesPanel hidden for now */}
 
+      {hasRecipeSlots && (
+        <section aria-label="Shopping list actions" className="hidden md:flex mt-6 pt-6 border-t border-gray-100 justify-end">
+          <button
+            type="button"
+            onClick={() => router.push(`/shopping/generate?week=${weekStartStr}`)}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+          >
+            <ShoppingCart size={14} />
+            Generate shopping list
+          </button>
+        </section>
+      )}
+
     </div>
   )
 }
@@ -510,14 +523,12 @@ function PlannerActions({
   return (
     <section
       aria-label="Planner actions"
-      className={`-mt-3 mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-start ${
-        hasRecipeSlots ? '' : 'md:hidden'
-      }`}
+      className="-mt-3 mb-6 flex flex-row items-stretch gap-2 md:hidden"
     >
       <button
         type="button"
         onClick={onToggleMobileEdit}
-        className={`md:hidden inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
           isMobileEditMode
             ? 'bg-gray-900 text-white'
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -531,7 +542,7 @@ function PlannerActions({
         <button
           type="button"
           onClick={onGenerateShoppingList}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+          className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
         >
           <ShoppingCart size={14} />
           Generate shopping list
