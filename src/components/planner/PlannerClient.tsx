@@ -520,6 +520,24 @@ function PlannerActions({
   onToggleMobileEdit: () => void
   onGenerateShoppingList: () => void
 }) {
+  if (isMobileEditMode) {
+    return (
+      <section
+        aria-label="Planner actions"
+        className="-mt-3 mb-6 flex flex-row items-stretch gap-2 md:hidden"
+      >
+        <button
+          type="button"
+          onClick={onToggleMobileEdit}
+          className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+        >
+          <X size={15} />
+          Done
+        </button>
+      </section>
+    )
+  }
+
   return (
     <section
       aria-label="Planner actions"
@@ -528,14 +546,10 @@ function PlannerActions({
       <button
         type="button"
         onClick={onToggleMobileEdit}
-        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-          isMobileEditMode
-            ? 'bg-gray-900 text-white'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        }`}
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
       >
-        {isMobileEditMode ? <X size={15} /> : <Pencil size={15} />}
-        {isMobileEditMode ? 'Done' : 'Edit'}
+        <Pencil size={15} />
+        Edit
       </button>
 
       {hasRecipeSlots && (

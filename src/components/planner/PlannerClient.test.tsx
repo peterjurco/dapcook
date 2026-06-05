@@ -192,4 +192,22 @@ describe('PlannerClient', () => {
     )
     expect(screen.getByTestId('day-1').compareDocumentPosition(shoppingActions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
+
+  it('shows only Done in the mobile planner actions while editing', async () => {
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Edit Pasta')))
+
+    render(<PlannerClient weekStart={new Date('2026-07-06T00:00:00.000Z')} />)
+
+    expect(await screen.findByText('Edit Pasta')).toBeInTheDocument()
+
+    const actions = screen.getByRole('region', { name: /planner actions/i })
+    expect(within(actions).getByRole('button', { name: /edit/i })).toBeInTheDocument()
+    expect(within(actions).getByRole('button', { name: /generate shopping list/i })).toBeInTheDocument()
+
+    await userEvent.click(within(actions).getByRole('button', { name: /edit/i }))
+
+    expect(screen.getByText('Mobile edit')).toBeInTheDocument()
+    expect(within(actions).getByRole('button', { name: /done/i })).toBeInTheDocument()
+    expect(within(actions).queryByRole('button', { name: /generate shopping list/i })).toBeNull()
+  })
 })
