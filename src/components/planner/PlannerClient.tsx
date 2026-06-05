@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, Pencil, X } from 'lucide-react'
+import { ArrowRight, CalendarDays, ChefHat, Pencil, ShoppingCart, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { DayHeader } from './DayHeader'
@@ -304,6 +304,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   }
 
   const weekDays = getWeekDays(weekStart)
+  const isWeekEmpty = slots.length === 0
 
   // Build the collapsed list used by mobile edit mode.
   // Multi-day slots appear once (with a date-range label); covered days are skipped.
@@ -341,7 +342,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           <h1 className="text-xl font-semibold text-gray-900">Weekly Planner</h1>
           <p className="text-sm text-gray-500 mt-1">Plan your lunches for the week</p>
         </div>
-        {!loading && (
+        {!loading && !isWeekEmpty && (
           <button
             type="button"
             onClick={() => setIsMobileEditMode((v) => !v)}
@@ -387,6 +388,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
             ))}
           </div>
         </div>
+      ) : isWeekEmpty ? (
+        <PlannerEmptyState onBrowseRecipes={() => router.push('/recipes')} />
       ) : isMobileEditMode ? (
         /* Mobile edit mode — replaces the normal slot list */
         <div className="md:hidden">
@@ -507,5 +510,40 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       )}
 
     </div>
+  )
+}
+
+function PlannerEmptyState({ onBrowseRecipes }: { onBrowseRecipes: () => void }) {
+  return (
+    <section className="min-h-[360px] flex flex-col items-center justify-center text-center px-4 py-14">
+      <div className="relative mb-7 h-32 w-36" aria-hidden="true">
+        <div className="absolute left-1/2 top-3 h-24 w-28 -translate-x-1/2 rounded-2xl border border-gray-200 bg-white shadow-sm" />
+        <div className="absolute left-1/2 top-3 h-7 w-28 -translate-x-1/2 rounded-t-2xl bg-gray-900" />
+        <div className="absolute left-1/2 top-12 grid w-20 -translate-x-1/2 grid-cols-3 gap-2">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <span key={index} className="h-2.5 rounded-full bg-gray-200" />
+          ))}
+        </div>
+        <div className="absolute bottom-2 right-0 flex h-16 w-16 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 shadow-sm">
+          <ChefHat size={30} className="text-emerald-700" />
+        </div>
+        <div className="absolute left-2 top-0 flex h-10 w-10 items-center justify-center rounded-full border border-sky-100 bg-sky-50">
+          <CalendarDays size={20} className="text-sky-700" />
+        </div>
+      </div>
+
+      <h2 className="text-2xl font-semibold text-gray-950">Nothing planned for this week</h2>
+      <p className="mt-3 max-w-md text-sm leading-6 text-gray-500">
+        Pick a recipe you like and add it to the plan from your cookbook.
+      </p>
+      <button
+        type="button"
+        onClick={onBrowseRecipes}
+        className="mt-7 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+      >
+        Browse recipes
+        <ArrowRight size={15} />
+      </button>
+    </section>
   )
 }
