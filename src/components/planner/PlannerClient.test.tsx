@@ -157,4 +157,21 @@ describe('PlannerClient', () => {
     expect(await screen.findByText('Planned Soup')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /nothing planned for this week/i })).toBeNull()
   })
+
+  it('places planner actions directly under the week picker for planned weeks', async () => {
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Action Pasta')))
+
+    render(<PlannerClient weekStart={new Date('2026-06-22T00:00:00.000Z')} />)
+
+    expect(await screen.findByText('Action Pasta')).toBeInTheDocument()
+
+    const weekPicker = screen.getByRole('navigation')
+    const actions = screen.getByRole('region', { name: /planner actions/i })
+    const generateButton = screen.getByRole('button', { name: /generate shopping list/i })
+
+    expect(actions).toContainElement(screen.getByRole('button', { name: /edit/i }))
+    expect(actions).toContainElement(generateButton)
+    expect(weekPicker.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(actions.compareDocumentPosition(screen.getByTestId('day-1')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })

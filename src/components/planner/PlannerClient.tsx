@@ -305,6 +305,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   const weekDays = getWeekDays(weekStart)
   const isWeekEmpty = slots.length === 0
+  const hasRecipeSlots = slots.some((s) => s.recipe_id)
 
   // Build the collapsed list used by mobile edit mode.
   // Multi-day slots appear once (with a date-range label); covered days are skipped.
@@ -336,29 +337,24 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   return (
     <div>
-      {/* Page heading + mobile edit toggle */}
-      <div className="flex items-start justify-between mb-3">
+      {/* Page heading */}
+      <div className="mb-3">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Weekly Planner</h1>
           <p className="text-sm text-gray-500 mt-1">Plan your lunches for the week</p>
         </div>
-        {!loading && !isWeekEmpty && (
-          <button
-            type="button"
-            onClick={() => setIsMobileEditMode((v) => !v)}
-            className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              isMobileEditMode
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {isMobileEditMode ? <X size={15} /> : <Pencil size={15} />}
-            {isMobileEditMode ? 'Done' : 'Edit'}
-          </button>
-        )}
       </div>
 
       <WeekNav weekStart={weekStart} />
+
+      {!loading && !isWeekEmpty && (
+        <PlannerActions
+          hasRecipeSlots={hasRecipeSlots}
+          isMobileEditMode={isMobileEditMode}
+          onToggleMobileEdit={() => setIsMobileEditMode((v) => !v)}
+          onGenerateShoppingList={() => router.push(`/shopping/generate?week=${weekStartStr}`)}
+        />
+      )}
 
       {loading ? (
         <div>
@@ -496,20 +492,52 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
       {/* WeekRulesPanel hidden for now */}
 
-      {slots.some((s) => s.recipe_id) && (
-        <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
-          <button
-            type="button"
-            onClick={() => router.push(`/shopping/generate?week=${weekStartStr}`)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            <ShoppingCart size={14} />
-            Generate shopping list
-          </button>
-        </div>
-      )}
-
     </div>
+  )
+}
+
+function PlannerActions({
+  hasRecipeSlots,
+  isMobileEditMode,
+  onToggleMobileEdit,
+  onGenerateShoppingList,
+}: {
+  hasRecipeSlots: boolean
+  isMobileEditMode: boolean
+  onToggleMobileEdit: () => void
+  onGenerateShoppingList: () => void
+}) {
+  return (
+    <section
+      aria-label="Planner actions"
+      className={`-mt-3 mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-start ${
+        hasRecipeSlots ? '' : 'md:hidden'
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onToggleMobileEdit}
+        className={`md:hidden inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          isMobileEditMode
+            ? 'bg-gray-900 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        {isMobileEditMode ? <X size={15} /> : <Pencil size={15} />}
+        {isMobileEditMode ? 'Done' : 'Edit'}
+      </button>
+
+      {hasRecipeSlots && (
+        <button
+          type="button"
+          onClick={onGenerateShoppingList}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+        >
+          <ShoppingCart size={14} />
+          Generate shopping list
+        </button>
+      )}
+    </section>
   )
 }
 
