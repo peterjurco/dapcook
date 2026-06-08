@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 import { usePostHog } from 'posthog-js/react'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, Trash2 } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -74,6 +74,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const [categories] = useState<ShoppingCategory[]>(initialCategories)
   const [recipeNames] = useState<Record<string, string>>(initialRecipeNames)
   const [copied, setCopied] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const posthog = usePostHog()
 
@@ -226,6 +227,16 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     })
   }
 
+  async function handleClearList() {
+    setShowClearConfirm(false)
+    const snapshot = items
+    setItems([])
+    const res = await fetch(`/api/shopping/list/${list!.id}/items`, { method: 'DELETE' })
+    if (!res.ok) {
+      setItems(snapshot)
+    }
+  }
+
   async function copyToClipboard() {
     const lines = getListLines()
     const text = lines.join('\n')
@@ -250,14 +261,26 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       <div className="flex items-center justify-between mb-1 px-4 sm:px-0">
         <h1 className="text-xl font-semibold text-gray-900">Shopping List</h1>
         {visibleItems.length > 0 && (
-          <button
-            type="button"
-            onClick={copyToClipboard}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
-          >
-            {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
-            {copied ? 'Copied!' : 'Copy list'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={copyToClipboard}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+            >
+              {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
+              {copied ? 'Copied!' : 'Copy list'}
+            </button>
+            {list && (
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+              >
+                <Trash2 size={15} />
+                Clear list
+              </button>
+            )}
+          </div>
         )}
       </div>
       <p className="text-xs text-gray-400 mb-4 px-4 sm:px-0">
@@ -311,6 +334,36 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
           </DndContext>
         )}
       </div>
+
+      {showClearConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowClearConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-xl p-6 shadow-xl max-w-sm mx-4 w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-gray-900 font-medium mb-5">Remove all items from the list?</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleClearList}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
