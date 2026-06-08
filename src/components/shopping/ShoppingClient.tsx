@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 import { usePostHog } from 'posthog-js/react'
 import { Copy, Check } from 'lucide-react'
 import {
@@ -220,7 +221,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
 
   function getListLines() {
     return visibleItems.map((item) => {
-      const qty = item.quantity != null ? `${formatQty(item.quantity)}${item.unit ?? ''}` : (item.unit ?? '')
+      const qty = item.quantity != null ? formatQtyUnit(item.quantity, item.unit ?? '') : (item.unit ?? '')
       return qty ? `${qty} ${item.name}` : item.name
     })
   }
@@ -314,7 +315,3 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   )
 }
 
-function formatQty(qty: number): string {
-  if (Number.isInteger(qty)) return String(qty)
-  return String(parseFloat(qty.toPrecision(3)))
-}

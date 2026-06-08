@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { X, Info, GripVertical } from 'lucide-react'
 import type { ShoppingItem } from '@/types/database'
+import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 
 interface Props {
   item: ShoppingItem
@@ -37,7 +38,7 @@ export function ShoppingItemRow({
   const [editText, setEditText] = useState(() => {
     if (isNewItem) return ''
     const prefix = item.quantity != null
-      ? `${formatQty(item.quantity)}${item.unit ?? ''}`
+      ? formatQtyUnit(item.quantity, item.unit ?? '')
       : (item.unit ?? '')
     return (prefix ? `${prefix} ${item.name}` : item.name).trim()
   })
@@ -68,7 +69,7 @@ export function ShoppingItemRow({
       return
     }
     const prefix = item.quantity != null
-      ? `${formatQty(item.quantity)}${item.unit ?? ''}`
+      ? formatQtyUnit(item.quantity, item.unit ?? '')
       : (item.unit ?? '')
     setEditText((prefix ? `${prefix} ${item.name}` : item.name).trim())
     setSaveError(null)
@@ -142,7 +143,7 @@ export function ShoppingItemRow({
   const displayName = (saving || saveError) && isNewItem ? editText.trim() : item.name
   const displayQty = (saving || saveError) && isNewItem ? null : (
     item.quantity != null
-      ? `${formatQty(item.quantity)}${item.unit ?? ''}`
+      ? formatQtyUnit(item.quantity, item.unit ?? '')
       : item.unit ?? null
   )
 
@@ -286,8 +287,3 @@ export function ShoppingItemRow({
   )
 }
 
-function formatQty(qty: number): string {
-  if (Number.isInteger(qty)) return String(qty)
-  const rounded = parseFloat(qty.toPrecision(3))
-  return String(rounded)
-}
