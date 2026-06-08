@@ -81,20 +81,30 @@ export async function POST(request: NextRequest) {
       const pageLanguage = detectedLanguage?.split('-')[0]?.toLowerCase()
       const alreadyInTargetLanguage = !!pageLanguage && pageLanguage === household?.preferred_language
 
-      if (!household?.translation_enabled || alreadyInTargetLanguage) {
+      const needsTranslation = !!household?.translation_enabled && !alreadyInTargetLanguage
+      const needsUnitConversion = !!household?.preferred_units
+
+      if (!needsTranslation && !needsUnitConversion) {
         send({ type: 'done', draft: baseDraft })
         controller.close()
         return
       }
 
-      // Step 3: Translate
-      const langName = LANGUAGE_NAMES[household.preferred_language] ?? household.preferred_language
-      send({ type: 'step', key: 'translating', message: `Translating to ${langName}...` })
+      // Step 3: Transform (translate and/or convert units)
+      if (needsTranslation) {
+        const langName = LANGUAGE_NAMES[household!.preferred_language] ?? household!.preferred_language
+        send({ type: 'step', key: 'translating', message: `Translating to ${langName}...` })
+      } else {
+        send({ type: 'step', key: 'converting', message: 'Converting units...' })
+      }
 
       try {
         const transformed = await transformRecipe(
           { title: meta.title, description: meta.description ?? null, ingredients, steps, notes: null },
-          { targetLanguage: household.preferred_language, targetUnits: household.preferred_units },
+          {
+            targetLanguage: needsTranslation ? household!.preferred_language : undefined,
+            targetUnits: household?.preferred_units,
+          },
           profile?.household_id ?? undefined
         )
         send({

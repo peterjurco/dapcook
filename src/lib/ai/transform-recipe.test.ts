@@ -71,8 +71,20 @@ describe('transformRecipe', () => {
     const callArgs = getCreateMock().mock.calls[0][0] as { messages: Array<{ content: string }> }
     const prompt = callArgs.messages[0].content
     expect(prompt).toContain('Slovak')
-    expect(prompt).not.toContain('Convert all quantities')
+    expect(prompt).toContain('Convert all quantities')
+    expect(prompt).toContain('metric')
     expect(result.title).toBe('Pasta Carbonara SK')
+  })
+
+  it('calls Anthropic with metric instruction when only targetUnits is metric', async () => {
+    mockAnthropicResponse(mockContent)
+
+    await transformRecipe(mockContent, { targetUnits: 'metric' }, 'hh-1')
+
+    expect(getCreateMock()).toHaveBeenCalledOnce()
+    const prompt = (getCreateMock().mock.calls[0][0] as { messages: Array<{ content: string }> }).messages[0].content
+    expect(prompt).toContain('metric')
+    expect(prompt).not.toContain('Translate')
   })
 
   it('calls Anthropic when targetUnits is imperial', async () => {

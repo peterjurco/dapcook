@@ -159,7 +159,21 @@ describe('POST /api/recipes/import', () => {
     )
   })
 
-  it('skips transformRecipe when translation_enabled is false', async () => {
+  it('calls transformRecipe with only targetUnits when translation_enabled is false', async () => {
+    // default household: translation_enabled: false, preferred_units: 'metric'
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    await collectEvents(res)
+    expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Pasta' }),
+      { targetUnits: 'metric' },
+      'hh-1'
+    )
+  })
+
+  it('skips transformRecipe when household has no preferences', async () => {
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase(mockUser, null) as unknown as ReturnType<typeof createClient>
+    )
     await POST(req({ url: 'https://example.com/pasta' }))
     expect(vi.mocked(transformRecipe)).not.toHaveBeenCalled()
   })
@@ -175,6 +189,27 @@ describe('POST /api/recipes/import', () => {
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Pasta' }),
       { targetLanguage: 'sk', targetUnits: 'metric' },
+      'hh-1'
+    )
+  })
+
+  it('calls transformRecipe with only targetUnits when recipe is already in preferred language', async () => {
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase(mockUser, { preferred_language: 'en', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    )
+    vi.mocked(scrapeRecipe).mockResolvedValue({
+      raw: rawScraped,
+      detectedLanguage: 'en',
+    } as Awaited<ReturnType<typeof scrapeRecipe>>)
+
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    const events = await collectEvents(res)
+    const steps = events.filter(e => e.type === 'step').map(e => (e as Extract<ImportEvent, { type: 'step' }>).key)
+
+    expect(steps).not.toContain('translating')
+    expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Pasta' }),
+      { targetUnits: 'metric' },
       'hh-1'
     )
   })
