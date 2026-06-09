@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, Plus } from 'lucide-react'
 import type { Recipe } from '@/types/database'
 import { CUSTOM_LABELS } from '@/types/planner'
 
@@ -119,6 +119,20 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
             <span className="text-sm text-gray-900 line-clamp-1">{recipe.title}</span>
           </button>
         ))}
+
+        {/* Free-text custom meal — track anything that isn't a recipe (side salad, spices…) */}
+        {query.trim() && (
+          <button
+            type="button"
+            onClick={() => onSelectCustom(query.trim())}
+            className="w-full flex items-center gap-2 px-3 py-2 border-t border-gray-100 hover:bg-gray-50 transition-colors text-left"
+          >
+            <Plus size={14} className="text-gray-400 flex-shrink-0" />
+            <span className="text-sm text-gray-600 line-clamp-1">
+              Use “{query.trim()}” as a custom meal
+            </span>
+          </button>
+        )}
       </div>
     </div>
   )
