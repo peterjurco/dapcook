@@ -16,9 +16,22 @@ interface SlotCardProps {
   /** Called once on mouseup — persists the final span to the API */
   onSpanCommit: (newSpan: number) => void
   maxSpanDays: number
+  /** Desktop lane-grid placement. When omitted, the card does not self-place. */
+  startDay?: number
+  lane?: number
+  span?: number
 }
 
-export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanDays }: SlotCardProps) {
+export function SlotCard({
+  slot,
+  onDelete,
+  onSpanPreview,
+  onSpanCommit,
+  maxSpanDays,
+  startDay,
+  lane,
+  span,
+}: SlotCardProps) {
   const [confirming, setConfirming] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [savedPortions, setSavedPortions] = useState<number | null>(null)
@@ -41,9 +54,15 @@ export function SlotCard({ slot, onDelete, onSpanPreview, onSpanCommit, maxSpanD
     data: { slot },
   })
 
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform), zIndex: 50, opacity: 0.9 }
-    : undefined
+  // Desktop lane-grid placement (no effect outside a grid, e.g. the drag overlay).
+  const placement: React.CSSProperties =
+    startDay != null && span != null
+      ? { gridColumn: `${startDay} / ${startDay + span}`, gridRow: (lane ?? 0) + 1 }
+      : {}
+
+  const style: React.CSSProperties = transform
+    ? { ...placement, transform: CSS.Translate.toString(transform), zIndex: 50, opacity: 0.9 }
+    : placement
 
   const canExpand = slot.span_days < maxSpanDays && slot.span_days < 7
   const showResizeHandle = canExpand || slot.span_days > 1
