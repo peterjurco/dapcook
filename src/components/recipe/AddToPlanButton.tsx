@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { CalendarPlus, Check, Loader2 } from 'lucide-react'
+import { CalendarPlus } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-
-type AddState = 'idle' | 'loading' | 'done' | 'error'
+import { AddToPlanPicker } from './AddToPlanPicker'
 
 interface AddToPlanButtonProps {
   recipeId: string
@@ -12,54 +11,55 @@ interface AddToPlanButtonProps {
 }
 
 export function AddToPlanButton({ recipeId, variant = 'toolbar' }: AddToPlanButtonProps) {
-  const [addState, setAddState] = useState<AddState>('idle')
+  const [open, setOpen] = useState(false)
   const iconSize = variant === 'overlay' ? 11 : 13
 
-  async function handleAddToPlan(e: React.MouseEvent<HTMLButtonElement>) {
+  function toggle(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault()
     e.stopPropagation()
-    if (addState !== 'idle') return
-
-    setAddState('loading')
-    const res = await fetch('/api/planner/slots/next-empty', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipe_id: recipeId }),
-    })
-
-    if (res.ok) {
-      setAddState('done')
-      setTimeout(() => setAddState('idle'), 2000)
-    } else {
-      setAddState('error')
-      setTimeout(() => setAddState('idle'), 2500)
-    }
+    setOpen((v) => !v)
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleAddToPlan}
-      disabled={addState === 'loading'}
-      className={cn(
-        'inline-flex items-center gap-1.5 whitespace-nowrap font-medium transition-all',
-        variant === 'overlay'
-          ? 'absolute bottom-2 right-2 px-2.5 py-1.5 rounded-full text-xs shadow-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
-          : 'px-3 py-1.5 rounded-lg text-sm',
-        addState === 'done'
-          ? 'bg-green-500 text-white opacity-100'
-          : addState === 'error'
-          ? 'bg-red-500 text-white opacity-100'
-          : variant === 'overlay'
-          ? 'bg-white text-gray-700 hover:bg-gray-900 hover:text-white'
-          : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-gray-900'
+    <div className={variant === 'overlay' ? 'absolute bottom-2 right-2' : 'relative inline-block'}>
+      <button
+        type="button"
+        onClick={toggle}
+        className={cn(
+          'inline-flex items-center gap-1.5 whitespace-nowrap font-medium transition-all',
+          variant === 'overlay'
+            ? 'px-2.5 py-1.5 rounded-full text-xs shadow-sm bg-white text-gray-700 hover:bg-gray-900 hover:text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+            : 'px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-gray-900',
+        )}
+        title="Add to weekly plan"
+        aria-expanded={open}
+      >
+        <CalendarPlus size={iconSize} />
+        Add to Plan
+      </button>
+
+      {open && (
+        <>
+          {/* Click-away backdrop */}
+          <div
+            className="fixed inset-0 z-20"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setOpen(false)
+            }}
+          />
+          <div
+            className={cn(
+              'absolute z-30',
+              variant === 'overlay' ? 'bottom-full right-0 mb-2' : 'top-full right-0 mt-2',
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AddToPlanPicker recipeId={recipeId} onClose={() => setOpen(false)} />
+          </div>
+        </>
       )}
-      title="Add to weekly plan"
-    >
-      {addState === 'loading' && <Loader2 size={iconSize} className="animate-spin" />}
-      {addState === 'done' && <Check size={iconSize} />}
-      {addState === 'idle' && <CalendarPlus size={iconSize} />}
-      {addState === 'error' ? 'Full' : addState === 'done' ? 'Added' : addState === 'loading' ? 'Adding...' : 'Add to Plan'}
-    </button>
+    </div>
   )
 }
