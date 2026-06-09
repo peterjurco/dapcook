@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compareInDay, buildEditDays, maxSpanForStart } from './layout'
+import { compareInDay, buildEditDays, maxSpanForStart, packLanes, buildMobileAgenda } from './layout'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
 function slot(
@@ -48,5 +48,45 @@ describe('buildEditDays', () => {
     expect(days[1].slots.map((s) => s.id)).toEqual(['s1', 's2']) // span 4 before span 1
     expect(days[3].slots.map((s) => s.id)).toEqual(['s3'])
     expect(days[0].slots).toEqual([])
+  })
+})
+
+describe('packLanes', () => {
+  it('puts non-overlapping meals on the same lane and overlaps on separate lanes', () => {
+    const soup = slot({ id: 'soup', day_of_week: 2, span_days: 4 }) // Tue–Fri
+    const kura = slot({ id: 'kura', day_of_week: 3, span_days: 2 }) // Wed–Thu
+    const dessert = slot({ id: 'des', day_of_week: 4, span_days: 1 }) // Thu
+    const mon = slot({ id: 'mon', day_of_week: 1, span_days: 1 }) // Mon, no overlap with soup
+    const lanes = packLanes([soup, kura, dessert, mon])
+    expect(lanes.get('soup')).toBe(0)
+    expect(lanes.get('mon')).toBe(0) // Mon is free on lane 0 before soup starts
+    expect(lanes.get('kura')).toBe(1)
+    expect(lanes.get('des')).toBe(2)
+  })
+
+  it('stacks two single-day meals on the same day onto different lanes', () => {
+    const a = slot({ id: 'a', day_of_week: 3, span_days: 1 })
+    const b = slot({ id: 'b', day_of_week: 3, span_days: 1 })
+    const lanes = packLanes([a, b])
+    expect(new Set([lanes.get('a'), lanes.get('b')])).toEqual(new Set([0, 1]))
+  })
+})
+
+describe('buildMobileAgenda', () => {
+  it('repeats multi-day meals on each covered day with dayIndex/span', () => {
+    const soup = slot({ id: 'soup', day_of_week: 2, span_days: 4 })
+    const days = buildMobileAgenda([soup])
+    expect(days[0].cards).toEqual([]) // Mon
+    expect(days[1].cards[0]).toMatchObject({ dayIndex: 1, span: 4 }) // Tue
+    expect(days[4].cards[0]).toMatchObject({ dayIndex: 4, span: 4 }) // Fri
+    expect(days[5].cards).toEqual([]) // Sat
+  })
+
+  it('orders multiple meals within a day by compareInDay', () => {
+    const soup = slot({ id: 'soup', day_of_week: 2, span_days: 4 }) // active Thu, started Tue
+    const kura = slot({ id: 'kura', day_of_week: 3, span_days: 2 }) // active Thu, started Wed
+    const dessert = slot({ id: 'des', day_of_week: 4, span_days: 1 }) // active Thu, started Thu
+    const thu = buildMobileAgenda([dessert, kura, soup])[3]
+    expect(thu.cards.map((c) => c.slot.id)).toEqual(['soup', 'kura', 'des'])
   })
 })
