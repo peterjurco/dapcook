@@ -20,16 +20,6 @@ vi.mock('@dnd-kit/core', () => ({
   pointerWithin: vi.fn(),
 }))
 
-vi.mock('./DayHeader', () => ({
-  DayHeader: ({ weekday, day }: { weekday: string; day: string }) => <div>{weekday} {day}</div>,
-}))
-
-vi.mock('./DaySlot', () => ({
-  DaySlot: ({ dayOfWeek, slot }: { dayOfWeek: number; slot: WeekData['slots'][number] | null }) => (
-    <div data-testid={`day-${dayOfWeek}`}>{slot?.recipe?.title ?? slot?.custom_label ?? 'Empty'}</div>
-  ),
-}))
-
 vi.mock('./SlotCard', () => ({
   SlotCard: ({ slot }: { slot: WeekData['slots'][number] }) => <div>{slot.recipe?.title}</div>,
 }))
@@ -44,12 +34,20 @@ vi.mock('./WeekNav', () => ({
 
 vi.mock('./MobileEditList', () => ({
   MobileEditList: () => <div>Mobile edit</div>,
-  arrayMove: <T,>(items: T[], from: number, to: number) => {
-    const next = [...items]
-    const [item] = next.splice(from, 1)
-    next.splice(to, 0, item)
-    return next
-  },
+}))
+
+vi.mock('./PlannerDesktopGrid', () => ({
+  PlannerDesktopGrid: ({ slots }: { slots: WeekData['slots'] }) => (
+    <div data-testid="planner-grid">
+      {slots.map((s) => (
+        <div key={s.id}>{s.recipe?.title ?? s.custom_label}</div>
+      ))}
+    </div>
+  ),
+}))
+
+vi.mock('./PlannerMobileAgenda', () => ({
+  PlannerMobileAgenda: () => <div>Mobile agenda</div>,
 }))
 
 function response(data: WeekData) {
@@ -143,7 +141,7 @@ describe('PlannerClient', () => {
 
     expect(await screen.findByRole('heading', { name: /nothing planned for this week/i })).toBeInTheDocument()
     expect(screen.getByText(/pick a recipe you like/i)).toBeInTheDocument()
-    expect(screen.queryByTestId('day-1')).toBeNull()
+    expect(screen.queryByTestId('planner-grid')).toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: /browse recipes/i }))
     expect(mockPush).toHaveBeenCalledWith('/recipes')
@@ -174,7 +172,7 @@ describe('PlannerClient', () => {
     expect(actions).toContainElement(within(actions).getByRole('button', { name: /edit/i }))
     expect(actions).toContainElement(generateButton)
     expect(weekPicker.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(actions.compareDocumentPosition(screen.getByTestId('day-1')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(actions.compareDocumentPosition(screen.getByTestId('planner-grid')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('keeps the desktop shopping list action below the planner grid', async () => {
@@ -190,7 +188,35 @@ describe('PlannerClient', () => {
     expect(shoppingActions).toContainElement(
       within(shoppingActions).getByRole('button', { name: /generate shopping list/i })
     )
-    expect(screen.getByTestId('day-1').compareDocumentPosition(shoppingActions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByTestId('planner-grid').compareDocumentPosition(shoppingActions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('renders multiple meals planned on the same day', async () => {
+    const data = weekData('First Meal')
+    data.slots.push({
+      id: 'slot-2',
+      week_plan_id: 'week-plan-1',
+      day_of_week: 1,
+      meal_type: 'lunch',
+      recipe_id: 'recipe-2',
+      servings_scale: 1,
+      custom_label: null,
+      span_days: 1,
+      recipe: {
+        id: 'recipe-2',
+        title: 'Second Meal',
+        image_url: null,
+        cook_time_min: null,
+        prep_time_min: null,
+        servings: null,
+      },
+    })
+    global.fetch = vi.fn().mockResolvedValue(response(data))
+
+    render(<PlannerClient weekStart={new Date('2026-08-03T00:00:00.000Z')} />)
+
+    expect(await screen.findByText('First Meal')).toBeInTheDocument()
+    expect(screen.getByText('Second Meal')).toBeInTheDocument()
   })
 
   it('shows only Done in the mobile planner actions while editing', async () => {

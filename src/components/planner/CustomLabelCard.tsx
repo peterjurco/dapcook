@@ -41,9 +41,13 @@ function getStyle(label: string) {
 interface CustomLabelCardProps {
   slot: MealSlotWithRecipe
   onDelete: () => void
+  /** Desktop lane-grid placement. When omitted, the card does not self-place. */
+  startDay?: number
+  lane?: number
+  span?: number
 }
 
-export function CustomLabelCard({ slot, onDelete }: CustomLabelCardProps) {
+export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: CustomLabelCardProps) {
   const [confirming, setConfirming] = useState(false)
   const label = slot.custom_label ?? 'Custom'
   const style = getStyle(label)
@@ -53,9 +57,14 @@ export function CustomLabelCard({ slot, onDelete }: CustomLabelCardProps) {
     data: { slot },
   })
 
-  const css = transform
-    ? { transform: CSS.Translate.toString(transform), zIndex: 50, opacity: 0.9 }
-    : undefined
+  const placement: React.CSSProperties =
+    startDay != null && span != null
+      ? { gridColumn: `${startDay} / ${startDay + span}`, gridRow: (lane ?? 0) + 1 }
+      : {}
+
+  const css: React.CSSProperties = transform
+    ? { ...placement, transform: CSS.Translate.toString(transform), zIndex: 50, opacity: 0.9 }
+    : placement
 
   return (
     <>
