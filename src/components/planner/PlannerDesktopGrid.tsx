@@ -53,9 +53,18 @@ export function PlannerDesktopGrid({
   onSpanCommit,
 }: PlannerDesktopGridProps) {
   const lanes = packLanes(slots)
-  const laneCount = slots.length ? Math.max(...Array.from(lanes.values())) + 1 : 0
-  const addRow = laneCount + 1 // grid row index (1-based) for the per-day "+" cells
   const todayStr = toDateString(today)
+
+  // Lowest lane occupied by any meal covering this day (-1 if the day is empty).
+  function maxCoveringLane(day: number): number {
+    let max = -1
+    for (const s of slots) {
+      if (s.day_of_week <= day && day < s.day_of_week + s.span_days) {
+        max = Math.max(max, lanes.get(s.id) ?? 0)
+      }
+    }
+    return max
+  }
 
   return (
     <div data-testid="planner-grid">
@@ -84,11 +93,8 @@ export function PlannerDesktopGrid({
           ))}
         </div>
 
-        {/* Meal cards + add row */}
-        <div
-          className="relative grid grid-cols-7 gap-3"
-          style={{ gridAutoRows: 'minmax(11rem, auto)' }}
-        >
+        {/* Meal cards + per-day add affordances */}
+        <div className="relative grid grid-cols-7 gap-3" style={{ gridAutoRows: 'auto' }}>
           {slots.map((slot) => {
             const lane = lanes.get(slot.id) ?? 0
             const span = slot.span_days
@@ -116,36 +122,69 @@ export function PlannerDesktopGrid({
             )
           })}
 
-          {/* Per-day add cells on the row below the last lane */}
+          {/* Per-day add affordance: full slot in row 1 for empty days, otherwise a
+              small "+" directly under that day's last meal. */}
           {weekDays.map((_, index) => {
             const day = index + 1
+            const maxLane = maxCoveringLane(day)
+            const isEmptyDay = maxLane === -1
+            const gridRow = isEmptyDay ? 1 : maxLane + 2
+            const weekday = formatDayLabel(weekDays[index]).weekday
+
+            const search = (
+              <RecipeSearch
+                onSelectRecipe={(recipe) => {
+                  onCloseSearch()
+                  onAddRecipe(day, recipe)
+                }}
+                onSelectCustom={(label) => {
+                  onCloseSearch()
+                  onAddCustom(day, label)
+                }}
+                onClose={onCloseSearch}
+              />
+            )
+
             return (
-              <div key={`add-${day}`} className="relative" style={{ gridColumn: day, gridRow: addRow }}>
-                {addingToDay === day ? (
-                  <div className="h-full min-h-[3rem] flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200">
+              <div
+                key={`add-${day}`}
+                className={`relative ${isEmptyDay ? '' : 'self-start'}`}
+                style={{ gridColumn: day, gridRow }}
+              >
+                {isEmptyDay ? (
+                  addingToDay === day ? (
+                    <div className="h-full min-h-[11rem] flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200">
+                      <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : openSearchDay === day ? (
+                    search
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onOpenSearch(day)}
+                      aria-label={`Add meal to ${weekday}`}
+                      className="w-full h-full min-h-[11rem] flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-gray-300 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-400"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  )
+                ) : addingToDay === day ? (
+                  <div className="flex justify-center pt-1">
                     <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : openSearchDay === day ? (
-                  <RecipeSearch
-                    onSelectRecipe={(recipe) => {
-                      onCloseSearch()
-                      onAddRecipe(day, recipe)
-                    }}
-                    onSelectCustom={(label) => {
-                      onCloseSearch()
-                      onAddCustom(day, label)
-                    }}
-                    onClose={onCloseSearch}
-                  />
+                  search
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => onOpenSearch(day)}
-                    aria-label={`Add meal to ${formatDayLabel(weekDays[index]).weekday}`}
-                    className="w-full min-h-[3rem] h-full flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-gray-300 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-400"
-                  >
-                    <Plus size={16} />
-                  </button>
+                  <div className="flex justify-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => onOpenSearch(day)}
+                      aria-label={`Add meal to ${weekday}`}
+                      className="flex items-center justify-center w-9 h-9 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-400"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
                 )}
               </div>
             )

@@ -71,7 +71,7 @@ export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: Custom
       <div
         ref={setNodeRef}
         style={css}
-        className={`relative h-full rounded-lg border overflow-hidden group ${style.bg} ${
+        className={`relative h-full min-h-[11rem] rounded-lg border overflow-hidden group ${style.bg} ${
           isDragging ? 'shadow-lg ring-2 ring-gray-300' : ''
         }`}
       >

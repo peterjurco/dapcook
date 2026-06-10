@@ -136,7 +136,7 @@ export function SlotCard({
       <div
         ref={setNodeRef}
         style={style}
-        className={`relative h-full flex flex-col bg-white border rounded-lg shadow-sm group ${
+        className={`relative h-full min-h-[11rem] flex flex-col bg-white border rounded-lg shadow-sm group ${
           isDragging ? 'shadow-lg ring-2 ring-gray-300' : isResizing ? 'border-gray-400 shadow-md' : 'border-gray-200'
         }`}
       >
