@@ -4,10 +4,11 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { generateInviteToken } from '@/lib/utils/invite'
+import { getOrigin } from './getOrigin'
 
 export async function signInWithGoogle(redirectTo?: string) {
   const supabase = createClient()
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const origin = getOrigin()
 
   const callbackUrl = redirectTo
     ? `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
@@ -39,7 +40,7 @@ export async function signInWithGoogleForJoin(token: string) {
   })
 
   const supabase = createClient()
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const origin = getOrigin()
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
