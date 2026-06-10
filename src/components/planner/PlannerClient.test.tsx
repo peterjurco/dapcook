@@ -76,6 +76,7 @@ function weekData(recipeTitle: string): WeekData {
       servings_scale: 1,
       custom_label: null,
       span_days: 1,
+      created_at: '2026-01-01T00:00:00.000Z',
       recipe: {
         id: 'recipe-1',
         title: recipeTitle,
@@ -202,6 +203,7 @@ describe('PlannerClient', () => {
       servings_scale: 1,
       custom_label: null,
       span_days: 1,
+      created_at: '2026-01-01T00:00:00.000Z',
       recipe: {
         id: 'recipe-2',
         title: 'Second Meal',

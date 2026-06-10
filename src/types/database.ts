@@ -218,6 +218,7 @@ export interface Database {
           servings_scale: number
           custom_label: string | null
           span_days: number
+          created_at: string
         }
         Insert: {
           id?: string
@@ -228,6 +229,7 @@ export interface Database {
           servings_scale?: number
           custom_label?: string | null
           span_days?: number
+          created_at?: string
         }
         Update: {
           id?: string
@@ -238,6 +240,7 @@ export interface Database {
           servings_scale?: number
           custom_label?: string | null
           span_days?: number
+          created_at?: string
         }
         Relationships: []
       }

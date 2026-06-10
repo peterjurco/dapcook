@@ -19,6 +19,7 @@ function recipeSlot(p: { id: string; day_of_week: number; span_days: number; tit
     custom_label: null,
     servings_scale: 1,
     span_days: p.span_days,
+    created_at: '2026-01-01T00:00:00.000Z',
     recipe: { id: `r-${p.id}`, title: p.title, image_url: null, cook_time_min: null, prep_time_min: null, servings: null },
   }
 }

@@ -17,6 +17,7 @@ function slot(id: string, day = 1): MealSlotWithRecipe {
     custom_label: null,
     servings_scale: 1,
     span_days: 1,
+    created_at: '2026-01-01T00:00:00.000Z',
     recipe: null,
   }
 }

@@ -1,9 +1,17 @@
 import type { MealSlotWithRecipe } from '@/types/planner'
 
-/** Deterministic within-day order: earliest start, then longest span, then id (stable). */
+/**
+ * Deterministic within-day order: earliest start, then longest span, then
+ * insertion order (created_at, so newly added meals sort last), then id as a
+ * final stable tiebreaker. created_at is read defensively in case a slot
+ * predates the column being populated.
+ */
 export function compareInDay(a: MealSlotWithRecipe, b: MealSlotWithRecipe): number {
   if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
   if (a.span_days !== b.span_days) return b.span_days - a.span_days
+  const ca = a.created_at ?? ''
+  const cb = b.created_at ?? ''
+  if (ca !== cb) return ca < cb ? -1 : 1
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
 }
 

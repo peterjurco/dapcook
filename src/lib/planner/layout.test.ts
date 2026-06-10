@@ -14,18 +14,26 @@ function slot(
     custom_label: p.custom_label ?? null,
     servings_scale: 1,
     span_days: p.span_days,
+    created_at: p.created_at ?? '2026-01-01T00:00:00.000Z',
     recipe: p.recipe ?? null,
   }
 }
 
 describe('compareInDay', () => {
-  it('orders by start day, then longer span first, then id', () => {
+  it('orders by start day, then longer span first', () => {
     const a = slot({ id: 'a', day_of_week: 3, span_days: 1 })
     const b = slot({ id: 'b', day_of_week: 2, span_days: 1 })
     const c = slot({ id: 'c', day_of_week: 2, span_days: 3 })
     const d = slot({ id: 'd', day_of_week: 2, span_days: 3 })
     const sorted = [a, b, c, d].sort(compareInDay).map((s) => s.id)
     expect(sorted).toEqual(['c', 'd', 'b', 'a'])
+  })
+
+  it('orders meals on the same day by creation time so new meals sort last', () => {
+    // id order would put 'a-new' first; created_at must win.
+    const older = slot({ id: 'z-old', day_of_week: 2, span_days: 1, created_at: '2026-01-01T00:00:00.000Z' })
+    const newer = slot({ id: 'a-new', day_of_week: 2, span_days: 1, created_at: '2026-02-01T00:00:00.000Z' })
+    expect([newer, older].sort(compareInDay).map((s) => s.id)).toEqual(['z-old', 'a-new'])
   })
 })
 
