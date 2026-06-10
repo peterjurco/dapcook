@@ -52,6 +52,31 @@ describe('AddToPlanButton', () => {
     expect(lastFetchBody().day_of_week).toBe(1)
   })
 
+  // Regression: "Change" should move the just-placed meal, not create a second slot.
+  it('deletes the previous placement when Change is used, instead of duplicating', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'slot-A' }) } as unknown as Response) // POST 1
+      .mockResolvedValueOnce({ ok: true } as Response) // DELETE slot-A
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'slot-B' }) } as unknown as Response) // POST 2
+    global.fetch = fetchMock as unknown as typeof fetch
+
+    render(<AddToPlanButton recipeId="recipe-1" />)
+
+    await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
+    await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /change/i }))
+    await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          (c) => String(c[0]) === '/api/planner/slots/slot-A' && (c[1] as RequestInit | undefined)?.method === 'DELETE',
+        ),
+      ).toBe(true),
+    )
+  })
+
   // Regression: on the recipes grid the button sits inside a card-wide link; opening
   // and using the picker must never trigger the enclosing element's click handler.
   it('does not bubble picker interactions to an enclosing clickable card', async () => {

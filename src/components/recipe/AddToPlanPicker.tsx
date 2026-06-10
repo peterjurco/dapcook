@@ -46,6 +46,9 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   )
   const [submitting, setSubmitting] = useState(false)
   const [confirmedDay, setConfirmedDay] = useState<number | null>(null)
+  // The slot created earlier in this picker session (set after the first add).
+  // "Change" re-uses it so a second confirm MOVES the meal instead of duplicating it.
+  const [placedSlotId, setPlacedSlotId] = useState<string | null>(null)
 
   const weekDays = getWeekDays(weekStart)
   const todayStr = toDateString(today)
@@ -63,6 +66,11 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
 
   async function handleAdd() {
     setSubmitting(true)
+    // If this session already placed the meal (user hit "Change"), remove that
+    // placement first so we end up with a single slot at the new destination.
+    if (placedSlotId) {
+      await fetch(`/api/planner/slots/${placedSlotId}`, { method: 'DELETE' })
+    }
     const res = await fetch('/api/planner/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,6 +82,12 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
     })
     setSubmitting(false)
     if (res.ok) {
+      try {
+        const slot = (await res.json()) as { id?: string }
+        if (slot?.id) setPlacedSlotId(slot.id)
+      } catch {
+        // ignore body parse errors — placement still succeeded
+      }
       try {
         localStorage.setItem(LAST_WEEK_KEY, toDateString(weekStart))
       } catch {
