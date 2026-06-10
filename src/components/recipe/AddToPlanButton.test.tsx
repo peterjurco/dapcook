@@ -51,4 +51,21 @@ describe('AddToPlanButton', () => {
     await waitFor(() => expect(global.fetch).toHaveBeenCalled())
     expect(lastFetchBody().day_of_week).toBe(1)
   })
+
+  // Regression: on the recipes grid the button sits inside a card-wide link; opening
+  // and using the picker must never trigger the enclosing element's click handler.
+  it('does not bubble picker interactions to an enclosing clickable card', async () => {
+    const onCardClick = vi.fn()
+    render(
+      <div onClick={onCardClick}>
+        <AddToPlanButton recipeId="recipe-1" variant="overlay" />
+      </div>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
+    await userEvent.click(screen.getByRole('button', { name: /this week/i }))
+    await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
+
+    expect(onCardClick).not.toHaveBeenCalled()
+  })
 })
