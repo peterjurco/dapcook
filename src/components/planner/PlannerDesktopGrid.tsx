@@ -33,7 +33,7 @@ function DayColumnDroppable({ day }: { day: number }) {
     <div
       ref={setNodeRef}
       style={{ gridColumn: day }}
-      className={`rounded-xl transition-colors ${isOver ? 'bg-blue-50 ring-2 ring-inset ring-blue-300' : ''}`}
+      className={`h-full rounded-xl transition-colors ${isOver ? 'bg-blue-50 ring-2 ring-inset ring-blue-300' : ''}`}
     />
   )
 }
@@ -84,12 +84,13 @@ export function PlannerDesktopGrid({
       </div>
 
       <div className="relative">
-        {/* Background droppable columns */}
-        <div className="absolute inset-0 grid grid-cols-7 gap-3 pointer-events-none">
+        {/* Background droppable columns — single full-height row so each column's
+            droppable spans the whole grid (otherwise the rects collapse to 0 height
+            and pointerWithin never finds a drop target). pointer-events-none lets
+            clicks fall through to the cards; dnd-kit detects droppables by rect. */}
+        <div className="absolute inset-0 grid grid-cols-7 grid-rows-1 gap-3 pointer-events-none">
           {Array.from({ length: 7 }, (_, i) => (
-            <div key={i} className="pointer-events-auto" style={{ gridColumn: i + 1 }}>
-              <DayColumnDroppable day={i + 1} />
-            </div>
+            <DayColumnDroppable key={i} day={i + 1} />
           ))}
         </div>
 
