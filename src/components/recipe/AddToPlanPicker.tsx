@@ -15,6 +15,8 @@ import {
   isNextWeek,
   dayOfWeekNumber,
 } from '@/lib/utils/week'
+import { addSlotToCachedWeek, removeSlotFromCachedWeek } from '@/components/planner/plannerWeekCache'
+import type { MealSlotWithRecipe } from '@/types/planner'
 
 const LAST_WEEK_KEY = 'addToPlan:lastWeek'
 
@@ -48,7 +50,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   const [confirmedDay, setConfirmedDay] = useState<number | null>(null)
   // The slot created earlier in this picker session (set after the first add).
   // "Change" re-uses it so a second confirm MOVES the meal instead of duplicating it.
-  const [placedSlotId, setPlacedSlotId] = useState<string | null>(null)
+  const [placed, setPlaced] = useState<{ id: string; weekStart: string } | null>(null)
 
   const weekDays = getWeekDays(weekStart)
   const todayStr = toDateString(today)
@@ -66,16 +68,18 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
 
   async function handleAdd() {
     setSubmitting(true)
+    const targetWeek = toDateString(weekStart)
     // If this session already placed the meal (user hit "Change"), remove that
     // placement first so we end up with a single slot at the new destination.
-    if (placedSlotId) {
-      await fetch(`/api/planner/slots/${placedSlotId}`, { method: 'DELETE' })
+    if (placed) {
+      await fetch(`/api/planner/slots/${placed.id}`, { method: 'DELETE' })
+      removeSlotFromCachedWeek(placed.weekStart, placed.id)
     }
     const res = await fetch('/api/planner/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        week_start: toDateString(weekStart),
+        week_start: targetWeek,
         day_of_week: selectedDay,
         recipe_id: recipeId,
       }),
@@ -83,13 +87,18 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
     setSubmitting(false)
     if (res.ok) {
       try {
-        const slot = (await res.json()) as { id?: string }
-        if (slot?.id) setPlacedSlotId(slot.id)
+        const slot = (await res.json()) as MealSlotWithRecipe & { id?: string }
+        if (slot?.id) {
+          // Keep the planner's in-memory cache in sync so "View plan" shows the
+          // meal immediately instead of stale data pending the silent refetch.
+          addSlotToCachedWeek(targetWeek, slot)
+          setPlaced({ id: slot.id, weekStart: targetWeek })
+        }
       } catch {
         // ignore body parse errors — placement still succeeded
       }
       try {
-        localStorage.setItem(LAST_WEEK_KEY, toDateString(weekStart))
+        localStorage.setItem(LAST_WEEK_KEY, targetWeek)
       } catch {
         // ignore storage errors
       }
