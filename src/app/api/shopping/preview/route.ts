@@ -10,6 +10,18 @@ interface RecipeInput {
   portions: number
 }
 
+interface CustomInput {
+  name: string
+  portions: number
+}
+
+interface PreviewItem {
+  name: string
+  quantity: number | null
+  unit: string | null
+  category: string | null
+}
+
 export async function POST(request: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -20,11 +32,20 @@ export async function POST(request: NextRequest) {
   if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
   const householdId = profile.household_id
 
-  const body = await request.json() as { recipes: RecipeInput[] }
-  const { recipes } = body
+  const body = await request.json() as { recipes?: RecipeInput[]; customItems?: CustomInput[] }
+  const recipes = body.recipes ?? []
+  // Typed custom meals (e.g. "rice") added verbatim — name + portions, no recipe.
+  const customItems: PreviewItem[] = (body.customItems ?? [])
+    .filter((c) => c.name?.trim())
+    .map((c) => ({
+      name: c.name.trim(),
+      quantity: Number.isFinite(c.portions) && c.portions >= 1 ? c.portions : 1,
+      unit: null,
+      category: null,
+    }))
 
-  if (!recipes?.length) {
-    return NextResponse.json({ error: 'recipes array is required' }, { status: 400 })
+  if (!recipes.length && !customItems.length) {
+    return NextResponse.json({ error: 'recipes or customItems are required' }, { status: 400 })
   }
 
   const recipeIds = recipes.map((r) => r.recipe_id)
@@ -73,44 +94,45 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (!rawItems.length) {
-    return NextResponse.json({ items: [], categories: [] })
-  }
-
   const rules = (rulesRows ?? []).map((r) => r.rule)
 
-  let result
-  try {
-    result = await makeShoppingListSmart(rawItems, categories ?? [], householdId, rules)
-  } catch (err) {
-    console.error('[shopping/preview] AI call failed:', err)
-    return NextResponse.json({ error: 'AI processing failed' }, { status: 500 })
-  }
+  // Recipe ingredients go through the AI merge/categorizer; custom items do not.
+  let aiItems: PreviewItem[] = []
+  let allCategories = categories ?? []
 
-  // Save AI-invented categories so they're ready for the main shopping list
-  if (result.newCategories.length > 0) {
-    await supabase.from('shopping_categories').insert(
-      result.newCategories.map((cat) => ({
-        household_id: cat.household_id,
-        name: cat.name,
-        color: cat.color,
-        sort_order: cat.sort_order,
-      }))
-    )
-  }
+  if (rawItems.length) {
+    let result
+    try {
+      result = await makeShoppingListSmart(rawItems, categories ?? [], householdId, rules)
+    } catch (err) {
+      console.error('[shopping/preview] AI call failed:', err)
+      return NextResponse.json({ error: 'AI processing failed' }, { status: 500 })
+    }
 
-  // Return items + category metadata for the review page
-  const allCategories = result.newCategories.length > 0
-    ? result.newCategories
-    : (categories ?? [])
+    // Save AI-invented categories so they're ready for the main shopping list
+    if (result.newCategories.length > 0) {
+      await supabase.from('shopping_categories').insert(
+        result.newCategories.map((cat) => ({
+          household_id: cat.household_id,
+          name: cat.name,
+          color: cat.color,
+          sort_order: cat.sort_order,
+        }))
+      )
+      allCategories = result.newCategories
+    }
 
-  return NextResponse.json({
-    items: result.items.map((item) => ({
+    aiItems = result.items.map((item) => ({
       name: item.name,
       quantity: item.quantity,
       unit: item.unit || null,
       category: item.category || null,
-    })),
+    }))
+  }
+
+  // Custom items appended verbatim (uncategorized) so name + portions stay exact.
+  return NextResponse.json({
+    items: [...aiItems, ...customItems],
     categories: allCategories.map((c) => ({ name: c.name, color: c.color })),
   })
 }
