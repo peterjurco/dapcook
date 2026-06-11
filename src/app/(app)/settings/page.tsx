@@ -142,7 +142,7 @@ export default async function SettingsPage() {
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Planner rules</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-xs text-gray-400 mb-4">
-            These rules are copied into each new week plan. The AI will respect them when generating suggestions.
+            Planner rules will guide the AI when it generates weekly plans — coming soon.
           </p>
           <PlannerRulesEditor initialRules={plannerRules ?? []} />
         </div>
