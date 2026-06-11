@@ -33,7 +33,6 @@ const mockItem: ShoppingItem = {
   is_checked: false,
   sort_order: 0,
   source_recipe_ids: [],
-  created_at: '2026-06-08T00:00:00Z',
 }
 
 const defaultProps = {

@@ -72,12 +72,20 @@ describe('GET /api/recipes', () => {
     expect(await res.json()).toEqual(recipes)
   })
 
-  it('applies search filter', async () => {
+  it('applies search filter on the normalized title', async () => {
     const supabase = makeSupabase({ recipesResult: { data: [], error: null } })
     vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
     await GET(req('/api/recipes?search=pasta'))
     const qb = supabase.from.mock.results[0].value
-    expect(qb.ilike).toHaveBeenCalledWith('title', '%pasta%')
+    expect(qb.ilike).toHaveBeenCalledWith('title_normalized', '%pasta%')
+  })
+
+  it('strips diacritics and lowercases the search term', async () => {
+    const supabase = makeSupabase({ recipesResult: { data: [], error: null } })
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    await GET(req(`/api/recipes?search=${encodeURIComponent('Café')}`))
+    const qb = supabase.from.mock.results[0].value
+    expect(qb.ilike).toHaveBeenCalledWith('title_normalized', '%cafe%')
   })
 
   it('applies tag filter', async () => {
