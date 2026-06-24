@@ -107,7 +107,13 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
           const newItem = payload.new as ShoppingItem
           setItems((prev) => {
             if (prev.some((item) => item.id === newItem.id)) return prev
-            return [...prev, newItem]
+            const catOrder = new Map(categories.map((c, i) => [c.name, i]))
+            return [...prev, newItem].sort((a, b) => {
+              const ai = a.category ? (catOrder.get(a.category) ?? 999) : 999
+              const bi = b.category ? (catOrder.get(b.category) ?? 999) : 999
+              if (ai !== bi) return ai - bi
+              return a.sort_order - b.sort_order
+            })
           })
         }
       )
