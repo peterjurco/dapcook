@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 import { usePostHog } from 'posthog-js/react'
 import { Copy, Check, Trash2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import {
   DndContext,
   closestCenter,
@@ -86,6 +87,42 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     posthog.capture('shopping_list_viewed')
   }, [posthog])
 
+  useEffect(() => {
+    if (!list) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`shopping-${list.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
+        (payload) => {
+          const updated = payload.new as ShoppingItem
+          setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
+        (payload) => {
+          const newItem = payload.new as ShoppingItem
+          setItems((prev) => {
+            if (prev.some((item) => item.id === newItem.id)) return prev
+            return [...prev, newItem]
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'shopping_items' },
+        (payload) => {
+          const deletedId = (payload.old as { id: string }).id
+          setItems((prev) => prev.filter((item) => item.id !== deletedId))
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [list])
+
   async function handleCheck(id: string, checked: boolean) {
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: checked } : item))
     await fetch(`/api/shopping/items/${id}`, {
@@ -123,9 +160,10 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sort_order: targetOrder }),
       })
-      setItems((prev) => prev.map((i) =>
-        i.id === id ? { ...created, sort_order: targetOrder } : i
-      ))
+      setItems((prev) => prev
+        .filter((i) => i.id !== created.id) // remove if realtime INSERT already added it
+        .map((i) => i.id === id ? { ...created, sort_order: targetOrder } : i)
+      )
       return
     }
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, ...changes } : item))
