@@ -28,18 +28,19 @@ export function WeekNav({ weekStart }: WeekNavProps) {
         <ChevronLeft size={18} />
       </button>
 
-      <div className="flex items-center gap-2">
-        <CalendarDays size={16} className="text-gray-400" />
-        <h2 className="text-base font-semibold text-gray-900">
-          {formatWeekLabel(weekStart)}
+      <div className="flex min-w-0 items-center gap-2">
+        <CalendarDays size={16} className="hidden shrink-0 text-gray-400 sm:block" />
+        <h2 className="whitespace-nowrap text-sm font-semibold text-gray-900 sm:text-base">
+          <span className="sm:hidden">{formatWeekLabel(weekStart, true)}</span>
+          <span className="hidden sm:inline">{formatWeekLabel(weekStart)}</span>
         </h2>
         {isCurrentWeek(weekStart) && (
-          <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+          <span className="whitespace-nowrap text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
             This week
           </span>
         )}
         {isNext && (
-          <span className="text-xs font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+          <span className="whitespace-nowrap text-xs font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
             Next week
           </span>
         )}
