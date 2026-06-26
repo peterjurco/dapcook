@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 import { usePostHog } from 'posthog-js/react'
-import { Copy, Check, Trash2 } from 'lucide-react'
+import { Copy, Check, Trash2, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
   DndContext,
@@ -210,6 +210,21 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     })
   }
 
+  function handleCreateFirst() {
+    const pendingItem: ShoppingItem = {
+      id: `pending-${Date.now()}`,
+      shopping_list_id: list?.id ?? '',
+      name: '',
+      quantity: null,
+      unit: null,
+      category: null,
+      is_checked: false,
+      sort_order: 0,
+      source_recipe_ids: [],
+    }
+    setItems([pendingItem])
+  }
+
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -334,9 +349,19 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {/* List card — full-width on mobile, rounded on sm+ */}
       <div className="sm:bg-white sm:border sm:border-gray-200 sm:rounded-xl divide-y divide-gray-50">
         {visibleItems.length === 0 ? (
-          <p className="text-sm text-gray-400 px-4 py-8 text-center">
-            Your shopping list is empty. Add items manually or generate from the planner.
-          </p>
+          <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+            <p className="text-sm text-gray-400">
+              Your shopping list is empty. Add items manually or generate from the planner.
+            </p>
+            <button
+              type="button"
+              onClick={handleCreateFirst}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <Plus size={15} />
+              Add item
+            </button>
+          </div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={visibleItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
