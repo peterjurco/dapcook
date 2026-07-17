@@ -44,6 +44,7 @@ describe('buildRecipeJsonLd', () => {
       totalTime: 'PT30M',
       recipeYield: '4 servings',
       keywords: 'quick, vegetarian',
+      isBasedOn: 'https://recipes.test/tomato-pasta',
       recipeIngredient: ['200 g pasta', '2 tomato, chopped'],
       recipeInstructions: [
         { '@type': 'HowToStep', position: 1, text: 'Boil pasta.' },

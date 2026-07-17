@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { RecipeView } from './RecipeView'
 import type { Recipe } from '@/types/database'
@@ -48,6 +48,8 @@ describe('RecipeView', () => {
     expect(screen.getByText('20m')).toBeInTheDocument()
     expect(screen.getByText('30m')).toBeInTheDocument()
     expect(screen.getByText('4')).toBeInTheDocument()
+    expect(within(screen.getByRole('complementary')).getByText('200 g')).toBeInTheDocument()
+    expect(within(screen.getByRole('complementary')).getByText('2')).toBeInTheDocument()
     expect(screen.getByText('pasta')).toBeInTheDocument()
     expect(screen.getByText('tomato')).toBeInTheDocument()
     expect(screen.getByText(/chopped/)).toBeInTheDocument()
