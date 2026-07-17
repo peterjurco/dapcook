@@ -35,7 +35,7 @@ export default async function SharedRecipePage({ params }: Props) {
   const jsonLd = buildRecipeJsonLd(typedRecipe)
 
   return (
-    <main>
+    <main className="min-h-dvh bg-gray-50 text-gray-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}

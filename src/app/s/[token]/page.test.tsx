@@ -82,6 +82,7 @@ describe('SharedRecipePage', () => {
 
     const { container } = render(await SharedRecipePage({ params: { token: 'public-token' } }))
 
+    expect(container.querySelector('main')).toHaveClass('min-h-dvh', 'bg-gray-50', 'text-gray-900')
     expect(screen.getByTestId('recipe-view')).toHaveAttribute('data-recipe-id', recipe.id)
     expect(screen.getByTestId('recipe-view')).toHaveAttribute('data-has-toolbar', 'false')
 
