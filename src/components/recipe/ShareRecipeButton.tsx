@@ -57,6 +57,15 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
     wasOpenRef.current = open
   }, [open, shareToken])
 
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!open || !loading || !dialog) return
+
+    if (dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR).length === 0) {
+      dialog.focus()
+    }
+  }, [loading, open])
+
   function containFocus(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key !== 'Tab') return
 
@@ -64,7 +73,11 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
     if (!dialog) return
 
     const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-    if (focusable.length === 0) return
+    if (focusable.length === 0) {
+      event.preventDefault()
+      dialog.focus()
+      return
+    }
 
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
@@ -156,6 +169,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
             role="dialog"
             aria-modal="true"
             aria-labelledby="share-recipe-title"
+            tabIndex={-1}
             className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl sm:p-6"
             onMouseDown={(event) => event.stopPropagation()}
             onKeyDown={containFocus}

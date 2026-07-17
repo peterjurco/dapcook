@@ -162,8 +162,12 @@ describe('ShareRecipeButton', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Create share link' }))
     await waitFor(() => expect(global.fetch).toHaveBeenCalled())
+    const dialog = screen.getByRole('dialog')
+    await userEvent.tab()
+    expect(dialog).toHaveFocus()
+
     await userEvent.keyboard('{Escape}')
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(dialog).toBeInTheDocument()
 
     resolveRequest(
       response({ body: { share_token: 'new-token', share_url: 'https://dapcook.test/s/new-token' } }),
