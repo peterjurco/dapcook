@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Check, Copy, Link2Off, Share2, X } from 'lucide-react'
 
 interface ShareRecipeButtonProps {
@@ -9,6 +9,8 @@ interface ShareRecipeButtonProps {
 }
 
 const ACTION_ERROR = 'Something went wrong. Try again.'
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeButtonProps) {
   const [open, setOpen] = useState(false)
@@ -17,6 +19,9 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLElement>(null)
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
     setShareUrl((currentUrl) =>
@@ -24,22 +29,58 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
     )
   }, [shareToken])
 
-  useEffect(() => {
-    if (!open) return
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
-    }
-
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [open])
-
-  function close() {
+  const close = useCallback(() => {
     if (loading) return
     setOpen(false)
     setCopied(false)
     setError(null)
+  }, [loading])
+
+  useEffect(() => {
+    if (!open) return
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') close()
+    }
+
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [close, open])
+
+  useEffect(() => {
+    if (open) {
+      dialogRef.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+    } else if (wasOpenRef.current) {
+      triggerRef.current?.focus()
+    }
+
+    wasOpenRef.current = open
+  }, [open, shareToken])
+
+  function containFocus(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key !== 'Tab') return
+
+    const dialog = dialogRef.current
+    if (!dialog) return
+
+    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+    if (focusable.length === 0) return
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    const active = document.activeElement
+
+    if (event.shiftKey && active === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault()
+      first.focus()
+    } else if (!dialog.contains(active)) {
+      event.preventDefault()
+      const target = event.shiftKey ? last : first
+      target.focus()
+    }
   }
 
   async function handleEnable() {
@@ -94,6 +135,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
@@ -110,11 +152,13 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
             onMouseDown={close}
           />
           <section
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="share-recipe-title"
             className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl sm:p-6"
             onMouseDown={(event) => event.stopPropagation()}
+            onKeyDown={containFocus}
           >
             <div className="flex items-start justify-between gap-4">
               <h2 id="share-recipe-title" className="text-lg font-semibold tracking-tight text-gray-900">
@@ -136,6 +180,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
                 <p className="text-sm leading-5 text-gray-500">Anyone with this link can view the recipe.</p>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
                   <input
+                    data-autofocus
                     readOnly
                     aria-label="Share link"
                     value={shareUrl}
@@ -168,6 +213,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
             ) : (
               <div className="mt-5">
                 <button
+                  data-autofocus
                   type="button"
                   disabled={loading}
                   onClick={handleEnable}

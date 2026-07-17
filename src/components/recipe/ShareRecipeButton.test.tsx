@@ -123,4 +123,51 @@ describe('ShareRecipeButton', () => {
     fireEvent.mouseDown(screen.getByTestId('share-modal-backdrop'))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+
+  it('moves focus into the dialog and restores it to Share when closed', async () => {
+    render(<ShareRecipeButton recipeId="recipe-1" initialShareToken={null} />)
+    const trigger = screen.getByRole('button', { name: 'Share' })
+
+    await openShare()
+    expect(screen.getByRole('button', { name: 'Create share link' })).toHaveFocus()
+
+    await userEvent.keyboard('{Escape}')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('contains forward and backward Tab navigation within the dialog', async () => {
+    render(<ShareRecipeButton recipeId="recipe-1" initialShareToken={null} />)
+    await openShare()
+
+    const close = screen.getByRole('button', { name: 'Close' })
+    const create = screen.getByRole('button', { name: 'Create share link' })
+    expect(create).toHaveFocus()
+
+    await userEvent.tab()
+    expect(close).toHaveFocus()
+
+    await userEvent.tab({ shift: true })
+    expect(create).toHaveFocus()
+  })
+
+  it('does not close on Escape while a share request is in flight', async () => {
+    let resolveRequest!: (value: Response) => void
+    vi.mocked(global.fetch).mockReturnValue(
+      new Promise<Response>((resolve) => {
+        resolveRequest = resolve
+      }),
+    )
+    render(<ShareRecipeButton recipeId="recipe-1" initialShareToken={null} />)
+    await openShare()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Create share link' }))
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled())
+    await userEvent.keyboard('{Escape}')
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    resolveRequest(
+      response({ body: { share_token: 'new-token', share_url: 'https://dapcook.test/s/new-token' } }),
+    )
+    expect(await screen.findByDisplayValue('https://dapcook.test/s/new-token')).toBeInTheDocument()
+  })
 })
