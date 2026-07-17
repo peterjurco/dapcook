@@ -79,7 +79,11 @@ export async function DELETE(
   // Soft delete — archive instead of removing
   const { error } = await supabase
     .from('recipes')
-    .update({ is_archived: true, updated_at: new Date().toISOString() })
+    .update({
+      is_archived: true,
+      share_token: null,
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', params.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

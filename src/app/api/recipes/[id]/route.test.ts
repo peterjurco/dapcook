@@ -135,6 +135,7 @@ describe('DELETE /api/recipes/[id]', () => {
     const qb = supabase.from.mock.results[0].value
     const updateArg = qb.update.mock.calls[0][0] as Record<string, unknown>
     expect(updateArg.is_archived).toBe(true)
+    expect(updateArg.share_token).toBeNull()
   })
 
   it('returns 500 on DB error', async () => {
