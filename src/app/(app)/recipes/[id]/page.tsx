@@ -4,6 +4,7 @@ import { ChevronLeft, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { AddToPlanButton } from '@/components/recipe/AddToPlanButton'
 import { RecipeView } from '@/components/recipe/RecipeView'
+import { ShareRecipeButton } from '@/components/recipe/ShareRecipeButton'
 import type { Recipe } from '@/types/database'
 
 interface Props {
@@ -34,6 +35,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       </Link>
       <div className="flex items-center gap-2">
         <AddToPlanButton recipeId={r.id} />
+        <ShareRecipeButton recipeId={r.id} initialShareToken={r.share_token} />
         <Link
           href={`/recipes/${r.id}/edit`}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"

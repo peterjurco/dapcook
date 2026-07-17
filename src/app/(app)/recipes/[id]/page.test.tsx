@@ -61,6 +61,7 @@ describe('RecipeDetailPage', () => {
     render(await RecipeDetailPage({ params: { id: 'recipe-1' } }))
 
     expect(screen.getByRole('button', { name: /add to plan/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /delete/i })).toBeNull()
   })
 })
