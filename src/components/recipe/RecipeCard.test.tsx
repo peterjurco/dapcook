@@ -28,6 +28,7 @@ const recipe = {
   notes: null,
   is_archived: false,
   last_used_at: null,
+  share_token: null,
   title_normalized: 'tomato pasta',
   created_at: '2026-06-04T00:00:00.000Z',
   updated_at: '2026-06-04T00:00:00.000Z',
