@@ -9,4 +9,8 @@ describe('isPublicPath', () => {
   it('keeps recipe detail routes protected', () => {
     expect(isPublicPath('/recipes/recipe-1')).toBe(false)
   })
+
+  it('allows crawlers to fetch the robots policy', () => {
+    expect(isPublicPath('/robots.txt')).toBe(true)
+  })
 })
