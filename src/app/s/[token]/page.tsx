@@ -40,7 +40,7 @@ export default async function SharedRecipePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <RecipeView recipe={typedRecipe} />
+      <RecipeView recipe={typedRecipe} mode="public" />
     </main>
   )
 }

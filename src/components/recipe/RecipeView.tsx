@@ -8,6 +8,7 @@ import type { Ingredient, Step } from '@/types/recipe'
 interface RecipeViewProps {
   recipe: Recipe
   toolbar?: ReactNode
+  mode?: 'authenticated' | 'public'
 }
 
 function formatTime(min: number | null, label: string) {
@@ -31,7 +32,7 @@ function tagColor(tag: string) {
   return TAG_COLORS[tag.toLowerCase()] ?? 'bg-gray-100 text-gray-600'
 }
 
-export function RecipeView({ recipe: r, toolbar }: RecipeViewProps) {
+export function RecipeView({ recipe: r, toolbar, mode = 'authenticated' }: RecipeViewProps) {
   const ingredients = (r.ingredients ?? []) as unknown as Ingredient[]
   const steps = (r.steps ?? []) as unknown as Step[]
   const totalTime = (r.prep_time_min ?? 0) + (r.cook_time_min ?? 0)
@@ -151,7 +152,9 @@ export function RecipeView({ recipe: r, toolbar }: RecipeViewProps) {
                   li: ({ children }) => <li>{children}</li>,
                   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                   em: ({ children }) => <em className="italic">{children}</em>,
-                  a: ({ href, children }) => <a href={href} className="underline hover:text-amber-900" target="_blank" rel="noopener noreferrer">{children}</a>,
+                  a: ({ href, children }) => mode === 'public'
+                    ? <span>{children}</span>
+                    : <a href={href} className="underline hover:text-amber-900" target="_blank" rel="noopener noreferrer">{children}</a>,
                 }}
               >
                 {r.notes}

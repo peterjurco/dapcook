@@ -66,4 +66,29 @@ describe('RecipeView', () => {
     expect(screen.queryByRole('link', { name: /edit|planner|share|copy|all recipes/i })).toBeNull()
     expect(document.querySelector('form')).toBeNull()
   })
+
+  it('preserves Markdown note links in authenticated mode', () => {
+    render(<RecipeView recipe={{ ...recipe, notes: 'See [timing tips](https://notes.test/timing).' }} />)
+
+    expect(screen.getByRole('link', { name: 'timing tips' })).toHaveAttribute(
+      'href',
+      'https://notes.test/timing'
+    )
+  })
+
+  it('renders Markdown note-link text without an anchor in public mode', () => {
+    render(
+      <RecipeView
+        recipe={{ ...recipe, notes: 'See [timing tips](https://notes.test/timing).' }}
+        mode="public"
+      />
+    )
+
+    expect(screen.getByText('timing tips')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'timing tips' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Original recipe' })).toHaveAttribute(
+      'href',
+      'https://recipes.test/tomato-pasta'
+    )
+  })
 })

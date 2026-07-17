@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
 import { usePostHog } from 'posthog-js/react'
+import { isPostHogPath } from '@/lib/analytics/is-posthog-path'
 
 function PostHogPageViewInner() {
   const pathname = usePathname()
@@ -10,7 +11,7 @@ function PostHogPageViewInner() {
   const posthog = usePostHog()
 
   useEffect(() => {
-    if (!posthog) return
+    if (!posthog || !isPostHogPath(pathname)) return
     let url = window.location.origin + pathname
     const params = searchParams.toString()
     if (params) url += `?${params}`

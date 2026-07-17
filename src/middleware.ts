@@ -16,7 +16,14 @@ export function isPublicPath(pathname: string): boolean {
   )
 }
 
+export function canBypassAuth(pathname: string): boolean {
+  return pathname === '/robots.txt' || pathname === '/s' || pathname.startsWith('/s/')
+}
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  if (canBypassAuth(pathname)) return NextResponse.next({ request })
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -44,8 +51,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
 
   // Redirect root to /recipes (or /login if unauthed — handled below)
   if (pathname === '/') {

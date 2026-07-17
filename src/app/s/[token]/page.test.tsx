@@ -48,8 +48,8 @@ vi.mock('@/lib/supabase/admin', () => ({
 }))
 
 vi.mock('@/components/recipe/RecipeView', () => ({
-  RecipeView: ({ recipe: renderedRecipe, toolbar }: { recipe: Recipe; toolbar?: React.ReactNode }) => (
-    <div data-testid="recipe-view" data-recipe-id={renderedRecipe.id} data-has-toolbar={Boolean(toolbar)} />
+  RecipeView: ({ recipe: renderedRecipe, toolbar, mode }: { recipe: Recipe; toolbar?: React.ReactNode; mode?: string }) => (
+    <div data-testid="recipe-view" data-recipe-id={renderedRecipe.id} data-has-toolbar={Boolean(toolbar)} data-mode={mode} />
   ),
 }))
 
@@ -85,6 +85,7 @@ describe('SharedRecipePage', () => {
     expect(container.querySelector('main')).toHaveClass('min-h-dvh', 'bg-gray-50', 'text-gray-900')
     expect(screen.getByTestId('recipe-view')).toHaveAttribute('data-recipe-id', recipe.id)
     expect(screen.getByTestId('recipe-view')).toHaveAttribute('data-has-toolbar', 'false')
+    expect(screen.getByTestId('recipe-view')).toHaveAttribute('data-mode', 'public')
 
     const script = container.querySelector('script[type="application/ld+json"]')
     expect(script).not.toBeNull()

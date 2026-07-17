@@ -14,6 +14,10 @@ const nextConfig = {
             key: 'X-Robots-Tag',
             value: 'noindex, nofollow',
           },
+          {
+            key: 'Referrer-Policy',
+            value: 'no-referrer',
+          },
         ],
       },
     ]

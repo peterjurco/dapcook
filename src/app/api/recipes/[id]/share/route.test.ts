@@ -79,6 +79,21 @@ describe('POST /api/recipes/[id]/share', () => {
     expect(response.status).toBe(404)
   })
 
+  it('returns 404 without issuing a token for an archived recipe', async () => {
+    const supabase = makeSupabase(mockUser, [
+      { data: { id: 'r-1', share_token: null, is_archived: true }, error: null },
+    ])
+    vi.mocked(createClient).mockReturnValue(
+      supabase as unknown as ReturnType<typeof createClient>
+    )
+
+    const response = await POST(req('POST'), params)
+
+    expect(response.status).toBe(404)
+    expect(createShareToken).not.toHaveBeenCalled()
+    expect(supabase.from).toHaveBeenCalledTimes(1)
+  })
+
   it('returns the existing token without updating', async () => {
     const supabase = makeSupabase(mockUser, [
       { data: { id: 'r-1', share_token: 'existing-token' }, error: null },
@@ -117,6 +132,24 @@ describe('POST /api/recipes/[id]/share', () => {
     const updateBuilder = supabase.from.mock.results[1].value
     expect(updateBuilder.update).toHaveBeenCalledWith({ share_token: 'token-one' })
     expect(updateBuilder.is).toHaveBeenCalledWith('share_token', null)
+    expect(updateBuilder.eq).toHaveBeenCalledWith('is_archived', false)
+  })
+
+  it('returns 404 when the recipe is archived concurrently with token creation', async () => {
+    const supabase = makeSupabase(mockUser, [
+      { data: { id: 'r-1', share_token: null, is_archived: false }, error: null },
+      { data: null, error: null },
+      { data: { share_token: null, is_archived: true }, error: null },
+    ])
+    vi.mocked(createClient).mockReturnValue(
+      supabase as unknown as ReturnType<typeof createClient>
+    )
+
+    const response = await POST(req('POST'), params)
+
+    expect(response.status).toBe(404)
+    expect(createShareToken).toHaveBeenCalledOnce()
+    expect(supabase.from.mock.results[1].value.eq).toHaveBeenCalledWith('is_archived', false)
   })
 
   it('retries a 23505 unique violation with a new token', async () => {

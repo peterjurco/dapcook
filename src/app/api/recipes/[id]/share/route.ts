@@ -21,12 +21,13 @@ export async function POST(
 
   const { data: recipe, error: readError } = await supabase
     .from('recipes')
-    .select('id, share_token')
+    .select('id, share_token, is_archived')
     .eq('id', params.id)
     .maybeSingle()
 
   if (readError) return NextResponse.json({ error: 'Unable to share recipe' }, { status: 500 })
   if (!recipe) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (recipe.is_archived) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (recipe.share_token) return shareResponse(request, recipe.share_token)
 
   for (let attempt = 0; attempt < MAX_TOKEN_ATTEMPTS; attempt += 1) {
@@ -35,6 +36,7 @@ export async function POST(
       .from('recipes')
       .update({ share_token: token })
       .eq('id', params.id)
+      .eq('is_archived', false)
       .is('share_token', null)
       .select('share_token')
       .maybeSingle()
@@ -45,9 +47,12 @@ export async function POST(
 
     const { data: concurrent } = await supabase
       .from('recipes')
-      .select('share_token')
+      .select('share_token, is_archived')
       .eq('id', params.id)
       .maybeSingle()
+    if (!concurrent || concurrent.is_archived) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
     if (concurrent?.share_token) return shareResponse(request, concurrent.share_token)
   }
 
