@@ -1,16 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { ShoppingClient } from './ShoppingClient'
 import type { ShoppingItem, ShoppingList, ShoppingCategory } from '@/types/database'
 
 const mockCapture = vi.fn()
+const realtime = vi.hoisted(() => ({
+  insertHandler: null as null | ((payload: { new: ShoppingItem }) => void),
+}))
 
 vi.mock('posthog-js/react', () => ({
   usePostHog: () => ({ capture: mockCapture }),
 }))
 
-vi.mock('./ShoppingItemRow', () => ({
-  ShoppingItemRow: () => null,
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => {
+    const channel = {
+      on: vi.fn((
+        _type: string,
+        config: { event: string },
+        handler: (payload: { new: ShoppingItem }) => void
+      ) => {
+        if (config.event === 'INSERT') realtime.insertHandler = handler
+        return channel
+      }),
+      subscribe: vi.fn(() => channel),
+    }
+    return {
+      channel: vi.fn(() => channel),
+      removeChannel: vi.fn(),
+    }
+  },
 }))
 
 const mockList: ShoppingList = {
@@ -44,6 +63,7 @@ const defaultProps = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  realtime.insertHandler = null
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
 })
 
@@ -100,5 +120,52 @@ describe('ShoppingClient', () => {
       { method: 'DELETE' }
     )
     expect(queryByText('Remove all items from the list?')).toBeNull()
+  })
+
+  it('does not append a realtime duplicate while a new item is saving', async () => {
+    const itemId = '11111111-1111-4111-8111-111111111111'
+    const randomUuid = vi.spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValueOnce(itemId)
+      .mockReturnValueOnce('22222222-2222-4222-8222-222222222222')
+    const persistedItem: ShoppingItem = {
+      ...mockItem,
+      id: itemId,
+      name: 'Milk',
+    }
+    let resolvePost!: (response: { ok: boolean; json: () => Promise<ShoppingItem> }) => void
+    const postResponse = new Promise<{ ok: boolean; json: () => Promise<ShoppingItem> }>((resolve) => {
+      resolvePost = resolve
+    })
+    vi.mocked(fetch).mockImplementation((url) => {
+      if (url === '/api/shopping/items') return postResponse as Promise<Response>
+      return Promise.resolve({ ok: true }) as Promise<Response>
+    })
+
+    render(
+      <ShoppingClient {...defaultProps} initialList={mockList} />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Add item' }))
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Milk' } })
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+
+    const createRequest = vi.mocked(fetch).mock.calls.find(([url]) => url === '/api/shopping/items')
+    expect(JSON.parse(createRequest?.[1]?.body as string)).toMatchObject({ id: itemId })
+    expect(realtime.insertHandler).not.toBeNull()
+    act(() => {
+      realtime.insertHandler?.({ new: persistedItem })
+    })
+
+    try {
+      expect(screen.getAllByText('Milk')).toHaveLength(1)
+    } finally {
+      await act(async () => {
+        resolvePost({
+          ok: true,
+          json: () => Promise.resolve(persistedItem),
+        })
+        await postResponse
+      })
+      randomUuid.mockRestore()
+    }
   })
 })

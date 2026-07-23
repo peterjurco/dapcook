@@ -72,6 +72,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       return a.sort_order - b.sort_order
     })
   })
+  const [pendingItemIds, setPendingItemIds] = useState<Set<string>>(() => new Set())
   const [categories] = useState<ShoppingCategory[]>(initialCategories)
   const [recipeNames] = useState<Record<string, string>>(initialRecipeNames)
   const [copied, setCopied] = useState(false)
@@ -139,7 +140,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }
 
   async function handleUpdate(id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) {
-    if (id.startsWith('pending-')) {
+    if (pendingItemIds.has(id)) {
       // Pending item: POST to create for real, then PATCH sort_order to keep position
       if (!changes.name?.trim()) {
         setItems((prev) => prev.filter((item) => item.id !== id))
@@ -151,6 +152,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id,
           list_id: list.id,
           name: changes.name.trim(),
           category: pendingItem.category,
@@ -166,10 +168,14 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sort_order: targetOrder }),
       })
-      setItems((prev) => prev
-        .filter((i) => i.id !== created.id) // remove if realtime INSERT already added it
-        .map((i) => i.id === id ? { ...created, sort_order: targetOrder } : i)
-      )
+      setItems((prev) => prev.map((item) =>
+        item.id === id ? { ...created, sort_order: targetOrder } : item
+      ))
+      setPendingItemIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
       return
     }
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, ...changes } : item))
@@ -182,7 +188,14 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
 
   async function handleDelete(id: string) {
     setItems((prev) => prev.filter((item) => item.id !== id))
-    if (!id.startsWith('pending-')) {
+    const wasPending = pendingItemIds.has(id)
+    if (wasPending) {
+      setPendingItemIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    } else {
       await fetch(`/api/shopping/items/${id}`, { method: 'DELETE' })
     }
   }
@@ -191,7 +204,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     const afterItem = items.find((i) => i.id === afterId)
     if (!afterItem) return
     const pendingItem: ShoppingItem = {
-      id: `pending-${Date.now()}`,
+      id: crypto.randomUUID(),
       shopping_list_id: list?.id ?? '',
       name: '',
       quantity: null,
@@ -201,6 +214,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       sort_order: afterItem.sort_order + 0.5,
       source_recipe_ids: [],
     }
+    setPendingItemIds((prev) => new Set(prev).add(pendingItem.id))
     setItems((prev) => {
       const idx = prev.findIndex((i) => i.id === afterId)
       if (idx === -1) return [...prev, pendingItem]
@@ -212,7 +226,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
 
   function handleCreateFirst() {
     const pendingItem: ShoppingItem = {
-      id: `pending-${Date.now()}`,
+      id: crypto.randomUUID(),
       shopping_list_id: list?.id ?? '',
       name: '',
       quantity: null,
@@ -222,6 +236,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       sort_order: 0,
       source_recipe_ids: [],
     }
+    setPendingItemIds((prev) => new Set(prev).add(pendingItem.id))
     setItems([pendingItem])
   }
 
@@ -259,7 +274,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     // Persist changed positions and/or category (skip unsaved pending items)
     await Promise.all(
       reordered.flatMap((item, i) => {
-        if (item.id.startsWith('pending-')) return []
+        if (pendingItemIds.has(item.id)) return []
         const patches: Record<string, unknown> = {}
         if (item.sort_order !== i) patches.sort_order = i
         if (item.id === draggedId && categoryChanged) patches.category = newCategory
@@ -392,7 +407,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
                         onCheck={handleCheck}
                         onUpdate={handleUpdate}
                         onDelete={handleDelete}
-                        isNewItem={item.id.startsWith('pending-')}
+                        isNewItem={pendingItemIds.has(item.id)}
                         onCreateBelow={handleCreateBelow}
                       />
                     </div>
@@ -436,4 +451,3 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     </div>
   )
 }
-
