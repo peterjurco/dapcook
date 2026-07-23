@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function POST(request: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -12,6 +14,7 @@ export async function POST(request: NextRequest) {
   const householdId = profile.household_id
 
   const body = await request.json() as {
+    id: string
     list_id: string
     name: string
     quantity?: number | null
@@ -21,6 +24,9 @@ export async function POST(request: NextRequest) {
 
   if (!body.list_id || !body.name?.trim()) {
     return NextResponse.json({ error: 'list_id and name are required' }, { status: 400 })
+  }
+  if (!UUID_PATTERN.test(body.id ?? '')) {
+    return NextResponse.json({ error: 'A valid id is required' }, { status: 400 })
   }
 
   // Verify list belongs to household
@@ -47,6 +53,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('shopping_items')
     .insert({
+      id: body.id,
       shopping_list_id: list.id,
       name: body.name.trim(),
       quantity: body.quantity ?? null,
