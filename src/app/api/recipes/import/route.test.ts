@@ -132,6 +132,25 @@ describe('POST /api/recipes/import', () => {
     expect(steps).toContain('parsing')
   })
 
+  it('calls scrapeRecipe with the household id and an onExtracting callback', async () => {
+    await POST(req({ url: 'https://example.com/pasta' }))
+    expect(vi.mocked(scrapeRecipe)).toHaveBeenCalledWith(
+      'https://example.com/pasta',
+      expect.objectContaining({ householdId: 'hh-1', onExtracting: expect.any(Function) })
+    )
+  })
+
+  it('emits an extracting step event when the scraper reports it', async () => {
+    vi.mocked(scrapeRecipe).mockImplementation(async (_url, options) => {
+      options?.onExtracting?.()
+      return { raw: rawScraped }
+    })
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    const events = await collectEvents(res)
+    const steps = events.filter(e => e.type === 'step').map(e => (e as Extract<ImportEvent, { type: 'step' }>).key)
+    expect(steps).toContain('extracting')
+  })
+
   it('returns draft in done event on successful scrape', async () => {
     const res = await POST(req({ url: 'https://example.com/pasta' }))
     const events = await collectEvents(res)

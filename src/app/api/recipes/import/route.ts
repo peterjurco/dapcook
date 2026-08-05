@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
       send({ type: 'step', key: 'scraping', message: 'Fetching recipe page...' })
       let scrapeResult: Awaited<ReturnType<typeof scrapeRecipe>>
       try {
-        scrapeResult = await scrapeRecipe(url)
+        scrapeResult = await scrapeRecipe(url, {
+          householdId: profile?.household_id ?? undefined,
+          onExtracting: () => send({ type: 'step', key: 'extracting', message: 'Reading the full page with AI...' }),
+        })
       } catch (err) {
         send({ type: 'error', error: err instanceof Error ? err.message : 'Failed to fetch the URL' })
         controller.close()
