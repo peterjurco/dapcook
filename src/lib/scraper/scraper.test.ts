@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const { mockExtract } = vi.hoisted(() => ({ mockExtract: vi.fn() }))
 vi.mock('@/lib/ai/extract-recipe', () => ({ extractRecipeFromContent: mockExtract }))
@@ -89,6 +89,11 @@ function mockFetch(html: string) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubEnv('RECIPE_IMPORT_USE_AI', 'true')
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
 })
 
 describe('scrapeRecipe — extraction tier', () => {
@@ -168,5 +173,22 @@ describe('scrapeRecipe — extraction tier', () => {
     await scrapeRecipe(URL, { householdId: 'hh-1' })
 
     expect(mockExtract).toHaveBeenCalledWith(expect.any(String), URL, 'hh-1')
+  })
+
+  it('skips the AI extraction tier entirely when RECIPE_IMPORT_USE_AI is not enabled', async () => {
+    vi.stubEnv('RECIPE_IMPORT_USE_AI', 'false')
+    mockFetch(PARTIAL_JSONLD_HTML)
+
+    const { raw } = await scrapeRecipe(URL)
+
+    expect(mockExtract).not.toHaveBeenCalled()
+    expect(raw.partial).toBe(true)
+  })
+
+  it('falls back to base (partial) result when AI extraction rejects', async () => {
+    mockFetch(PARTIAL_JSONLD_HTML)
+    mockExtract.mockRejectedValue(new Error('rate limited'))
+
+    await expect(scrapeRecipe(URL)).resolves.toMatchObject({ raw: { partial: true } })
   })
 })

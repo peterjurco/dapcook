@@ -59,20 +59,26 @@ export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Pr
   // before falling back to bare meta tags.
   const base = jsonLdResult ?? parseMetaFallback($, url)
 
-  const article = extractArticleContent(html, url)
-  if (article) {
-    options.onExtracting?.()
-    const extracted = await extractRecipeFromContent(article.textContent, url, options.householdId)
-    if (extracted) {
-      return {
-        raw: {
-          ...base,
-          rawIngredients: extracted.rawIngredients,
-          rawSteps: extracted.rawSteps,
-          partial: false,
-          partial_reason: undefined,
-        },
-        detectedLanguage,
+  if (process.env.RECIPE_IMPORT_USE_AI === 'true') {
+    const article = extractArticleContent(html, url)
+    if (article) {
+      options.onExtracting?.()
+      try {
+        const extracted = await extractRecipeFromContent(article.textContent, url, options.householdId)
+        if (extracted) {
+          return {
+            raw: {
+              ...base,
+              rawIngredients: extracted.rawIngredients,
+              rawSteps: extracted.rawSteps,
+              partial: false,
+              partial_reason: undefined,
+            },
+            detectedLanguage,
+          }
+        }
+      } catch (err) {
+        console.error(`[scraper] AI extraction failed for ${url}:`, err)
       }
     }
   }
