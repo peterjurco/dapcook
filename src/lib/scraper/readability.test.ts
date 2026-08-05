@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
+import { execFileSync } from 'node:child_process'
 import { extractArticleContent } from './readability'
 
 const URL = 'https://example.com/grandmas-apple-pie'
@@ -94,5 +95,41 @@ describe('extractArticleContent', () => {
     const result = extractArticleContent(LONG_ARTICLE_HTML, URL)
     expect(result).not.toBeNull()
     expect(result!.textContent.length).toBeGreaterThan(200)
+  })
+})
+
+describe('extractArticleContent dependencies — Vercel compatibility', () => {
+  // Vercel's Node.js serverless function runtime unconditionally passes
+  // --no-experimental-require-module, disabling require() of ES modules
+  // regardless of the selected Node.js version (confirmed via Vercel community
+  // reports; this is NOT fixed by bumping engines.node). jsdom (v26+) fails this
+  // because it requires the ESM-only @exodus/bytes package from several of its
+  // own core files. This test reproduces that exact restriction locally and
+  // would have caught that regression — and would catch it again if a future
+  // dependency bump (linkedom or otherwise) reintroduces a synchronous require()
+  // of an ES module anywhere in this module's dependency chain.
+  it('requires cleanly with Node ESM-require support disabled', () => {
+    const script = `
+      const { parseHTML } = require('linkedom');
+      const { Readability } = require('@mozilla/readability');
+      const { document } = parseHTML(
+        '<html><body><article><h1>Test</h1><p>' +
+        'This is a long enough paragraph of article text for Readability to ' +
+        'recognize it as real content worth extracting, rather than discarding it.' +
+        '</p></article></body></html>'
+      );
+      const article = new Readability(document).parse();
+      if (!article || !article.textContent.includes('Readability')) {
+        throw new Error('extraction did not produce expected content');
+      }
+      console.log('OK');
+    `
+
+    const result = execFileSync(process.execPath, ['--no-require-module', '-e', script], {
+      encoding: 'utf-8',
+      cwd: process.cwd(),
+    })
+
+    expect(result.trim()).toBe('OK')
   })
 })

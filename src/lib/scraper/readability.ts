@@ -1,4 +1,4 @@
-import { JSDOM } from 'jsdom'
+import { parseHTML } from 'linkedom'
 import { Readability } from '@mozilla/readability'
 
 export interface ArticleContent {
@@ -14,11 +14,16 @@ export interface ArticleContent {
 // back non-null with a handful of characters, so we reject those explicitly.
 const CHAR_THRESHOLD = 200
 
+// Uses linkedom instead of jsdom: Vercel's Node.js function runtime unconditionally
+// passes --no-experimental-require-module, disabling require() of ES modules
+// regardless of the selected Node.js version. jsdom (v26+) requires the ESM-only
+// @exodus/bytes package from several of its own core files, which crashes there.
+// linkedom is pinned to an exact pre-ESM version — see package.json.
 export function extractArticleContent(html: string, url: string): ArticleContent | null {
   let article: ReturnType<Readability['parse']>
   try {
-    const dom = new JSDOM(html, { url })
-    article = new Readability(dom.window.document, { charThreshold: CHAR_THRESHOLD }).parse()
+    const { document } = parseHTML(html)
+    article = new Readability(document, { charThreshold: CHAR_THRESHOLD }).parse()
   } catch (err) {
     console.error(`[readability] Failed to parse article content for ${url}:`, err)
     return null
