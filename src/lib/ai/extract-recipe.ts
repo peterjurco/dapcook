@@ -9,6 +9,11 @@ export interface ExtractedRecipeContent {
 
 const client = new Anthropic()
 
+// Recipe article text rarely needs more than this to contain the full ingredient
+// list and instructions; caps cost on unusually long blog posts (long personal
+// backstories, imperfectly-filtered related-post blocks, etc).
+const MAX_ARTICLE_CHARS = 6000
+
 export async function extractRecipeFromContent(
   articleText: string,
   sourceUrl: string,
@@ -19,10 +24,12 @@ export async function extractRecipeFromContent(
     return null
   }
 
+  const truncatedArticleText = articleText.slice(0, MAX_ARTICLE_CHARS)
+
   const prompt = `The text below is the main article content of a web page. Determine whether it contains a cooking recipe.
 
 Article text:
-${articleText}
+${truncatedArticleText}
 
 Return a JSON object with EXACTLY this structure, no other text:
 {

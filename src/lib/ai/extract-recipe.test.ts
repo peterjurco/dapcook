@@ -89,4 +89,18 @@ describe('extractRecipeFromContent', () => {
       { input_tokens: 50, output_tokens: 30 }
     )
   })
+
+  it('truncates a very long articleText before sending it to Claude', async () => {
+    mockAnthropicResponse(JSON.stringify({ rawIngredients: [], rawSteps: [] }))
+
+    const longArticleText = 'a'.repeat(50_000)
+    await extractRecipeFromContent(longArticleText, URL)
+
+    const promptSent = mockCreate.mock.calls[0][0].messages[0].content as string
+    // The full 50,000-char blob must not have been forwarded verbatim.
+    expect(promptSent.length).toBeLessThan(longArticleText.length)
+    // Only a bounded prefix of the article text should appear in the prompt.
+    expect(promptSent).not.toContain(longArticleText)
+    expect(promptSent).toContain('a'.repeat(100))
+  })
 })
