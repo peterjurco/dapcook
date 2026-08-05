@@ -42,6 +42,35 @@ const NON_ARTICLE_HTML = `
 <body><nav><a href="/">Home</a></nav><footer>Copyright 2024</footer></body></html>
 `
 
+// Readability recognizes both of these as article candidates and returns non-null
+// for both (verified: extracted textContent is 74 and 234 chars respectively) — the
+// CHAR_THRESHOLD floor check inside extractArticleContent is what rejects the short one.
+const SHORT_ARTICLE_HTML = `
+<!DOCTYPE html>
+<html><head><title>Quick Soup</title></head>
+<body>
+<nav><a href="/">Home</a></nav>
+<article>
+<h1>Quick Soup</h1>
+<p>A quick weeknight soup with just five ingredients and ten minutes of prep.</p>
+</article>
+<footer>Copyright 2024</footer>
+</body></html>
+`
+
+const LONG_ARTICLE_HTML = `
+<!DOCTYPE html>
+<html><head><title>Quick Soup</title></head>
+<body>
+<nav><a href="/">Home</a></nav>
+<article>
+<h1>Quick Soup</h1>
+<p>A quick weeknight soup with just five ingredients and ten minutes of prep. It comes together in one pot, uses pantry staples you already have, and reheats beautifully for lunch the next day without losing any of its flavor or texture.</p>
+</article>
+<footer>Copyright 2024</footer>
+</body></html>
+`
+
 describe('extractArticleContent', () => {
   it('extracts title and text content from a blog article', () => {
     const result = extractArticleContent(ARTICLE_HTML, URL)
@@ -54,5 +83,16 @@ describe('extractArticleContent', () => {
   it('returns null when the page has no identifiable article content', () => {
     const result = extractArticleContent(NON_ARTICLE_HTML, URL)
     expect(result).toBeNull()
+  })
+
+  it('returns null when extracted content is clearly under CHAR_THRESHOLD', () => {
+    const result = extractArticleContent(SHORT_ARTICLE_HTML, URL)
+    expect(result).toBeNull()
+  })
+
+  it('returns non-null when extracted content is clearly over CHAR_THRESHOLD', () => {
+    const result = extractArticleContent(LONG_ARTICLE_HTML, URL)
+    expect(result).not.toBeNull()
+    expect(result!.textContent.length).toBeGreaterThan(200)
   })
 })

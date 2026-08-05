@@ -15,14 +15,22 @@ export interface ArticleContent {
 const CHAR_THRESHOLD = 200
 
 export function extractArticleContent(html: string, url: string): ArticleContent | null {
-  const dom = new JSDOM(html, { url })
-  const article = new Readability(dom.window.document, { charThreshold: CHAR_THRESHOLD }).parse()
+  let article: ReturnType<Readability['parse']>
+  try {
+    const dom = new JSDOM(html, { url })
+    article = new Readability(dom.window.document, { charThreshold: CHAR_THRESHOLD }).parse()
+  } catch (err) {
+    console.error(`[readability] Failed to parse article content for ${url}:`, err)
+    return null
+  }
 
-  const textContent = article?.textContent?.trim() ?? ''
+  if (!article) return null
+
+  const textContent = article.textContent?.trim() ?? ''
   if (textContent.length < CHAR_THRESHOLD) return null
 
   return {
-    title: article!.title?.trim() ?? '',
+    title: article.title?.trim() ?? '',
     textContent,
   }
 }
