@@ -38,17 +38,25 @@ Wraps `@mozilla/readability` over `jsdom` (jsdom already a dependency; `@mozilla
 
 ### AI extraction — `src/lib/ai/extract-recipe.ts`
 
-`extractRecipeFromContent(articleText: string, sourceUrl: string): Promise<RecipeDraft | null>`
+`extractRecipeFromContent(articleText: string, sourceUrl: string, householdId?: string): Promise<{ rawIngredients: string[]; rawSteps: string[] } | null>`
 
-Same pattern as `parse-recipe.ts`/`transform-recipe.ts`: Anthropic client, `claude-haiku-4-5-20251001`, gated behind `RECIPE_IMPORT_USE_AI`. Prompt asks the model to return `RecipeDraft`-shaped JSON (title, description, prep/cook time, servings, ingredients, steps) directly from the article text, and explicitly return a "not a recipe" signal when the text lacks a clear ingredient list and steps. That signal (or a JSON-parse/response failure, matching the existing `rawFallback` pattern in `parse-recipe.ts`) causes the function to return `null`.
+Deliberately mirrors the output shape of `parseJsonLd`/`parseMetaFallback` (raw string arrays), **not** a full `RecipeDraft`. This lets the extraction slot into the existing `rawIngredients`/`rawSteps` → `parseRecipeData()` structuring step in `route.ts` unchanged — no duplicate quantity/unit parsing logic, and translation/unit-conversion downstream keeps working exactly as it does for JSON-LD-sourced recipes today.
 
-Logged via the existing `logAiUsage`, consistent with the other two AI call sites.
+Same pattern as `parse-recipe.ts`/`transform-recipe.ts`: Anthropic client, `claude-haiku-4-5-20251001`, gated behind `RECIPE_IMPORT_USE_AI` (checked inside this function, matching `parse-recipe.ts`'s convention). Prompt asks the model to return the ingredient lines and instruction steps verbatim (no translation, no unit parsing) from the article text, or empty arrays if the text isn't a recipe / lacks a clear ingredient list or steps. A parse failure, missing JSON, or empty-arrays response all resolve to `null` — the caller treats this the same as "nothing found."
+
+Logged via the existing `logAiUsage`, consistent with the other two AI call sites — `householdId` is threaded in from `scrapeRecipe()`'s caller the same way it already reaches `parseRecipeData()`.
 
 ### Orchestration — `scrapeRecipe()`
 
-After `parseJsonLd()`, check completeness: `ingredients.length > 0 && steps.length > 0`. If incomplete:
-1. Run `extractArticleContent()`. If `null`, skip straight to `parseMetaFallback()`.
-2. Run `extractRecipeFromContent()`. If it returns a complete draft, use it (merging in any JSON-LD fields it didn't fill, e.g. `image_url`, if JSON-LD had partial data). If it returns `null`, fall through to `parseMetaFallback()` exactly as today.
+`scrapeRecipe()` gains a `householdId?: string` parameter (for AI usage logging), passed from `route.ts` where `profile.household_id` is already resolved before the stream starts.
+
+After `parseJsonLd()`:
+1. If it returned a non-partial result (`ingredients.length > 0 && steps.length > 0` — i.e. `!jsonLdResult.partial`), return it immediately — unchanged, tier 1 only.
+2. Otherwise compute `base = jsonLdResult ?? parseMetaFallback($, url)` (keeps whatever title/description/image/times/tags tier 1 already found, or falls back to meta tags for those fields).
+3. Run `extractArticleContent(html, url)`. If `null` (Readability found no article), skip straight to returning `base` — today's behavior, unchanged.
+4. Run `extractRecipeFromContent(article.textContent, url, householdId)`. If it returns non-null arrays, return `{ ...base, rawIngredients, rawSteps, partial: false, partial_reason: undefined }`. If `null`, return `base` unchanged — falls through to today's partial/meta behavior.
+
+Note: when tier 1's JSON-LD is *partially* populated (e.g. ingredients but no steps), a successful AI extraction replaces both raw arrays wholesale rather than splicing per-field — simpler, and this partial-JSON-LD case is rare enough not to warrant per-field merge logic.
 
 ### SSE stage — `src/app/api/recipes/import/route.ts`
 
