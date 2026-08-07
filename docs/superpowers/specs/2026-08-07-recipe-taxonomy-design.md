@@ -80,6 +80,8 @@ CREATE POLICY "household_access" ON tag_groups FOR ALL
   WITH CHECK (household_id = public.user_household_id());
 
 ALTER TABLE tags ADD COLUMN group_id UUID REFERENCES tag_groups(id) ON DELETE SET NULL;
+
+ALTER TABLE profiles ADD COLUMN default_recipe_filter TEXT[] NOT NULL DEFAULT '{}';
 ```
 
 That is the entire migration. Notably absent:
@@ -89,6 +91,10 @@ That is the entire migration. Notably absent:
 - **No backfill and no data migration.** Existing rows are untouched.
 - **No `color` on `tag_groups`.** Group-inherited colour was considered and rejected;
   colour belongs to the individual tag (see Deferred work).
+
+`profiles.default_recipe_filter` is per user rather than per household, because two
+members plausibly want different defaults (one plans dinners, one bakes). It holds
+tag names, matching how `recipes.tags` stores them.
 
 The `tags` table remains what it is today: sparse display metadata, with rows created
 lazily. Today a row appears when a colour is set; now it also appears when a group is
@@ -166,21 +172,58 @@ Consequence: for a household with no groups, all selected tags AND together. The
 semantics therefore differ slightly between the grouped and ungrouped renderings.
 This is accepted as invisible in practice.
 
-### 5. Recipe card
+### 5. Recipe list — default view
+
+A user who mostly cooks main meals should not have to tap `main` on every visit, but
+should still be able to browse cocktails occasionally without that becoming their new
+normal.
+
+`profiles.default_recipe_filter` holds a tag-name selection that is **pre-applied on
+every visit** to the recipe list. Deviating from it is a deliberate, temporary act:
+tapping the chip off (or selecting different tags) browses freely for that visit, and
+the next visit reverts to the default. Common case costs zero taps; the exception
+costs two and does not stick.
+
+Rejected alternative: remembering the last-used filter. It lets the rare case corrupt
+the common one — browse cocktails once and the next several visits open on cocktails
+— and it produces the "where did my recipes go?" moment when a forgotten filter is
+active.
+
+**Setting it.** A right-aligned text action on the existing "Show all tags" line, so
+it consumes no additional vertical space. It renders only while a filter selection is
+active. When the active selection already is the default it reads "Clear default",
+otherwise "Set as default". Text rather than an icon, because a pin icon would
+collide with the pinned-groups meaning established in section 2.
+
+The default can be any selection — grouped or ungrouped, single or multi-tag —
+because the action attaches to the selection as a whole rather than to a chip.
+
+**Search bypasses the default.** When a search query is present the default filter is
+not applied, with a one-line hint saying so. Otherwise a default of `main` would make
+searching "mojito" return nothing, silently breaking search.
+
+**Unknown tag names are dropped on load.** The stored names are intersected with the
+household's known tags before being applied, so a default referencing a since-renamed
+or deleted tag degrades to "no default" rather than "no recipes."
+
+The default's chips render as selected in the filter bar, so the active state is
+always visible. This is what prevents the hidden-filter problem.
+
+### 6. Recipe card
 
 No layout change. `RecipeCard.tsx` keeps its existing three-tag budget and `+N`
 overflow. Only the *ordering* changes: tags from pinned groups first (by group
 `position`), then the remainder, then truncate as today. The card becomes more
 informative without becoming larger — the pattern every surveyed app converged on.
 
-### 6. Recipe form
+### 7. Recipe form
 
 **Untouched.** `TagInput.tsx` keeps its type-ahead and most-used quick-add and never
 mentions groups. Per-group quick-pick chip rows were considered and rejected: they
 would re-import the taxonomy into the creation flow, which is exactly the friction
 this design exists to avoid.
 
-### 7. Settings
+### 8. Settings
 
 `TagsEditor.tsx` grows group management:
 
@@ -191,7 +234,7 @@ this design exists to avoid.
 
 Deleting a group prompts once, then removes the group and leaves its tags ungrouped.
 
-### 8. Import
+### 9. Import
 
 **Unchanged.** `api/recipes/import/route.ts` keeps its current rule of accepting only
 tags already known to the household. Scraped `recipeCategory` / `recipeCuisine` are
@@ -235,3 +278,7 @@ now — designing for them here would be speculative.
 - **No-groups regression** — a household with zero groups produces identical card and
   filter output to the current implementation.
 - **Two-row clamp** — the expand toggle switches between clamped and full height.
+- **Default view** — pre-applied on load; deviating from it does not persist across
+  visits; a search query bypasses it; stored names that no longer exist are dropped
+  rather than producing an empty result; "Set as default" / "Clear default" renders
+  only while a selection is active.
