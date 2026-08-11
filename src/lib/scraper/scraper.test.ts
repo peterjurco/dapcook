@@ -192,3 +192,27 @@ describe('scrapeRecipe — extraction tier', () => {
     await expect(scrapeRecipe(URL)).resolves.toMatchObject({ raw: { partial: true } })
   })
 })
+
+describe('scrapeRecipe — fetch failure diagnostics', () => {
+  it('logs identifying response details and still throws the same error on a blocked (e.g. Cloudflare) response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      headers: new Headers({ server: 'cloudflare', 'cf-ray': 'abc123-BTS' }),
+      text: () => Promise.resolve('<html><body>Sorry, you have been blocked</body></html>'),
+    }))
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await expect(scrapeRecipe(URL)).rejects.toThrow('Failed to fetch URL: 403 Forbidden')
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('403 Forbidden'),
+      expect.objectContaining({
+        server: 'cloudflare',
+        cfRay: 'abc123-BTS',
+        bodySnippet: expect.stringContaining('Sorry, you have been blocked'),
+      })
+    )
+  })
+})

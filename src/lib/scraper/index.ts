@@ -34,6 +34,16 @@ export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Pr
   })
 
   if (!response.ok) {
+    // Diagnostic logging for blocked/failed fetches (e.g. Cloudflare bot protection
+    // rejecting Vercel's serverless IP) — visible in Vercel's function logs, since we
+    // can't otherwise tell a WAF/anti-bot block apart from an origin-side 403/404 etc.
+    const bodySnippet = await response.text().catch(() => '')
+    console.error(`[scraper] Fetch failed for ${url}: ${response.status} ${response.statusText}`, {
+      server: response.headers.get('server'),
+      cfRay: response.headers.get('cf-ray'),
+      cfMitigated: response.headers.get('cf-mitigated'),
+      bodySnippet: bodySnippet.slice(0, 500),
+    })
     throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`)
   }
 
