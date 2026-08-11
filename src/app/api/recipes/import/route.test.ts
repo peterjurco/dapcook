@@ -161,12 +161,12 @@ describe('POST /api/recipes/import', () => {
     expect(done!.draft.steps).toEqual(parsedParts.steps)
   })
 
-  it('emits error event when scrape throws', async () => {
-    vi.mocked(scrapeRecipe).mockRejectedValue(new Error('Connection refused'))
+  it('emits a categorized error event when scrape throws', async () => {
+    vi.mocked(scrapeRecipe).mockRejectedValue(new Error('Failed to fetch URL: 403 Forbidden'))
     const res = await POST(req({ url: 'https://example.com/recipe' }))
     const events = await collectEvents(res)
     const errorEvent = events.find(e => e.type === 'error') as Extract<ImportEvent, { type: 'error' }> | undefined
-    expect(errorEvent?.error).toBe('Connection refused')
+    expect(errorEvent?.error).toContain('blocking automated imports')
   })
 
   it('passes raw ingredients and steps to parseRecipeData', async () => {

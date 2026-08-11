@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Import, Loader2, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { RecipeForm } from '@/components/recipe/RecipeForm'
 import type { RecipeDraft } from '@/types/recipe'
@@ -259,9 +260,14 @@ export default function ImportRecipePage() {
         </form>
 
         {error && (
-          <div className="mt-4 flex gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-            {error}
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <div className="flex gap-2">
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+              {error}
+            </div>
+            <Link href="/recipes/new" className="mt-2 inline-block font-medium underline hover:no-underline">
+              Add recipe manually instead
+            </Link>
           </div>
         )}
 

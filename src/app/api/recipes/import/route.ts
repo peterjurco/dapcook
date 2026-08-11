@@ -4,6 +4,7 @@ import { scrapeRecipe } from '@/lib/scraper'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
 import { transformRecipe } from '@/lib/ai/transform-recipe'
 import { categorizeTranslationError } from '@/lib/ai/translation-error'
+import { categorizeScrapeError } from '@/lib/scraper/scrape-error'
 import { LANGUAGE_NAMES } from '@/lib/constants/languages'
 import type { RecipeDraft } from '@/types/recipe'
 
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
           onExtracting: () => send({ type: 'step', key: 'extracting', message: 'Reading the full page with AI...' }),
         })
       } catch (err) {
-        send({ type: 'error', error: err instanceof Error ? err.message : 'Failed to fetch the URL' })
+        send({ type: 'error', error: categorizeScrapeError(err).message })
         controller.close()
         return
       }
