@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { InviteLink } from '@/components/settings/InviteLink'
 import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagsEditor } from '@/components/settings/TagsEditor'
+import { TagGroupsEditor } from '@/components/settings/TagGroupsEditor'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
@@ -28,7 +29,7 @@ export default async function SettingsPage() {
 
   if (!profile?.household_id) redirect('/onboarding')
 
-  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }, { data: shoppingCategories }, { data: shoppingRules }] = await Promise.all([
+  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }, { data: shoppingCategories }, { data: shoppingRules }, { data: tagGroups }] = await Promise.all([
     supabase.from('households').select('*').eq('id', profile.household_id).single(),
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
     supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
@@ -36,6 +37,7 @@ export default async function SettingsPage() {
     supabase.from('tags').select('name, color, group_id').eq('household_id', profile.household_id),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
     supabase.from('shopping_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
+    supabase.from('tag_groups').select('*').eq('household_id', profile.household_id).order('position'),
   ])
 
   // Compute tag usage counts server-side
@@ -119,7 +121,10 @@ export default async function SettingsPage() {
           <p className="text-xs text-gray-400 mb-4">
             Assign colors, rename, or remove tags. Renaming or deleting updates all recipes.
           </p>
-          <TagsEditor initialTags={allTags} />
+          <TagGroupsEditor initialGroups={tagGroups ?? []} />
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <TagsEditor initialTags={allTags} groups={tagGroups ?? []} />
+          </div>
         </div>
       </section>
 

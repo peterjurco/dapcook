@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X, Check, Pencil } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { TagData } from '@/app/api/tags/route'
+import type { TagGroup } from '@/types/database'
 
 const PALETTE = [
   // Reds & pinks
@@ -22,9 +23,10 @@ const PALETTE = [
 
 interface TagsEditorProps {
   initialTags: TagData[]
+  groups: TagGroup[]
 }
 
-export function TagsEditor({ initialTags }: TagsEditorProps) {
+export function TagsEditor({ initialTags, groups }: TagsEditorProps) {
   const [tags, setTags] = useState<TagData[]>(initialTags)
   const [editingName, setEditingName] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
@@ -56,6 +58,17 @@ export function TagsEditor({ initialTags }: TagsEditorProps) {
       setTags((prev) => prev.map((t) => t.name === name ? { ...t, color } : t))
     }
     setColorPickerFor(null)
+  }
+
+  async function handleGroupChange(name: string, groupId: string | null) {
+    const res = await fetch(`/api/tags/${encodeURIComponent(name)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupId }),
+    })
+    if (res.ok) {
+      setTags((prev) => prev.map((t) => t.name === name ? { ...t, groupId } : t))
+    }
   }
 
   async function handleDelete(name: string) {
@@ -142,6 +155,20 @@ export function TagsEditor({ initialTags }: TagsEditorProps) {
                   <Pencil size={12} />
                 </button>
               </div>
+            )}
+
+            {groups.length > 0 && (
+              <select
+                value={tag.groupId ?? ''}
+                onChange={(e) => handleGroupChange(tag.name, e.target.value || null)}
+                className="text-xs text-gray-500 border border-gray-200 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300 flex-shrink-0"
+                aria-label={`Group for ${tag.name}`}
+              >
+                <option value="">No group</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
             )}
 
             {/* Delete */}
