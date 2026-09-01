@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { buildTagMeta } from '@/lib/tags/taxonomy'
 
 export interface TagData {
   name: string
@@ -30,15 +31,13 @@ export async function GET() {
     }
   }
 
-  // Merge metadata
-  const metaMap = new Map<string, { color: string | null; groupId: string | null }>()
-  for (const t of tagsMeta ?? []) metaMap.set(t.name, { color: t.color, groupId: t.group_id })
+  const meta = buildTagMeta(tagsMeta ?? [])
 
   const result: TagData[] = Array.from(counts.entries())
     .map(([name, count]) => ({
       name,
-      color: metaMap.get(name)?.color ?? null,
-      groupId: metaMap.get(name)?.groupId ?? null,
+      color: meta[name]?.color ?? null,
+      groupId: meta[name]?.groupId ?? null,
       count,
     }))
     .sort((a, b) => b.count - a.count)

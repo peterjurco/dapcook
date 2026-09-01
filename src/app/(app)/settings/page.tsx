@@ -9,6 +9,7 @@ import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSele
 import { TranslationSettings } from '@/components/settings/TranslationSettings'
 import { signOut } from '@/lib/auth/actions'
 import type { TagData } from '@/app/api/tags/route'
+import { buildTagMeta } from '@/lib/tags/taxonomy'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -42,12 +43,12 @@ export default async function SettingsPage() {
   for (const r of recipes ?? []) {
     for (const tag of r.tags ?? []) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
   }
-  const metaMap = new Map((tagsMeta ?? []).map((t) => [t.name, { color: t.color, groupId: t.group_id }]))
+  const meta = buildTagMeta(tagsMeta ?? [])
   const allTags: TagData[] = Array.from(tagCounts.entries())
     .map(([name, count]) => ({
       name,
-      color: metaMap.get(name)?.color ?? null,
-      groupId: metaMap.get(name)?.groupId ?? null,
+      color: meta[name]?.color ?? null,
+      groupId: meta[name]?.groupId ?? null,
       count,
     }))
     .sort((a, b) => b.count - a.count)

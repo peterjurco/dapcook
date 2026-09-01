@@ -7,6 +7,15 @@ export interface TagMeta {
   groupId: string | null
 }
 
+/** Build a name -> metadata map from raw `tags` table rows. */
+export function buildTagMeta(
+  rows: { name: string; color: string | null; group_id: string | null }[]
+): Record<string, TagMeta> {
+  const meta: Record<string, TagMeta> = {}
+  for (const row of rows) meta[row.name] = { color: row.color, groupId: row.group_id }
+  return meta
+}
+
 export interface Taxonomy {
   /** Every group in the household, pinned or not. */
   groups: TagGroupView[]

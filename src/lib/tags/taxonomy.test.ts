@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   EMPTY_TAXONOMY,
   buildFilterSections,
+  buildTagMeta,
   filterRecipesByTags,
   orderTagsForCard,
   pinnedGroups,
@@ -70,6 +71,23 @@ describe('tagColor', () => {
     const withColor: Taxonomy = { groups: [], tags: { main: { color: '#ef4444', groupId: null } } }
     expect(tagColor(withColor, 'main')).toBe('#ef4444')
     expect(tagColor(withColor, 'unknown')).toBeNull()
+  })
+})
+
+describe('buildTagMeta', () => {
+  it('maps each row by name', () => {
+    const rows = [
+      { name: 'main', color: '#ef4444', group_id: 'g-course' },
+      { name: 'quick', color: null, group_id: null },
+    ]
+    expect(buildTagMeta(rows)).toEqual({
+      main: { color: '#ef4444', groupId: 'g-course' },
+      quick: { color: null, groupId: null },
+    })
+  })
+
+  it('returns an empty object for no rows', () => {
+    expect(buildTagMeta([])).toEqual({})
   })
 })
 
