@@ -1,43 +1,66 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { Search, Import, Plus } from 'lucide-react'
+import { Search, Import, Plus, ChevronDown, ChevronUp } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
-import { tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
+import {
+  buildFilterSections,
+  filterRecipesByTags,
+  tagColor,
+  type Taxonomy,
+} from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 interface RecipeListProps {
   recipes: Recipe[]
   taxonomy: Taxonomy
+  defaultFilter: string[]
 }
 
-export function RecipeList({ recipes, taxonomy }: RecipeListProps) {
+export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps) {
   const [search, setSearch] = useState('')
-  const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [selection, setSelection] = useState<string[]>(defaultFilter)
+  const [expanded, setExpanded] = useState(false)
 
-  // Collect all unique tags across recipes
-  const allTags = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const r of recipes) {
-      for (const tag of r.tags) {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1)
-      }
-    }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([tag]) => tag)
-  }, [recipes])
+  const sections = buildFilterSections(recipes, taxonomy)
 
-  const filtered = useMemo(() => {
-    let result = recipes
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter((r) => r.title.toLowerCase().includes(q))
-    }
-    if (activeTag) {
-      result = result.filter((r) => r.tags.includes(activeTag))
-    }
-    return result
-  }, [recipes, search, activeTag])
+  function toggleTag(tag: string) {
+    setSelection((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    )
+  }
+
+  let filtered = filterRecipesByTags(recipes, selection, taxonomy)
+  if (search.trim()) {
+    const q = search.toLowerCase()
+    filtered = filtered.filter((r) => r.title.toLowerCase().includes(q))
+  }
+
+  function renderPill(tag: string) {
+    const color = tagColor(taxonomy, tag)
+    const isActive = selection.includes(tag)
+    return (
+      <button
+        key={tag}
+        onClick={() => toggleTag(tag)}
+        className="px-3 py-1 text-sm rounded-full border transition-colors"
+        style={
+          isActive
+            ? color
+              ? { backgroundColor: color, color: '#fff', borderColor: color }
+              : { backgroundColor: '#111827', color: '#fff', borderColor: '#111827' }
+            : color
+              ? { color, borderColor: color + '60', backgroundColor: color + '14' }
+              : undefined
+        }
+      >
+        {tag}
+      </button>
+    )
+  }
+
+  const hasTags = sections.pinned.length > 0 || sections.rest.length > 0
 
   return (
     <div>
@@ -74,27 +97,46 @@ export function RecipeList({ recipes, taxonomy }: RecipeListProps) {
         />
       </div>
 
-      {/* Tag filter */}
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {allTags.map((tag) => {
-            const color = tagColor(taxonomy, tag)
-            const isActive = activeTag === tag
-            return (
-              <button
-                key={tag}
-                onClick={() => setActiveTag(isActive ? null : tag)}
-                className="px-3 py-1 text-sm rounded-full border transition-colors"
-                style={
-                  isActive
-                    ? color ? { backgroundColor: color, color: '#fff', borderColor: color } : { backgroundColor: '#111827', color: '#fff', borderColor: '#111827' }
-                    : color ? { color, borderColor: color + '60', backgroundColor: color + '14' } : undefined
-                }
+      {/* Tag filters */}
+      {hasTags && (
+        <div className="mb-6">
+          {sections.pinned.map((section) => (
+            <div key={section.group.id} className="mb-3">
+              <p className="text-xs text-gray-400 mb-1.5">{section.group.name}</p>
+              <div className="flex flex-wrap gap-2">
+                {section.tags.map(renderPill)}
+              </div>
+            </div>
+          ))}
+
+          {sections.rest.length > 0 && (
+            <div className={sections.pinned.length > 0 ? 'pt-3 border-t border-gray-100' : undefined}>
+              {/* Two-row clamp: pill height ~30px (py-1 text-sm) x 2 rows + 8px gap-2 = 68px.
+                  Update this value if pill padding/gap classes change. */}
+              <div
+                data-testid="tag-area-rest"
+                className={`flex flex-wrap gap-2${expanded ? '' : ' max-h-[68px] overflow-hidden'}`}
               >
-                {tag}
+                {sections.rest.map(renderPill)}
+              </div>
+            </div>
+          )}
+
+          {/* Action row. Lives outside the remainder block so the default-view
+              action in Task 10 still appears when every tag sits in a pinned group. */}
+          <div className="mt-2 flex items-center justify-between gap-3">
+            {sections.rest.length > 0 ? (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                {expanded ? 'Show fewer tags' : 'Show all tags'}
+                {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
-            )
-          })}
+            ) : (
+              <span />
+            )}
+          </div>
         </div>
       )}
 

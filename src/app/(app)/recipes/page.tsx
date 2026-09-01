@@ -16,7 +16,7 @@ export default async function RecipesPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <RecipeList recipes={(recipes ?? []) as Recipe[]} taxonomy={taxonomy} />
+      <RecipeList recipes={(recipes ?? []) as Recipe[]} taxonomy={taxonomy} defaultFilter={[]} />
     </div>
   )
 }
