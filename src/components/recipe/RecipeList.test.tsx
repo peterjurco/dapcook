@@ -106,3 +106,62 @@ describe('RecipeList tag area clamp', () => {
     expect(screen.getByTestId('tag-area-rest')).toHaveClass('max-h-[68px]')
   })
 })
+
+describe('RecipeList pinned group sections', () => {
+  const twoGroups: Taxonomy = {
+    groups: [
+      { id: 'g-course', name: 'Course', position: 0, is_pinned: true },
+      { id: 'g-cuisine', name: 'Cuisine', position: 1, is_pinned: true },
+      { id: 'g-mood', name: 'Mood', position: 2, is_pinned: false },
+    ],
+    tags: {
+      main: { color: null, groupId: 'g-course' },
+      side: { color: null, groupId: 'g-course' },
+      italian: { color: null, groupId: 'g-cuisine' },
+      asian: { color: null, groupId: 'g-cuisine' },
+      comfort: { color: null, groupId: 'g-mood' },
+      quick: { color: null, groupId: null },
+    },
+  }
+
+  const withExtras = [
+    ...recipes,
+    makeRecipe('r4', 'Stew', ['comfort', 'quick']),
+  ]
+
+  it('renders a labelled section per pinned group in position order', () => {
+    render(<RecipeList recipes={withExtras} taxonomy={twoGroups} defaultFilter={[]} />)
+
+    const labels = screen.getAllByText(/^(Course|Cuisine|Mood)$/).map((el) => el.textContent)
+    expect(labels).toEqual(['Course', 'Cuisine'])
+  })
+
+  it('renders every tag of a pinned group without clamping', () => {
+    render(<RecipeList recipes={withExtras} taxonomy={twoGroups} defaultFilter={[]} />)
+
+    expect(screen.getByRole('button', { name: 'main' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'side' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'italian' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'asian' })).toBeInTheDocument()
+  })
+
+  it('puts unpinned-group tags and ungrouped tags in the clamped remainder', () => {
+    render(<RecipeList recipes={withExtras} taxonomy={twoGroups} defaultFilter={[]} />)
+
+    const rest = screen.getByTestId('tag-area-rest')
+    expect(rest).toHaveTextContent('comfort')
+    expect(rest).toHaveTextContent('quick')
+    expect(rest).not.toHaveTextContent('main')
+  })
+
+  it('renders no pinned sections when no group is pinned', () => {
+    const unpinned: Taxonomy = {
+      groups: [{ id: 'g-mood', name: 'Mood', position: 0, is_pinned: false }],
+      tags: { comfort: { color: null, groupId: 'g-mood' } },
+    }
+    render(<RecipeList recipes={withExtras} taxonomy={unpinned} defaultFilter={[]} />)
+
+    expect(screen.queryByText('Mood')).not.toBeInTheDocument()
+    expect(screen.getByTestId('tag-area-rest')).toHaveTextContent('comfort')
+  })
+})
