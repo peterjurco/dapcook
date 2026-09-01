@@ -4,14 +4,15 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Search, Import, Plus } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
+import { tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 interface RecipeListProps {
   recipes: Recipe[]
-  tagColors: Record<string, string | null>
+  taxonomy: Taxonomy
 }
 
-export function RecipeList({ recipes, tagColors }: RecipeListProps) {
+export function RecipeList({ recipes, taxonomy }: RecipeListProps) {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
 
@@ -77,7 +78,7 @@ export function RecipeList({ recipes, tagColors }: RecipeListProps) {
       {allTags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           {allTags.map((tag) => {
-            const color = tagColors[tag] ?? null
+            const color = tagColor(taxonomy, tag)
             const isActive = activeTag === tag
             return (
               <button
@@ -101,7 +102,7 @@ export function RecipeList({ recipes, tagColors }: RecipeListProps) {
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} tagColors={tagColors} />
+            <RecipeCard key={recipe.id} recipe={recipe} taxonomy={taxonomy} />
           ))}
         </div>
       ) : (

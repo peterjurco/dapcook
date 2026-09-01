@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { Clock, Users } from 'lucide-react'
 import { AddToPlanButton } from './AddToPlanButton'
+import { orderTagsForCard, tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 interface RecipeCardProps {
   recipe: Recipe
-  tagColors: Record<string, string | null>
+  taxonomy: Taxonomy
 }
 
 function formatTime(min: number | null): string | null {
@@ -18,8 +19,9 @@ function formatTime(min: number | null): string | null {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-export function RecipeCard({ recipe, tagColors }: RecipeCardProps) {
+export function RecipeCard({ recipe, taxonomy }: RecipeCardProps) {
   const totalTime = (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0)
+  const orderedTags = orderTagsForCard(recipe.tags, taxonomy)
 
   return (
     <Link href={`/recipes/${recipe.id}`} className="group block">
@@ -52,11 +54,11 @@ export function RecipeCard({ recipe, tagColors }: RecipeCardProps) {
             {recipe.title}
           </h3>
 
-          {/* Tags */}
-          {recipe.tags.length > 0 && (
+          {/* Tags — pinned-group tags first, same 3-slot budget */}
+          {orderedTags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {recipe.tags.slice(0, 3).map((tag) => {
-                const color = tagColors[tag] ?? null
+              {orderedTags.slice(0, 3).map((tag) => {
+                const color = tagColor(taxonomy, tag)
                 return (
                   <span
                     key={tag}
@@ -70,9 +72,9 @@ export function RecipeCard({ recipe, tagColors }: RecipeCardProps) {
                   </span>
                 )
               })}
-              {recipe.tags.length > 3 && (
+              {orderedTags.length > 3 && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                  +{recipe.tags.length - 3}
+                  +{orderedTags.length - 3}
                 </span>
               )}
             </div>
