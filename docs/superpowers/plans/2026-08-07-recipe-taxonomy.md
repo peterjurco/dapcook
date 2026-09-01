@@ -364,8 +364,9 @@ describe('buildFilterSections', () => {
 
   it('omits pinned group members that no recipe uses', () => {
     const sections = buildFilterSections([makeRecipe('r1', ['main'])], taxonomy)
+    expect(sections.pinned).toHaveLength(1)
+    expect(sections.pinned[0].group.id).toBe('g-course')
     expect(sections.pinned[0].tags).toEqual(['main'])
-    expect(sections.pinned[1].tags).toEqual([])
   })
 
   it('drops pinned sections that end up empty', () => {
@@ -565,7 +566,7 @@ export function filterRecipesByTags(
     for (const tag of ungrouped) {
       if (!tags.includes(tag)) return false
     }
-    for (const groupTags of byGroup.values()) {
+    for (const groupTags of Array.from(byGroup.values())) {
       if (!groupTags.some((tag) => tags.includes(tag))) return false
     }
     return true
@@ -583,7 +584,7 @@ export function sanitizeDefaultFilter(stored: string[], knownTags: string[]): st
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npx vitest run src/lib/tags/taxonomy.test.ts`
-Expected: PASS — 21 tests passing.
+Expected: PASS — 22 tests passing.
 
 - [ ] **Step 5: Commit**
 
@@ -921,6 +922,24 @@ describe('PATCH /api/tag-groups/[id]', () => {
     const res = await PATCH(req({ name: '   ' }), params)
     expect(res.status).toBe(400)
   })
+
+  it('treats position 0 as a provided value, not a missing one', async () => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    await PATCH(req({ position: 0 }), params)
+
+    const qb = supabase.from.mock.results[1].value
+    expect(qb.update).toHaveBeenCalledWith({ position: 0 })
+  })
+
+  it('returns 404 when the group does not exist or belongs to another household', async () => {
+    const supabase = makeSupabase({ groupResult: { data: null, error: null } })
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ name: 'x' }), params)
+    expect(res.status).toBe(404)
+  })
 })
 
 describe('DELETE /api/tag-groups/[id]', () => {
@@ -1003,15 +1022,17 @@ export async function PATCH(
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('tag_groups')
     .update(updates)
     .eq('id', params.id)
     .eq('household_id', householdId)
+    .select()
+    .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error || !data) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 404 })
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json(data)
 }
 
 export async function DELETE(
@@ -1042,7 +1063,7 @@ export async function DELETE(
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npx vitest run src/app/api/tag-groups/\[id\]/route.test.ts`
-Expected: PASS — 7 tests passing.
+Expected: PASS — 9 tests passing.
 
 - [ ] **Step 5: Commit**
 
@@ -1651,7 +1672,7 @@ In `src/app/(app)/recipes/page.tsx`, replace the whole file with:
 ```tsx
 import { createClient } from '@/lib/supabase/server'
 import { RecipeList } from '@/components/recipe/RecipeList'
-import type { Taxonomy, TagMeta } from '@/lib/tags/taxonomy'
+import { buildTagMeta, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 export default async function RecipesPage() {
@@ -1663,10 +1684,7 @@ export default async function RecipesPage() {
     supabase.from('tag_groups').select('id, name, position, is_pinned').order('position'),
   ])
 
-  const tags: Record<string, TagMeta> = {}
-  for (const t of tagsMeta ?? []) tags[t.name] = { color: t.color, groupId: t.group_id }
-
-  const taxonomy: Taxonomy = { groups: groups ?? [], tags }
+  const taxonomy: Taxonomy = { groups: groups ?? [], tags: buildTagMeta(tagsMeta ?? []) }
 
   return (
     <div className="p-6 lg:p-8">
@@ -1675,6 +1693,8 @@ export default async function RecipesPage() {
   )
 }
 ```
+
+Note: `buildTagMeta` is a helper added to `src/lib/tags/taxonomy.ts` after Task 5's code review (it maps raw `tags` table rows — `{ name, color, group_id }` — into `Record<string, TagMeta>`). If it's missing when you reach this step, add it: `export function buildTagMeta(rows: { name: string; color: string | null; group_id: string | null }[]): Record<string, TagMeta> { const meta: Record<string, TagMeta> = {}; for (const row of rows) meta[row.name] = { color: row.color, groupId: row.group_id }; return meta }`.
 
 - [ ] **Step 5: Run the tests and type-check**
 
@@ -2224,6 +2244,26 @@ describe('RecipeList default view', () => {
 
     vi.unstubAllGlobals()
   })
+
+  it('keeps the prior default and re-enables the button when saving fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+    await user.click(screen.getByRole('button', { name: 'main' }))
+    await user.click(screen.getByRole('button', { name: /set as default/i }))
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({ default_recipe_filter: ['main'] }),
+    }))
+
+    const button = await screen.findByRole('button', { name: /set as default/i })
+    expect(button).not.toBeDisabled()
+
+    vi.unstubAllGlobals()
+  })
 })
 ```
 
@@ -2340,7 +2380,7 @@ Then, directly below the search input's closing `</div>`, add the bypass hint:
 - [ ] **Step 5: Run the tests to verify they pass**
 
 Run: `npx vitest run src/components/recipe/RecipeList.test.tsx`
-Expected: PASS — 16 tests total.
+Expected: PASS — 17 tests total.
 
 - [ ] **Step 6: Load the real default in the page**
 
@@ -2349,7 +2389,7 @@ In `src/app/(app)/recipes/page.tsx`, replace the whole file with:
 ```tsx
 import { createClient } from '@/lib/supabase/server'
 import { RecipeList } from '@/components/recipe/RecipeList'
-import type { Taxonomy, TagMeta } from '@/lib/tags/taxonomy'
+import { buildTagMeta, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 export default async function RecipesPage() {
@@ -2365,10 +2405,7 @@ export default async function RecipesPage() {
       : Promise.resolve({ data: null }),
   ])
 
-  const tags: Record<string, TagMeta> = {}
-  for (const t of tagsMeta ?? []) tags[t.name] = { color: t.color, groupId: t.group_id }
-
-  const taxonomy: Taxonomy = { groups: groups ?? [], tags }
+  const taxonomy: Taxonomy = { groups: groups ?? [], tags: buildTagMeta(tagsMeta ?? []) }
 
   return (
     <div className="p-6 lg:p-8">
