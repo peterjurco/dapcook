@@ -7,7 +7,9 @@ import { RecipeCard } from './RecipeCard'
 import {
   buildFilterSections,
   filterRecipesByTags,
+  sanitizeDefaultFilter,
   tagColor,
+  tagsByUsage,
   type Taxonomy,
 } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
@@ -19,20 +21,48 @@ interface RecipeListProps {
 }
 
 export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps) {
+  const knownTags = tagsByUsage(recipes)
+  const initialDefault = sanitizeDefaultFilter(defaultFilter, knownTags)
+
   const [search, setSearch] = useState('')
-  const [selection, setSelection] = useState<string[]>(defaultFilter)
+  const [selection, setSelection] = useState<string[]>(initialDefault)
   const [expanded, setExpanded] = useState(false)
+  const [savedDefault, setSavedDefault] = useState<string[]>(initialDefault)
+  const [selectionTouched, setSelectionTouched] = useState(false)
+  const [savingDefault, setSavingDefault] = useState(false)
 
   const sections = buildFilterSections(recipes, taxonomy)
 
   function toggleTag(tag: string) {
+    setSelectionTouched(true)
     setSelection((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     )
   }
 
-  let filtered = filterRecipesByTags(recipes, selection, taxonomy)
-  if (search.trim()) {
+  const searching = search.trim().length > 0
+  // A search must never be narrowed by a default the user did not choose for
+  // this visit. Once they change the selection themselves, it is theirs and applies.
+  const defaultBypassed = searching && !selectionTouched && initialDefault.length > 0
+  const effectiveSelection = defaultBypassed ? [] : selection
+
+  const sameSet = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((v) => b.includes(v))
+  const selectionIsDefault = selection.length > 0 && sameSet(selection, savedDefault)
+
+  async function saveDefault(next: string[]) {
+    setSavingDefault(true)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ default_recipe_filter: next }),
+    })
+    if (res.ok) setSavedDefault(next)
+    setSavingDefault(false)
+  }
+
+  let filtered = filterRecipesByTags(recipes, effectiveSelection, taxonomy)
+  if (searching) {
     const q = search.toLowerCase()
     filtered = filtered.filter((r) => r.title.toLowerCase().includes(q))
   }
@@ -97,6 +127,10 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
         />
       </div>
 
+      {defaultBypassed && (
+        <p className="text-xs text-gray-400 -mt-2 mb-4">Searching all recipes, ignoring your default view.</p>
+      )}
+
       {/* Tag filters */}
       {hasTags && (
         <div className="mb-6">
@@ -135,6 +169,16 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
               </button>
             ) : (
               <span />
+            )}
+
+            {selection.length > 0 && (
+              <button
+                onClick={() => saveDefault(selectionIsDefault ? [] : selection)}
+                disabled={savingDefault}
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50"
+              >
+                {selectionIsDefault ? 'Clear default' : 'Set as default'}
+              </button>
             )}
           </div>
         </div>

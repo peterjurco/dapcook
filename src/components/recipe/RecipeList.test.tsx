@@ -165,3 +165,117 @@ describe('RecipeList pinned group sections', () => {
     expect(screen.getByTestId('tag-area-rest')).toHaveTextContent('comfort')
   })
 })
+
+describe('RecipeList default view', () => {
+  it('pre-applies the default filter on mount', () => {
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={['main']} />)
+
+    expect(screen.getByText('Lasagne')).toBeInTheDocument()
+    expect(screen.getByText('Ramen')).toBeInTheDocument()
+    expect(screen.queryByText('Garlic Bread')).not.toBeInTheDocument()
+  })
+
+  it('drops stored names that no longer exist instead of emptying the list', () => {
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={['gone']} />)
+
+    expect(screen.getByText('Lasagne')).toBeInTheDocument()
+    expect(screen.getByText('Garlic Bread')).toBeInTheDocument()
+    expect(screen.getByText('Ramen')).toBeInTheDocument()
+  })
+
+  it('bypasses the untouched default while searching', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={['main']} />)
+
+    expect(screen.queryByText('Garlic Bread')).not.toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('Search recipes...'), 'garlic')
+    expect(screen.getByText('Garlic Bread')).toBeInTheDocument()
+    expect(screen.getByText(/searching all recipes/i)).toBeInTheDocument()
+  })
+
+  it('respects a manually changed selection while searching', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={['main']} />)
+
+    await user.click(screen.getByRole('button', { name: 'side' }))
+    await user.type(screen.getByPlaceholderText('Search recipes...'), 'a')
+
+    expect(screen.getByText('Garlic Bread')).toBeInTheDocument()
+    expect(screen.queryByText(/searching all recipes/i)).not.toBeInTheDocument()
+  })
+
+  it('hides the default action until something is selected', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+
+    expect(screen.queryByRole('button', { name: /set as default/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'main' }))
+    expect(screen.getByRole('button', { name: /set as default/i })).toBeInTheDocument()
+  })
+
+  it('shows "Clear default" when the selection already is the default', () => {
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={['main']} />)
+
+    expect(screen.getByRole('button', { name: /clear default/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /set as default/i })).not.toBeInTheDocument()
+  })
+
+  it('still offers the default action when every tag sits in a pinned group', async () => {
+    const allPinned: Taxonomy = {
+      groups: [{ id: 'g-course', name: 'Course', position: 0, is_pinned: true }],
+      tags: {
+        main: { color: null, groupId: 'g-course' },
+        side: { color: null, groupId: 'g-course' },
+        italian: { color: null, groupId: 'g-course' },
+        asian: { color: null, groupId: 'g-course' },
+      },
+    }
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={allPinned} defaultFilter={[]} />)
+
+    expect(screen.queryByTestId('tag-area-rest')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'main' }))
+    expect(screen.getByRole('button', { name: /set as default/i })).toBeInTheDocument()
+  })
+
+  it('saves the selection as the default', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+    await user.click(screen.getByRole('button', { name: 'main' }))
+    await user.click(screen.getByRole('button', { name: /set as default/i }))
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({ default_recipe_filter: ['main'] }),
+    }))
+    expect(await screen.findByRole('button', { name: /clear default/i })).toBeInTheDocument()
+
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps the prior default and re-enables the button when saving fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+    await user.click(screen.getByRole('button', { name: 'main' }))
+    await user.click(screen.getByRole('button', { name: /set as default/i }))
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({ default_recipe_filter: ['main'] }),
+    }))
+
+    const button = await screen.findByRole('button', { name: /set as default/i })
+    expect(button).not.toBeDisabled()
+
+    vi.unstubAllGlobals()
+  })
+})
