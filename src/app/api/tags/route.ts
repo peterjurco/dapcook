@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export interface TagData {
   name: string
   color: string | null
+  groupId: string | null
   count: number
 }
 
@@ -18,7 +19,7 @@ export async function GET() {
 
   const [{ data: recipes }, { data: tagsMeta }] = await Promise.all([
     supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
-    supabase.from('tags').select('name, color').eq('household_id', profile.household_id),
+    supabase.from('tags').select('name, color, group_id').eq('household_id', profile.household_id),
   ])
 
   // Count usage per tag
@@ -29,18 +30,23 @@ export async function GET() {
     }
   }
 
-  // Merge color metadata
-  const colorMap = new Map<string, string | null>()
-  for (const t of tagsMeta ?? []) colorMap.set(t.name, t.color)
+  // Merge metadata
+  const metaMap = new Map<string, { color: string | null; groupId: string | null }>()
+  for (const t of tagsMeta ?? []) metaMap.set(t.name, { color: t.color, groupId: t.group_id })
 
   const result: TagData[] = Array.from(counts.entries())
-    .map(([name, count]) => ({ name, color: colorMap.get(name) ?? null, count }))
+    .map(([name, count]) => ({
+      name,
+      color: metaMap.get(name)?.color ?? null,
+      groupId: metaMap.get(name)?.groupId ?? null,
+      count,
+    }))
     .sort((a, b) => b.count - a.count)
 
-  // Also include tags with metadata but 0 usage (in case they were just colored)
+  // Also include tags with metadata but 0 usage (in case they were just coloured or grouped)
   for (const t of tagsMeta ?? []) {
     if (!counts.has(t.name)) {
-      result.push({ name: t.name, color: t.color, count: 0 })
+      result.push({ name: t.name, color: t.color, groupId: t.group_id, count: 0 })
     }
   }
 

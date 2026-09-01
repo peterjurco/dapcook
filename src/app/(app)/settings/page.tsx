@@ -32,7 +32,7 @@ export default async function SettingsPage() {
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
     supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
     supabase.from('recipes').select('id, tags').eq('household_id', profile.household_id).eq('is_archived', false),
-    supabase.from('tags').select('name, color').eq('household_id', profile.household_id),
+    supabase.from('tags').select('name, color, group_id').eq('household_id', profile.household_id),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
     supabase.from('shopping_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
   ])
@@ -42,12 +42,19 @@ export default async function SettingsPage() {
   for (const r of recipes ?? []) {
     for (const tag of r.tags ?? []) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
   }
-  const colorMap = new Map((tagsMeta ?? []).map((t) => [t.name, t.color]))
+  const metaMap = new Map((tagsMeta ?? []).map((t) => [t.name, { color: t.color, groupId: t.group_id }]))
   const allTags: TagData[] = Array.from(tagCounts.entries())
-    .map(([name, count]) => ({ name, color: colorMap.get(name) ?? null, count }))
+    .map(([name, count]) => ({
+      name,
+      color: metaMap.get(name)?.color ?? null,
+      groupId: metaMap.get(name)?.groupId ?? null,
+      count,
+    }))
     .sort((a, b) => b.count - a.count)
   for (const t of tagsMeta ?? []) {
-    if (!tagCounts.has(t.name)) allTags.push({ name: t.name, color: t.color, count: 0 })
+    if (!tagCounts.has(t.name)) {
+      allTags.push({ name: t.name, color: t.color, groupId: t.group_id, count: 0 })
+    }
   }
 
   const recipeIds = (recipes ?? []).map((r) => r.id)
