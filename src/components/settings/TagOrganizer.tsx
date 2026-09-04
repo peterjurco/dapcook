@@ -40,6 +40,18 @@ function zoneId(groupId: string) {
   return `zone:${groupId}`
 }
 
+/** Which droppable "target type" a given drag type is allowed to land on.
+ *  A tag drag lands in a zone; a group drag lands on another group (to
+ *  reorder). No droppable is ever registered with `type: 'tag'`, so
+ *  filtering the droppable pool by `=== dragType` directly — instead of
+ *  through this mapping — silently matches nothing for every tag drag:
+ *  `over` is always null and the drop is a no-op, with zero visual
+ *  feedback. Group drags happened to work regardless, since a group's own
+ *  drag type coincidentally equals its valid target type. */
+export function targetTypeFor(dragType: unknown): 'zone' | 'group' {
+  return dragType === 'group' ? 'group' : 'zone'
+}
+
 function TagPill({ tag, moving, onClick }: { tag: TagData; moving: boolean; onClick: () => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: tag.name,
@@ -162,8 +174,8 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
   // placeholder text. Fall back to closestCenter only when the pointer
   // isn't over any candidate, so a fast drag still resolves to something.
   const collisionDetection: CollisionDetection = (args) => {
-    const dragType = args.active.data.current?.type
-    const pool = args.droppableContainers.filter((c) => c.data.current?.type === dragType)
+    const targetType = targetTypeFor(args.active.data.current?.type)
+    const pool = args.droppableContainers.filter((c) => c.data.current?.type === targetType)
     const scopedArgs = { ...args, droppableContainers: pool }
     const pointerHits = pointerWithin(scopedArgs)
     return pointerHits.length > 0 ? pointerHits : closestCenter(scopedArgs)
