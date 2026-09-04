@@ -12,6 +12,7 @@ interface RecipeFiltersModalProps {
   onClearAll: () => void
   resultCount: number
   selectionIsDefault: boolean
+  showDefaultAction: boolean
   savingDefault: boolean
   onToggleDefault: () => void
   onClose: () => void
@@ -25,6 +26,7 @@ export function RecipeFiltersModal({
   onClearAll,
   resultCount,
   selectionIsDefault,
+  showDefaultAction,
   savingDefault,
   onToggleDefault,
   onClose,
@@ -123,7 +125,7 @@ export function RecipeFiltersModal({
             >
               Clear all
             </button>
-            {selection.length > 0 && (
+            {showDefaultAction && (
               <button
                 type="button"
                 onClick={onToggleDefault}

@@ -333,4 +333,27 @@ describe('RecipeList default view', () => {
 
     vi.unstubAllGlobals()
   })
+
+  it('lets you clear all tags and save that empty state as the new default', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    // Already has a saved default of ['main'] — the bug was that the default
+    // action disappeared entirely once Clear all emptied the selection.
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={['main']} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.click(screen.getByRole('button', { name: /clear all/i }))
+
+    const button = await screen.findByRole('button', { name: /set as default/i })
+    await user.click(button)
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({ default_recipe_filter: [] }),
+    }))
+
+    vi.unstubAllGlobals()
+  })
 })

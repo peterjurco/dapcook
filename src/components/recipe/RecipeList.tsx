@@ -101,7 +101,11 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
 
   const sameSet = (a: string[], b: string[]) =>
     a.length === b.length && a.every((v) => b.includes(v))
-  const selectionIsDefault = selection.length > 0 && sameSet(selection, savedDefault)
+  const selectionIsDefault = sameSet(selection, savedDefault)
+  // Show the default action whenever there's something to set OR something
+  // to clear — not just when a selection is active. Otherwise clearing your
+  // selection to save "no filter" as the new default has no button to press.
+  const showDefaultAction = selection.length > 0 || savedDefault.length > 0
 
   async function saveDefault(next: string[]) {
     setSavingDefault(true)
@@ -222,6 +226,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           onClearAll={clearAllTags}
           resultCount={filtered.length}
           selectionIsDefault={selectionIsDefault}
+          showDefaultAction={showDefaultAction}
           savingDefault={savingDefault}
           onToggleDefault={() => saveDefault(selectionIsDefault ? [] : selection)}
           onClose={() => setFiltersOpen(false)}
