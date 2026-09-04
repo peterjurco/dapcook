@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { RecipeCard } from './RecipeCard'
+import { EMPTY_TAXONOMY, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 vi.mock('next/link', () => ({
@@ -11,7 +12,7 @@ vi.mock('next/link', () => ({
   ),
 }))
 
-const recipe = {
+const baseRecipe = {
   id: 'recipe-1',
   household_id: 'household-1',
   created_by: 'user-1',
@@ -34,14 +35,47 @@ const recipe = {
   updated_at: '2026-06-04T00:00:00.000Z',
 } satisfies Recipe
 
+const taxonomy: Taxonomy = {
+  groups: [
+    { id: 'g-course', name: 'Course', position: 0 },
+    { id: 'g-mood', name: 'Mood', position: 1 },
+  ],
+  tags: {
+    main: { color: null, groupId: 'g-course' },
+    comfort: { color: null, groupId: 'g-mood' },
+    quick: { color: null, groupId: null },
+    vegan: { color: null, groupId: null },
+  },
+}
+
 describe('RecipeCard', () => {
   it('keeps the add to plan button visible on mobile and hover-revealed on larger screens', () => {
-    render(<RecipeCard recipe={recipe} tagColors={{}} />)
+    render(<RecipeCard recipe={baseRecipe} taxonomy={EMPTY_TAXONOMY} />)
 
     const planButton = screen.getByRole('button', { name: /add to plan/i })
 
     expect(planButton).toHaveClass('opacity-100')
     expect(planButton).toHaveClass('sm:opacity-0')
     expect(planButton).toHaveClass('sm:group-hover:opacity-100')
+  })
+
+  it('shows grouped tags before ungrouped ones within the three-tag budget', () => {
+    const recipe = { ...baseRecipe, tags: ['quick', 'vegan', 'comfort', 'main'] }
+    render(<RecipeCard recipe={recipe} taxonomy={taxonomy} />)
+
+    expect(screen.getByText('main')).toBeInTheDocument()
+    expect(screen.getByText('comfort')).toBeInTheDocument()
+    expect(screen.getByText('quick')).toBeInTheDocument()
+    expect(screen.queryByText('vegan')).not.toBeInTheDocument()
+    expect(screen.getByText('+1')).toBeInTheDocument()
+  })
+
+  it('preserves the recipe tag order when there are no groups', () => {
+    const recipe = { ...baseRecipe, tags: ['quick', 'vegan'] }
+    render(<RecipeCard recipe={recipe} taxonomy={EMPTY_TAXONOMY} />)
+
+    expect(screen.getByText('quick')).toBeInTheDocument()
+    expect(screen.getByText('vegan')).toBeInTheDocument()
+    expect(screen.queryByText(/^\+/)).not.toBeInTheDocument()
   })
 })

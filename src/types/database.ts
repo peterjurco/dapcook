@@ -42,6 +42,7 @@ export interface Database {
           household_id: string | null
           display_name: string | null
           avatar_url: string | null
+          default_recipe_filter: string[]
           created_at: string
           updated_at: string
         }
@@ -50,6 +51,7 @@ export interface Database {
           household_id?: string | null
           display_name?: string | null
           avatar_url?: string | null
+          default_recipe_filter?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -58,6 +60,7 @@ export interface Database {
           household_id?: string | null
           display_name?: string | null
           avatar_url?: string | null
+          default_recipe_filter?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -160,12 +163,37 @@ export interface Database {
         }
         Relationships: []
       }
+      tag_groups: {
+        Row: {
+          id: string
+          household_id: string
+          name: string
+          position: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          name: string
+          position?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          name?: string
+          position?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           id: string
           household_id: string
           name: string
           color: string | null
+          group_id: string | null
           created_at: string
         }
         Insert: {
@@ -173,6 +201,7 @@ export interface Database {
           household_id: string
           name: string
           color?: string | null
+          group_id?: string | null
           created_at?: string
         }
         Update: {
@@ -180,6 +209,7 @@ export interface Database {
           household_id?: string
           name?: string
           color?: string | null
+          group_id?: string | null
           created_at?: string
         }
         Relationships: []
@@ -481,6 +511,7 @@ export type Tables<T extends keyof Database['public']['Tables']> =
 
 export type Household = Tables<'households'>
 export type Profile = Tables<'profiles'>
+export type TagGroup = Tables<'tag_groups'>
 export type Recipe = Tables<'recipes'>
 export type PlannerRule = Tables<'planner_rules'>
 export type WeekPlan = Tables<'week_plans'>

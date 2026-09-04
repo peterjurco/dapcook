@@ -2,13 +2,14 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { InviteLink } from '@/components/settings/InviteLink'
 import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
-import { TagsEditor } from '@/components/settings/TagsEditor'
+import { TagOrganizer } from '@/components/settings/TagOrganizer'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
 import { TranslationSettings } from '@/components/settings/TranslationSettings'
 import { signOut } from '@/lib/auth/actions'
 import type { TagData } from '@/app/api/tags/route'
+import { buildTagMeta } from '@/lib/tags/taxonomy'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -27,14 +28,15 @@ export default async function SettingsPage() {
 
   if (!profile?.household_id) redirect('/onboarding')
 
-  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }, { data: shoppingCategories }, { data: shoppingRules }] = await Promise.all([
+  const [{ data: household }, { data: members }, { data: plannerRules }, { data: recipes }, { data: tagsMeta }, { data: shoppingCategories }, { data: shoppingRules }, { data: tagGroups }] = await Promise.all([
     supabase.from('households').select('*').eq('id', profile.household_id).single(),
     supabase.from('profiles').select('*').eq('household_id', profile.household_id),
     supabase.from('planner_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
     supabase.from('recipes').select('id, tags').eq('household_id', profile.household_id).eq('is_archived', false),
-    supabase.from('tags').select('name, color').eq('household_id', profile.household_id),
+    supabase.from('tags').select('name, color, group_id').eq('household_id', profile.household_id),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
     supabase.from('shopping_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
+    supabase.from('tag_groups').select('*').eq('household_id', profile.household_id).order('position'),
   ])
 
   // Compute tag usage counts server-side
@@ -42,12 +44,19 @@ export default async function SettingsPage() {
   for (const r of recipes ?? []) {
     for (const tag of r.tags ?? []) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
   }
-  const colorMap = new Map((tagsMeta ?? []).map((t) => [t.name, t.color]))
+  const meta = buildTagMeta(tagsMeta ?? [])
   const allTags: TagData[] = Array.from(tagCounts.entries())
-    .map(([name, count]) => ({ name, color: colorMap.get(name) ?? null, count }))
+    .map(([name, count]) => ({
+      name,
+      color: meta[name]?.color ?? null,
+      groupId: meta[name]?.groupId ?? null,
+      count,
+    }))
     .sort((a, b) => b.count - a.count)
   for (const t of tagsMeta ?? []) {
-    if (!tagCounts.has(t.name)) allTags.push({ name: t.name, color: t.color, count: 0 })
+    if (!tagCounts.has(t.name)) {
+      allTags.push({ name: t.name, color: t.color, groupId: t.group_id, count: 0 })
+    }
   }
 
   const recipeIds = (recipes ?? []).map((r) => r.id)
@@ -111,7 +120,7 @@ export default async function SettingsPage() {
           <p className="text-xs text-gray-400 mb-4">
             Assign colors, rename, or remove tags. Renaming or deleting updates all recipes.
           </p>
-          <TagsEditor initialTags={allTags} />
+          <TagOrganizer initialGroups={tagGroups ?? []} initialTags={allTags} />
         </div>
       </section>
 

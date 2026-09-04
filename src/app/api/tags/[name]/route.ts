@@ -18,7 +18,11 @@ export async function PATCH(
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const oldName = decodeURIComponent(params.name)
-  const body = await request.json() as { newName?: string; color?: string | null }
+  const body = await request.json() as {
+    newName?: string
+    color?: string | null
+    groupId?: string | null
+  }
 
   if (body.newName !== undefined) {
     const newName = body.newName.trim().toLowerCase()
@@ -32,12 +36,19 @@ export async function PATCH(
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  if (body.color !== undefined) {
-    const nameForColor = body.newName?.trim().toLowerCase() ?? oldName
-    await supabase
+  if (body.color !== undefined || body.groupId !== undefined) {
+    const nameForMeta = body.newName?.trim().toLowerCase() ?? oldName
+    const row: { household_id: string; name: string; color?: string | null; group_id?: string | null } = {
+      household_id: householdId,
+      name: nameForMeta,
+    }
+    if (body.color !== undefined) row.color = body.color
+    if (body.groupId !== undefined) row.group_id = body.groupId
+
+    const { error } = await supabase
       .from('tags')
-      .upsert({ household_id: householdId, name: nameForColor, color: body.color },
-        { onConflict: 'household_id,name' })
+      .upsert(row, { onConflict: 'household_id,name' })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })

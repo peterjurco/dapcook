@@ -1,49 +1,172 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { Search, Import, Plus } from 'lucide-react'
+import { Search, Import, Plus, SlidersHorizontal } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
+import { RecipeFiltersModal } from './RecipeFiltersModal'
+import { RecipeTagStrip } from './RecipeTagStrip'
+import {
+  buildFilterSections,
+  filterRecipesByTags,
+  sanitizeDefaultFilter,
+  tagColor,
+  tagsByUsage,
+  type Taxonomy,
+} from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 interface RecipeListProps {
   recipes: Recipe[]
-  tagColors: Record<string, string | null>
+  taxonomy: Taxonomy
+  defaultFilter: string[]
 }
 
-export function RecipeList({ recipes, tagColors }: RecipeListProps) {
-  const [search, setSearch] = useState('')
-  const [activeTag, setActiveTag] = useState<string | null>(null)
+function FiltersButton({
+  testId,
+  showLabel,
+  count,
+  onClick,
+}: {
+  testId: string
+  showLabel: boolean
+  count: number
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      className="relative inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors flex-shrink-0"
+    >
+      <SlidersHorizontal size={14} />
+      {showLabel && 'Filters'}
+      {count > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center text-[10px] font-semibold bg-gray-900 text-white rounded-full">
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
 
-  // Collect all unique tags across recipes
-  const allTags = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const r of recipes) {
-      for (const tag of r.tags) {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1)
+export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps) {
+  const knownTags = tagsByUsage(recipes)
+  const initialDefault = sanitizeDefaultFilter(defaultFilter, knownTags)
+  const initialRowTags = [...initialDefault, ...knownTags.filter((t) => !initialDefault.includes(t))]
+
+  const [search, setSearch] = useState('')
+  const [selection, setSelection] = useState<string[]>(initialDefault)
+  const [savedDefault, setSavedDefault] = useState<string[]>(initialDefault)
+  const [selectionTouched, setSelectionTouched] = useState(false)
+  const [savingDefault, setSavingDefault] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  // The tag row's order is stable — it doesn't reshuffle just because a
+  // visible pill got clicked. It only changes when a tag gets selected (via
+  // the Filters modal, typically) that isn't currently among the tags the
+  // strip is actually rendering — that tag is brought to the front, pushing
+  // lower-priority tags out of the fitted width if needed.
+  const [rowTags, setRowTags] = useState<string[]>(initialRowTags)
+  const [visibleRowCount, setVisibleRowCount] = useState(initialRowTags.length)
+
+  const sections = buildFilterSections(recipes, taxonomy)
+
+  function toggleTag(tag: string) {
+    setSelectionTouched(true)
+    const isSelecting = !selection.includes(tag)
+    setSelection((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    )
+
+    if (isSelecting) {
+      const currentlyVisible = rowTags.slice(0, visibleRowCount)
+      if (!currentlyVisible.includes(tag)) {
+        setRowTags((prev) => [tag, ...prev.filter((t) => t !== tag)])
       }
     }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([tag]) => tag)
-  }, [recipes])
+  }
 
-  const filtered = useMemo(() => {
-    let result = recipes
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter((r) => r.title.toLowerCase().includes(q))
-    }
-    if (activeTag) {
-      result = result.filter((r) => r.tags.includes(activeTag))
-    }
-    return result
-  }, [recipes, search, activeTag])
+  function clearAllTags() {
+    setSelectionTouched(true)
+    setSelection([])
+    setRowTags(knownTags)
+  }
+
+  const searching = search.trim().length > 0
+  // A search must never be narrowed by a default the user did not choose for
+  // this visit. Once they change the selection themselves, it is theirs and applies.
+  const defaultBypassed = searching && !selectionTouched && initialDefault.length > 0
+  const effectiveSelection = defaultBypassed ? [] : selection
+
+  const sameSet = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((v) => b.includes(v))
+  const selectionIsDefault = sameSet(selection, savedDefault)
+  // Show the default action whenever there's something to set OR something
+  // to clear — not just when a selection is active. Otherwise clearing your
+  // selection to save "no filter" as the new default has no button to press.
+  const showDefaultAction = selection.length > 0 || savedDefault.length > 0
+
+  async function saveDefault(next: string[]) {
+    setSavingDefault(true)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ default_recipe_filter: next }),
+    })
+    if (res.ok) setSavedDefault(next)
+    setSavingDefault(false)
+  }
+
+  let filtered = filterRecipesByTags(recipes, effectiveSelection, taxonomy)
+  if (searching) {
+    const q = search.toLowerCase()
+    filtered = filtered.filter((r) => r.title.toLowerCase().includes(q))
+  }
+
+  function renderPill(tag: string) {
+    const color = tagColor(taxonomy, tag)
+    const isActive = selection.includes(tag)
+    return (
+      <button
+        key={tag}
+        type="button"
+        onClick={() => toggleTag(tag)}
+        className="px-3 py-1 text-sm rounded-full border transition-colors flex-shrink-0"
+        style={
+          isActive
+            ? color
+              ? { backgroundColor: color, color: '#fff', borderColor: color }
+              : { backgroundColor: '#111827', color: '#fff', borderColor: '#111827' }
+            : color
+              ? { color, borderColor: color + '60', backgroundColor: color + '14' }
+              : undefined
+        }
+      >
+        {tag}
+      </button>
+    )
+  }
 
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Recipes</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex-shrink-0">Recipes</h1>
+
+        {/* Search — desktop only */}
+        <div className="relative flex-1 max-w-md hidden sm:block">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search recipes..."
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Link
             href="/recipes/import"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
@@ -56,52 +179,65 @@ export function RecipeList({ recipes, tagColors }: RecipeListProps) {
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Plus size={14} />
-            New recipe
+            <span className="hidden sm:inline">New recipe</span>
+            <span className="sm:hidden">New</span>
           </Link>
+          {/* Filters — mobile only, grouped with the other action buttons
+              on the right rather than floating between title and them */}
+          <div className="sm:hidden">
+            <FiltersButton
+              testId="filters-button-mobile"
+              showLabel={false}
+              count={selection.length}
+              onClick={() => setFiltersOpen(true)}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search recipes..."
-          className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+      {defaultBypassed && (
+        <p className="text-xs text-gray-400 mb-3">Searching all recipes, ignoring your default view.</p>
+      )}
+
+      {/* Tag row — as many pills as fit on one line, no scrolling. The
+          Filters button lives outside RecipeTagStrip's own container so its
+          badge (which pokes outside the button via negative offset) is
+          never clipped by anything. */}
+      {rowTags.length > 0 && (
+        <div className="flex items-center gap-2 mb-6 pt-1.5 pb-1">
+          <div className="hidden sm:block flex-shrink-0">
+            <FiltersButton
+              testId="filters-button-desktop"
+              showLabel
+              count={selection.length}
+              onClick={() => setFiltersOpen(true)}
+            />
+          </div>
+          <RecipeTagStrip tags={rowTags} renderPill={renderPill} onVisibleCountChange={setVisibleRowCount} />
+        </div>
+      )}
+
+      {filtersOpen && (
+        <RecipeFiltersModal
+          sections={sections}
+          taxonomy={taxonomy}
+          selection={selection}
+          onToggleTag={toggleTag}
+          onClearAll={clearAllTags}
+          resultCount={filtered.length}
+          selectionIsDefault={selectionIsDefault}
+          showDefaultAction={showDefaultAction}
+          savingDefault={savingDefault}
+          onToggleDefault={() => saveDefault(selectionIsDefault ? [] : selection)}
+          onClose={() => setFiltersOpen(false)}
         />
-      </div>
-
-      {/* Tag filter */}
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {allTags.map((tag) => {
-            const color = tagColors[tag] ?? null
-            const isActive = activeTag === tag
-            return (
-              <button
-                key={tag}
-                onClick={() => setActiveTag(isActive ? null : tag)}
-                className="px-3 py-1 text-sm rounded-full border transition-colors"
-                style={
-                  isActive
-                    ? color ? { backgroundColor: color, color: '#fff', borderColor: color } : { backgroundColor: '#111827', color: '#fff', borderColor: '#111827' }
-                    : color ? { color, borderColor: color + '60', backgroundColor: color + '14' } : undefined
-                }
-              >
-                {tag}
-              </button>
-            )
-          })}
-        </div>
       )}
 
       {/* Grid */}
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} tagColors={tagColors} />
+            <RecipeCard key={recipe.id} recipe={recipe} taxonomy={taxonomy} />
           ))}
         </div>
       ) : (
