@@ -88,6 +88,19 @@ describe('RecipeList filtering', () => {
     await user.click(screen.getByRole('button', { name: 'asian' }))
     expect(screen.getByText('Lasagne')).toBeInTheDocument()
   })
+
+  it('moves a selected tag to the front of the tag row, ahead of more-used tags', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+
+    // Usage order is main, italian, side, asian — asian is last by usage.
+    const strip = screen.getByTestId('tag-strip-visible')
+    expect(within(strip).getAllByRole('button')[0]).toHaveTextContent('main')
+
+    await user.click(within(strip).getByRole('button', { name: 'asian' }))
+
+    expect(within(strip).getAllByRole('button')[0]).toHaveTextContent('asian')
+  })
 })
 
 describe('RecipeList Filters button and modal', () => {

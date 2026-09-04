@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Search, Import, Plus, SlidersHorizontal } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
 import { RecipeFiltersModal } from './RecipeFiltersModal'
+import { RecipeTagStrip } from './RecipeTagStrip'
 import {
   buildFilterSections,
   filterRecipesByTags,
@@ -20,10 +21,6 @@ interface RecipeListProps {
   taxonomy: Taxonomy
   defaultFilter: string[]
 }
-
-// How many most-used tags show inline before the rest are only reachable
-// through the Filters modal.
-const MOST_USED_COUNT = 12
 
 function FiltersButton({
   testId,
@@ -66,7 +63,9 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const sections = buildFilterSections(recipes, taxonomy)
-  const mostUsed = knownTags.slice(0, MOST_USED_COUNT)
+  // Selected tags always get priority so active filters stay visible; the
+  // rest fill in by usage. RecipeTagStrip then shows as many as fit.
+  const tagRowCandidates = [...selection, ...knownTags.filter((t) => !selection.includes(t))]
 
   function toggleTag(tag: string) {
     setSelectionTouched(true)
@@ -144,16 +143,6 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           />
         </div>
 
-        {/* Filters — mobile only, lives in the title row */}
-        <div className="sm:hidden">
-          <FiltersButton
-            testId="filters-button-mobile"
-            showLabel={false}
-            count={selection.length}
-            onClick={() => setFiltersOpen(true)}
-          />
-        </div>
-
         <div className="flex items-center gap-2 flex-shrink-0">
           <Link
             href="/recipes/import"
@@ -170,6 +159,16 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             <span className="hidden sm:inline">New recipe</span>
             <span className="sm:hidden">New</span>
           </Link>
+          {/* Filters — mobile only, grouped with the other action buttons
+              on the right rather than floating between title and them */}
+          <div className="sm:hidden">
+            <FiltersButton
+              testId="filters-button-mobile"
+              showLabel={false}
+              count={selection.length}
+              onClick={() => setFiltersOpen(true)}
+            />
+          </div>
         </div>
       </div>
 
@@ -177,11 +176,12 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
         <p className="text-xs text-gray-400 mb-3">Searching all recipes, ignoring your default view.</p>
       )}
 
-      {/* Most-used tags row. The Filters button lives outside the scrollable
-          strip — nesting it inside an overflow-x-auto container clips its
-          badge, since setting overflow-x forces overflow-y to clip too. */}
-      {mostUsed.length > 0 && (
-        <div className="flex items-center gap-2 mb-6">
+      {/* Tag row — as many pills as fit on one line, no scrolling. The
+          Filters button lives outside RecipeTagStrip's own container so its
+          badge (which pokes outside the button via negative offset) is
+          never clipped by anything. */}
+      {tagRowCandidates.length > 0 && (
+        <div className="flex items-center gap-2 mb-6 pt-1.5 pb-1">
           <div className="hidden sm:block flex-shrink-0">
             <FiltersButton
               testId="filters-button-desktop"
@@ -190,9 +190,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
               onClick={() => setFiltersOpen(true)}
             />
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pt-1.5 pb-1 min-w-0">
-            {mostUsed.map(renderPill)}
-          </div>
+          <RecipeTagStrip tags={tagRowCandidates} renderPill={renderPill} />
         </div>
       )}
 
