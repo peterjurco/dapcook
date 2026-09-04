@@ -6,6 +6,7 @@ import {
   DragOverlay,
   PointerSensor,
   closestCenter,
+  pointerWithin,
   useDraggable,
   useDroppable,
   useSensor,
@@ -141,10 +142,20 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
   // Tag drags and group-reorder drags run in the same DndContext but must
   // never collide with each other's targets: a tag can only land in a zone,
   // a group can only land on another group. Route each drag to its own pool.
+  //
+  // Within that pool, prefer pointerWithin (is the pointer literally over
+  // this drop target?) over closestCenter (which drop target's center is
+  // nearest?). closestCenter alone effectively never picks a small/empty
+  // zone next to a much larger populated one — the populated zone's center
+  // stays closer even when the pointer is directly over the empty zone's
+  // placeholder text. Fall back to closestCenter only when the pointer
+  // isn't over any candidate, so a fast drag still resolves to something.
   const collisionDetection: CollisionDetection = (args) => {
     const dragType = args.active.data.current?.type
     const pool = args.droppableContainers.filter((c) => c.data.current?.type === dragType)
-    return closestCenter({ ...args, droppableContainers: pool })
+    const scopedArgs = { ...args, droppableContainers: pool }
+    const pointerHits = pointerWithin(scopedArgs)
+    return pointerHits.length > 0 ? pointerHits : closestCenter(scopedArgs)
   }
 
   function flashError(message: string) {
