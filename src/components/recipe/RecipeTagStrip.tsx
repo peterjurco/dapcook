@@ -5,10 +5,16 @@ import { useLayoutEffect, useRef, useState } from 'react'
 const GAP_PX = 8 // matches gap-2
 
 interface RecipeTagStripProps {
-  /** Candidate tags in priority order — selected first, then by usage.
-   *  Only as many as fit the available width are actually rendered. */
+  /** Candidate tags in priority order. Only as many as fit the available
+   *  width are actually rendered. */
   tags: string[]
   renderPill: (tag: string) => React.ReactNode
+  /** Fires whenever the fitted count changes, so a caller can tell exactly
+   *  which tags are currently visible (not just present in `tags`) — e.g.
+   *  to decide whether selecting one needs to bring it into view. Should be
+   *  a stable reference (a raw useState setter is fine) since it isn't in
+   *  this component's own render/measure loop. */
+  onVisibleCountChange?: (count: number) => void
 }
 
 /**
@@ -17,7 +23,7 @@ interface RecipeTagStripProps {
  * pill widths (font/padding vary with content), which CSS alone can't do
  * cleanly — an `overflow-hidden` row would just clip the last pill mid-way.
  */
-export function RecipeTagStrip({ tags, renderPill }: RecipeTagStripProps) {
+export function RecipeTagStrip({ tags, renderPill, onVisibleCountChange }: RecipeTagStripProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLDivElement>(null)
   const [visibleCount, setVisibleCount] = useState(tags.length)
@@ -41,13 +47,14 @@ export function RecipeTagStrip({ tags, renderPill }: RecipeTagStripProps) {
         count++
       }
       setVisibleCount(count)
+      onVisibleCountChange?.(count)
     }
 
     recompute()
     const observer = new ResizeObserver(recompute)
     observer.observe(container)
     return () => observer.disconnect()
-  }, [tags])
+  }, [tags, onVisibleCountChange])
 
   return (
     <div ref={containerRef} className="flex-1 min-w-0">

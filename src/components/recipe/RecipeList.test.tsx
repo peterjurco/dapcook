@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RecipeList } from './RecipeList'
@@ -54,6 +54,14 @@ const grouped: Taxonomy = {
   },
 }
 
+const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
+
+afterEach(() => {
+  if (originalClientWidth) {
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidth)
+  }
+})
+
 describe('RecipeList filtering', () => {
   it('shows every recipe when nothing is selected', () => {
     render(<RecipeList recipes={recipes} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
@@ -89,17 +97,54 @@ describe('RecipeList filtering', () => {
     expect(screen.getByText('Lasagne')).toBeInTheDocument()
   })
 
-  it('moves a selected tag to the front of the tag row, ahead of more-used tags', async () => {
+  it('keeps a visible tag in place when selected inline, instead of reordering', async () => {
     const user = userEvent.setup()
     render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
 
-    // Usage order is main, italian, side, asian — asian is last by usage.
+    // Usage order is main, italian, side, asian.
     const strip = screen.getByTestId('tag-strip-visible')
-    expect(within(strip).getAllByRole('button')[0]).toHaveTextContent('main')
+    const namesBefore = within(strip).getAllByRole('button').map((el) => el.textContent)
+    expect(namesBefore).toEqual(['main', 'italian', 'side', 'asian'])
 
     await user.click(within(strip).getByRole('button', { name: 'asian' }))
 
-    expect(within(strip).getAllByRole('button')[0]).toHaveTextContent('asian')
+    const namesAfter = within(strip).getAllByRole('button').map((el) => el.textContent)
+    expect(namesAfter).toEqual(['main', 'italian', 'side', 'asian'])
+  })
+
+  it('brings a tag selected from the modal to the front when it was not currently visible', async () => {
+    // Pills are stubbed at 60px wide with an 8px gap (src/test/setup.ts).
+    // A 90px strip only fits one pill, so "asian" (last by usage) starts
+    // off-screen, reachable only through the modal.
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, value: 90 })
+
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+
+    const strip = screen.getByTestId('tag-strip-visible')
+    expect(strip).toHaveTextContent('main')
+    expect(strip).not.toHaveTextContent('asian')
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'asian' }))
+    await user.click(screen.getByRole('button', { name: /close filters/i }))
+
+    expect(strip).toHaveTextContent('asian')
+    expect(strip).not.toHaveTextContent('main')
+  })
+
+  it('resets the tag row back to plain usage order on Clear all', async () => {
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, value: 90 })
+
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'asian' }))
+    await user.click(screen.getByRole('button', { name: /clear all/i }))
+    await user.click(screen.getByRole('button', { name: /close filters/i }))
+
+    expect(screen.getByTestId('tag-strip-visible')).toHaveTextContent('main')
   })
 })
 

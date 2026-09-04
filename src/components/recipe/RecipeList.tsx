@@ -54,6 +54,7 @@ function FiltersButton({
 export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps) {
   const knownTags = tagsByUsage(recipes)
   const initialDefault = sanitizeDefaultFilter(defaultFilter, knownTags)
+  const initialRowTags = [...initialDefault, ...knownTags.filter((t) => !initialDefault.includes(t))]
 
   const [search, setSearch] = useState('')
   const [selection, setSelection] = useState<string[]>(initialDefault)
@@ -61,17 +62,35 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   const [selectionTouched, setSelectionTouched] = useState(false)
   const [savingDefault, setSavingDefault] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  // The tag row's order is stable — it doesn't reshuffle just because a
+  // visible pill got clicked. It only changes when a tag gets selected (via
+  // the Filters modal, typically) that isn't currently among the tags the
+  // strip is actually rendering — that tag is brought to the front, pushing
+  // lower-priority tags out of the fitted width if needed.
+  const [rowTags, setRowTags] = useState<string[]>(initialRowTags)
+  const [visibleRowCount, setVisibleRowCount] = useState(initialRowTags.length)
 
   const sections = buildFilterSections(recipes, taxonomy)
-  // Selected tags always get priority so active filters stay visible; the
-  // rest fill in by usage. RecipeTagStrip then shows as many as fit.
-  const tagRowCandidates = [...selection, ...knownTags.filter((t) => !selection.includes(t))]
 
   function toggleTag(tag: string) {
     setSelectionTouched(true)
+    const isSelecting = !selection.includes(tag)
     setSelection((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     )
+
+    if (isSelecting) {
+      const currentlyVisible = rowTags.slice(0, visibleRowCount)
+      if (!currentlyVisible.includes(tag)) {
+        setRowTags((prev) => [tag, ...prev.filter((t) => t !== tag)])
+      }
+    }
+  }
+
+  function clearAllTags() {
+    setSelectionTouched(true)
+    setSelection([])
+    setRowTags(knownTags)
   }
 
   const searching = search.trim().length > 0
@@ -180,7 +199,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           Filters button lives outside RecipeTagStrip's own container so its
           badge (which pokes outside the button via negative offset) is
           never clipped by anything. */}
-      {tagRowCandidates.length > 0 && (
+      {rowTags.length > 0 && (
         <div className="flex items-center gap-2 mb-6 pt-1.5 pb-1">
           <div className="hidden sm:block flex-shrink-0">
             <FiltersButton
@@ -190,7 +209,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
               onClick={() => setFiltersOpen(true)}
             />
           </div>
-          <RecipeTagStrip tags={tagRowCandidates} renderPill={renderPill} />
+          <RecipeTagStrip tags={rowTags} renderPill={renderPill} onVisibleCountChange={setVisibleRowCount} />
         </div>
       )}
 
@@ -200,7 +219,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           taxonomy={taxonomy}
           selection={selection}
           onToggleTag={toggleTag}
-          onClearAll={() => { setSelectionTouched(true); setSelection([]) }}
+          onClearAll={clearAllTags}
           resultCount={filtered.length}
           selectionIsDefault={selectionIsDefault}
           savingDefault={savingDefault}
