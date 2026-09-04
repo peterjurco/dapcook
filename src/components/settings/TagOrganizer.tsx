@@ -4,6 +4,7 @@ import { useState } from 'react'
 import {
   DndContext,
   DragOverlay,
+  MeasuringStrategy,
   PointerSensor,
   closestCenter,
   pointerWithin,
@@ -24,6 +25,16 @@ import type { TagData } from '@/app/api/tags/route'
 import type { TagGroup } from '@/types/database'
 
 const UNCATEGORIZED_ZONE = 'zone:uncategorized'
+
+// The default measuring strategy (WhileDragging) only (re)measures droppable
+// rects around drag start/end, sourced from whatever's already tracked at
+// that moment. A group created moments earlier can still be mid-registration
+// in that tracking, so its drop zone silently has no rect yet — collisions
+// against it fail with no visual feedback at all, exactly as if it weren't
+// droppable. Always keeps rects continuously fresh instead, at a cost
+// (continuous ResizeObserver-driven remeasurement) that's irrelevant for a
+// settings page with at most a few dozen groups.
+const MEASURING_CONFIG = { droppable: { strategy: MeasuringStrategy.Always } }
 
 function zoneId(groupId: string) {
   return `zone:${groupId}`
@@ -295,6 +306,7 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
 
       <DndContext
         sensors={sensors}
+        measuring={MEASURING_CONFIG}
         collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
