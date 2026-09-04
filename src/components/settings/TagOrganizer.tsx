@@ -5,28 +5,34 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  closestCenter,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { Plus } from 'lucide-react'
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { GripVertical, Plus } from 'lucide-react'
 import { GroupModal } from './GroupModal'
 import { TagEditModal } from './TagEditModal'
 import type { TagData } from '@/app/api/tags/route'
 import type { TagGroup } from '@/types/database'
 
-const UNCATEGORIZED = 'uncategorized'
+const UNCATEGORIZED_ZONE = 'zone:uncategorized'
 
-interface TagOrganizerProps {
-  initialGroups: TagGroup[]
-  initialTags: TagData[]
+function zoneId(groupId: string) {
+  return `zone:${groupId}`
 }
 
 function TagPill({ tag, moving, onClick }: { tag: TagData; moving: boolean; onClick: () => void }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: tag.name })
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: tag.name,
+    data: { type: 'tag' },
+  })
   const color = tag.color
 
   return (
@@ -54,7 +60,7 @@ function TagPill({ tag, moving, onClick }: { tag: TagData; moving: boolean; onCl
 }
 
 function DropZone({ id, children, empty }: { id: string; children: React.ReactNode; empty: boolean }) {
-  const { setNodeRef, isOver } = useDroppable({ id })
+  const { setNodeRef, isOver } = useDroppable({ id, data: { type: 'zone' } })
   return (
     <div
       ref={setNodeRef}
@@ -68,22 +74,78 @@ function DropZone({ id, children, empty }: { id: string; children: React.ReactNo
   )
 }
 
+interface SortableGroupProps {
+  group: TagGroup
+  onEdit: () => void
+  children: React.ReactNode
+}
+
+function SortableGroup({ group, onEdit, children }: SortableGroupProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: group.id,
+    data: { type: 'group' },
+  })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div className="flex items-center gap-1 mb-1.5">
+        <button
+          type="button"
+          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+          aria-label={`Drag to reorder ${group.name}`}
+          {...listeners}
+          {...attributes}
+        >
+          <GripVertical size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs font-semibold text-gray-500 uppercase tracking-wide hover:text-gray-900 transition-colors"
+        >
+          {group.name}
+        </button>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+interface TagOrganizerProps {
+  initialGroups: TagGroup[]
+  initialTags: TagData[]
+}
+
 export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) {
   const [groups, setGroups] = useState<TagGroup[]>(initialGroups)
   const [tags, setTags] = useState<TagData[]>(initialTags)
   const [editingGroup, setEditingGroup] = useState<TagGroup | 'new' | null>(null)
   const [editingTag, setEditingTag] = useState<TagData | null>(null)
-  // Two distinct states: activeDragId drives the live drag ghost/overlay,
-  // movingTag drives the "saving" spinner once dropped, while the PATCH is
-  // in flight. They don't overlap — the drag gesture ends before the
-  // network call starts.
-  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  // Two distinct states: activeDrag drives the live drag ghost/overlay,
+  // movingTag drives the "saving" spinner once a tag is dropped, while the
+  // PATCH is in flight. They don't overlap — the drag gesture ends before
+  // the network call starts.
+  const [activeDrag, setActiveDrag] = useState<{ type: 'tag' | 'group'; id: string } | null>(null)
   const [movingTag, setMovingTag] = useState<string | null>(null)
   const [banner, setBanner] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
+
+  // Tag drags and group-reorder drags run in the same DndContext but must
+  // never collide with each other's targets: a tag can only land in a zone,
+  // a group can only land on another group. Route each drag to its own pool.
+  const collisionDetection: CollisionDetection = (args) => {
+    const dragType = args.active.data.current?.type
+    const pool = args.droppableContainers.filter((c) => c.data.current?.type === dragType)
+    return closestCenter({ ...args, droppableContainers: pool })
+  }
 
   function flashError(message: string) {
     setBanner(message)
@@ -121,6 +183,36 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
     return true
   }
 
+  async function handleGroupReorder(activeId: string, overId: string) {
+    if (activeId === overId) return
+    const oldIndex = groups.findIndex((g) => g.id === activeId)
+    const newIndex = groups.findIndex((g) => g.id === overId)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const previous = groups
+    const reordered = arrayMove(groups, oldIndex, newIndex).map((g, i) => ({ ...g, position: i }))
+    setGroups(reordered)
+
+    try {
+      const results = await Promise.all(
+        reordered.map((g) =>
+          fetch(`/api/tag-groups/${g.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ position: g.position }),
+          })
+        )
+      )
+      if (results.some((r) => !r.ok)) {
+        setGroups(previous)
+        flashError("Couldn't reorder groups. Reverted.")
+      }
+    } catch {
+      setGroups(previous)
+      flashError("Couldn't reorder groups. Reverted.")
+    }
+  }
+
   async function handleTagSave(tag: TagData, updates: { name: string; color: string | null }): Promise<boolean> {
     const res = await fetch(`/api/tags/${encodeURIComponent(tag.name)}`, {
       method: 'PATCH',
@@ -139,17 +231,8 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
     return true
   }
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveDragId(String(event.active.id))
-  }
-
-  async function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    setActiveDragId(null)
-    if (!over) return
-
-    const tagName = String(active.id)
-    const targetGroupId = over.id === UNCATEGORIZED ? null : String(over.id)
+  async function handleTagMove(tagName: string, targetZoneId: string) {
+    const targetGroupId = targetZoneId === UNCATEGORIZED_ZONE ? null : targetZoneId.replace(/^zone:/, '')
     const tag = tags.find((t) => t.name === tagName)
     if (!tag || tag.groupId === targetGroupId) return
 
@@ -169,7 +252,25 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
     setMovingTag(null)
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    const type = event.active.data.current?.type === 'group' ? 'group' : 'tag'
+    setActiveDrag({ type, id: String(event.active.id) })
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    setActiveDrag(null)
+    if (!over) return
+
+    if (active.data.current?.type === 'group') {
+      await handleGroupReorder(String(active.id), String(over.id))
+    } else {
+      await handleTagMove(String(active.id), String(over.id))
+    }
+  }
+
   const uncategorized = tags.filter((t) => t.groupId === null)
+  const draggedTag = activeDrag?.type === 'tag' ? tags.find((t) => t.name === activeDrag.id) : undefined
 
   if (tags.length === 0 && groups.length === 0) {
     return <p className="text-sm text-gray-400">No tags yet. Add some to your recipes.</p>
@@ -181,60 +282,60 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
         <p className="text-xs text-red-500 mb-3" role="status">{banner}</p>
       )}
 
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="space-y-5">
-          {groups.map((group) => {
-            const groupTags = tags.filter((t) => t.groupId === group.id)
-            return (
-              <div key={group.id}>
-                <button
-                  type="button"
-                  onClick={() => setEditingGroup(group)}
-                  className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 hover:text-gray-900 transition-colors"
-                >
-                  {group.name}
-                </button>
-                <DropZone id={group.id} empty={groupTags.length === 0}>
-                  {groupTags.map((tag) => (
-                    <TagPill
-                      key={tag.name}
-                      tag={tag}
-                      moving={movingTag === tag.name}
-                      onClick={() => setEditingTag(tag)}
-                    />
-                  ))}
-                </DropZone>
-              </div>
-            )
-          })}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collisionDetection}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={groups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-5">
+            {groups.map((group) => {
+              const groupTags = tags.filter((t) => t.groupId === group.id)
+              return (
+                <SortableGroup key={group.id} group={group} onEdit={() => setEditingGroup(group)}>
+                  <DropZone id={zoneId(group.id)} empty={groupTags.length === 0}>
+                    {groupTags.map((tag) => (
+                      <TagPill
+                        key={tag.name}
+                        tag={tag}
+                        moving={movingTag === tag.name}
+                        onClick={() => setEditingTag(tag)}
+                      />
+                    ))}
+                  </DropZone>
+                </SortableGroup>
+              )
+            })}
 
-          <div>
-            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-1.5">Uncategorized</p>
-            <DropZone id={UNCATEGORIZED} empty={uncategorized.length === 0}>
-              {uncategorized.map((tag) => (
-                <TagPill
-                  key={tag.name}
-                  tag={tag}
-                  moving={movingTag === tag.name}
-                  onClick={() => setEditingTag(tag)}
-                />
-              ))}
-            </DropZone>
+            <div>
+              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-1.5">Uncategorized</p>
+              <DropZone id={UNCATEGORIZED_ZONE} empty={uncategorized.length === 0}>
+                {uncategorized.map((tag) => (
+                  <TagPill
+                    key={tag.name}
+                    tag={tag}
+                    moving={movingTag === tag.name}
+                    onClick={() => setEditingTag(tag)}
+                  />
+                ))}
+              </DropZone>
+            </div>
           </div>
-        </div>
+        </SortableContext>
 
         <DragOverlay>
-          {activeDragId && (() => {
-            const tag = tags.find((t) => t.name === activeDragId)
-            return tag ? (
-              <span
-                className="text-xs px-2.5 py-1 rounded-full font-medium shadow-lg"
-                style={{ backgroundColor: tag.color ? tag.color + '28' : '#f3f4f6', color: tag.color ?? '#4b5563' }}
-              >
-                {tag.name}
-              </span>
-            ) : null
-          })()}
+          {draggedTag && (
+            <span
+              className="text-xs px-2.5 py-1 rounded-full font-medium shadow-lg"
+              style={{
+                backgroundColor: draggedTag.color ? draggedTag.color + '28' : '#f3f4f6',
+                color: draggedTag.color ?? '#4b5563',
+              }}
+            >
+              {draggedTag.name}
+            </span>
+          )}
         </DragOverlay>
       </DndContext>
 

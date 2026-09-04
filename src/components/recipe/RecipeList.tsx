@@ -177,9 +177,11 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
         <p className="text-xs text-gray-400 mb-3">Searching all recipes, ignoring your default view.</p>
       )}
 
-      {/* Most-used tags row */}
+      {/* Most-used tags row. The Filters button lives outside the scrollable
+          strip — nesting it inside an overflow-x-auto container clips its
+          badge, since setting overflow-x forces overflow-y to clip too. */}
       {mostUsed.length > 0 && (
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 mb-6">
           <div className="hidden sm:block flex-shrink-0">
             <FiltersButton
               testId="filters-button-desktop"
@@ -188,7 +190,9 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
               onClick={() => setFiltersOpen(true)}
             />
           </div>
-          {mostUsed.map(renderPill)}
+          <div className="flex items-center gap-2 overflow-x-auto pt-1.5 pb-1 min-w-0">
+            {mostUsed.map(renderPill)}
+          </div>
         </div>
       )}
 
