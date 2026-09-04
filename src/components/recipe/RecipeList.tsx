@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Search, Import, Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, Import, Plus, SlidersHorizontal } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
+import { RecipeFiltersModal } from './RecipeFiltersModal'
 import {
   buildFilterSections,
   filterRecipesByTags,
@@ -20,18 +21,52 @@ interface RecipeListProps {
   defaultFilter: string[]
 }
 
+// How many most-used tags show inline before the rest are only reachable
+// through the Filters modal.
+const MOST_USED_COUNT = 12
+
+function FiltersButton({
+  testId,
+  showLabel,
+  count,
+  onClick,
+}: {
+  testId: string
+  showLabel: boolean
+  count: number
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      className="relative inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors flex-shrink-0"
+    >
+      <SlidersHorizontal size={14} />
+      {showLabel && 'Filters'}
+      {count > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center text-[10px] font-semibold bg-gray-900 text-white rounded-full">
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
+
 export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps) {
   const knownTags = tagsByUsage(recipes)
   const initialDefault = sanitizeDefaultFilter(defaultFilter, knownTags)
 
   const [search, setSearch] = useState('')
   const [selection, setSelection] = useState<string[]>(initialDefault)
-  const [expanded, setExpanded] = useState(false)
   const [savedDefault, setSavedDefault] = useState<string[]>(initialDefault)
   const [selectionTouched, setSelectionTouched] = useState(false)
   const [savingDefault, setSavingDefault] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const sections = buildFilterSections(recipes, taxonomy)
+  const mostUsed = knownTags.slice(0, MOST_USED_COUNT)
 
   function toggleTag(tag: string) {
     setSelectionTouched(true)
@@ -73,8 +108,9 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     return (
       <button
         key={tag}
+        type="button"
         onClick={() => toggleTag(tag)}
-        className="px-3 py-1 text-sm rounded-full border transition-colors"
+        className="px-3 py-1 text-sm rounded-full border transition-colors flex-shrink-0"
         style={
           isActive
             ? color
@@ -90,14 +126,35 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     )
   }
 
-  const hasTags = sections.groups.length > 0 || sections.ungrouped.length > 0
-
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Recipes</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex-shrink-0">Recipes</h1>
+
+        {/* Search — desktop only */}
+        <div className="relative flex-1 max-w-md hidden sm:block">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search recipes..."
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+          />
+        </div>
+
+        {/* Filters — mobile only, lives in the title row */}
+        <div className="sm:hidden">
+          <FiltersButton
+            testId="filters-button-mobile"
+            showLabel={false}
+            count={selection.length}
+            onClick={() => setFiltersOpen(true)}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Link
             href="/recipes/import"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
@@ -110,78 +167,44 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Plus size={14} />
-            New recipe
+            <span className="hidden sm:inline">New recipe</span>
+            <span className="sm:hidden">New</span>
           </Link>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search recipes..."
-          className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
-        />
-      </div>
-
       {defaultBypassed && (
-        <p className="text-xs text-gray-400 -mt-2 mb-4">Searching all recipes, ignoring your default view.</p>
+        <p className="text-xs text-gray-400 mb-3">Searching all recipes, ignoring your default view.</p>
       )}
 
-      {/* Tag filters */}
-      {hasTags && (
-        <div className="mb-6">
-          {sections.groups.map((section) => (
-            <div key={section.group.id} className="mb-3">
-              <p className="text-xs text-gray-400 mb-1.5">{section.group.name}</p>
-              <div className="flex flex-wrap gap-2">
-                {section.tags.map(renderPill)}
-              </div>
-            </div>
-          ))}
-
-          {sections.ungrouped.length > 0 && (
-            <div className={sections.groups.length > 0 ? 'pt-3 border-t border-gray-100' : undefined}>
-              {/* Two-row clamp: pill height ~30px (py-1 text-sm) x 2 rows + 8px gap-2 = 68px.
-                  Update this value if pill padding/gap classes change. */}
-              <div
-                data-testid="tag-area-rest"
-                className={`flex flex-wrap gap-2${expanded ? '' : ' max-h-[68px] overflow-hidden'}`}
-              >
-                {sections.ungrouped.map(renderPill)}
-              </div>
-            </div>
-          )}
-
-          {/* Action row. Lives outside the remainder block so the default-view
-              action still appears when every tag sits in a named group. */}
-          <div className="mt-2 flex items-center justify-between gap-3">
-            {sections.ungrouped.length > 0 ? (
-              <button
-                onClick={() => setExpanded((v) => !v)}
-                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-              >
-                {expanded ? 'Show fewer tags' : 'Show all tags'}
-                {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-            ) : (
-              <span />
-            )}
-
-            {selection.length > 0 && (
-              <button
-                onClick={() => saveDefault(selectionIsDefault ? [] : selection)}
-                disabled={savingDefault}
-                className="text-sm text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50"
-              >
-                {selectionIsDefault ? 'Clear default' : 'Set as default'}
-              </button>
-            )}
+      {/* Most-used tags row */}
+      {mostUsed.length > 0 && (
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+          <div className="hidden sm:block flex-shrink-0">
+            <FiltersButton
+              testId="filters-button-desktop"
+              showLabel
+              count={selection.length}
+              onClick={() => setFiltersOpen(true)}
+            />
           </div>
+          {mostUsed.map(renderPill)}
         </div>
+      )}
+
+      {filtersOpen && (
+        <RecipeFiltersModal
+          sections={sections}
+          taxonomy={taxonomy}
+          selection={selection}
+          onToggleTag={toggleTag}
+          onClearAll={() => { setSelectionTouched(true); setSelection([]) }}
+          resultCount={filtered.length}
+          selectionIsDefault={selectionIsDefault}
+          savingDefault={savingDefault}
+          onToggleDefault={() => saveDefault(selectionIsDefault ? [] : selection)}
+          onClose={() => setFiltersOpen(false)}
+        />
       )}
 
       {/* Grid */}

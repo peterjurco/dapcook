@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RecipeList } from './RecipeList'
 import { EMPTY_TAXONOMY, type Taxonomy } from '@/lib/tags/taxonomy'
@@ -90,24 +90,7 @@ describe('RecipeList filtering', () => {
   })
 })
 
-describe('RecipeList tag area clamp', () => {
-  it('clamps the tag area to two rows and expands on demand', async () => {
-    const user = userEvent.setup()
-    render(<RecipeList recipes={recipes} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
-
-    const area = screen.getByTestId('tag-area-rest')
-    expect(area).toHaveClass('max-h-[68px]')
-    expect(area).toHaveClass('overflow-hidden')
-
-    await user.click(screen.getByRole('button', { name: /show all tags/i }))
-    expect(screen.getByTestId('tag-area-rest')).not.toHaveClass('max-h-[68px]')
-
-    await user.click(screen.getByRole('button', { name: /show fewer tags/i }))
-    expect(screen.getByTestId('tag-area-rest')).toHaveClass('max-h-[68px]')
-  })
-})
-
-describe('RecipeList group sections', () => {
+describe('RecipeList Filters button and modal', () => {
   const threeGroups: Taxonomy = {
     groups: [
       { id: 'g-course', name: 'Course', position: 0 },
@@ -129,40 +112,68 @@ describe('RecipeList group sections', () => {
     makeRecipe('r4', 'Stew', ['comfort', 'quick']),
   ]
 
-  it('renders a labelled section per group in position order', () => {
-    render(<RecipeList recipes={withExtras} taxonomy={threeGroups} defaultFilter={[]} />)
+  it('shows no badge when nothing is selected, and the count once something is', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
 
-    const labels = screen.getAllByText(/^(Course|Cuisine|Mood)$/).map((el) => el.textContent)
-    expect(labels).toEqual(['Course', 'Cuisine', 'Mood'])
+    expect(screen.getByTestId('filters-button-desktop')).not.toHaveTextContent('1')
+
+    await user.click(screen.getByRole('button', { name: 'main' }))
+    expect(screen.getByTestId('filters-button-desktop')).toHaveTextContent('1')
+
+    await user.click(screen.getByRole('button', { name: 'side' }))
+    expect(screen.getByTestId('filters-button-desktop')).toHaveTextContent('2')
   })
 
-  it('renders every tag of a group without clamping', () => {
+  it('opens a modal with one labelled section per group, plus Other for ungrouped tags', async () => {
+    const user = userEvent.setup()
     render(<RecipeList recipes={withExtras} taxonomy={threeGroups} defaultFilter={[]} />)
 
-    expect(screen.getByRole('button', { name: 'main' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'side' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'italian' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'asian' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'comfort' })).toBeInTheDocument()
+    await user.click(screen.getByTestId('filters-button-desktop'))
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('Course')
+    expect(dialog).toHaveTextContent('Cuisine')
+    expect(dialog).toHaveTextContent('Mood')
+    expect(dialog).toHaveTextContent('Other')
+    expect(dialog).toHaveTextContent('quick')
   })
 
-  it('puts only ungrouped tags in the clamped remainder', () => {
-    render(<RecipeList recipes={withExtras} taxonomy={threeGroups} defaultFilter={[]} />)
+  it('closes the modal via the close button', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
 
-    const rest = screen.getByTestId('tag-area-rest')
-    expect(rest).toHaveTextContent('quick')
-    expect(rest).not.toHaveTextContent('comfort')
-    expect(rest).not.toHaveTextContent('main')
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /close filters/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('renders no section for a group with no in-use tags', () => {
-    const emptyGroup: Taxonomy = {
-      groups: [{ id: 'g-empty', name: 'Empty', position: 0 }],
-      tags: { unused: { color: null, groupId: 'g-empty' } },
-    }
-    render(<RecipeList recipes={withExtras} taxonomy={emptyGroup} defaultFilter={[]} />)
+  it('selecting a tag inside the modal applies immediately, live-updating the result count', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
 
-    expect(screen.queryByText('Empty')).not.toBeInTheDocument()
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    expect(screen.getByRole('button', { name: /show 3 recipes/i })).toBeInTheDocument()
+
+    const dialog = screen.getByRole('dialog')
+    const { getByRole } = within(dialog)
+    await user.click(getByRole('button', { name: 'main' }))
+
+    expect(screen.getByRole('button', { name: /show 2 recipes/i })).toBeInTheDocument()
+  })
+
+  it('clears the whole selection via Clear all', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+
+    await user.click(screen.getByRole('button', { name: 'main' }))
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.click(screen.getByRole('button', { name: /clear all/i }))
+
+    expect(screen.getByRole('button', { name: /show 3 recipes/i })).toBeInTheDocument()
+    expect(screen.getByTestId('filters-button-desktop')).not.toHaveTextContent('1')
   })
 })
 
@@ -205,40 +216,24 @@ describe('RecipeList default view', () => {
     expect(screen.queryByText(/searching all recipes/i)).not.toBeInTheDocument()
   })
 
-  it('hides the default action until something is selected', async () => {
+  it('hides the default action in the modal until something is selected', async () => {
     const user = userEvent.setup()
     render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
 
+    await user.click(screen.getByTestId('filters-button-desktop'))
     expect(screen.queryByRole('button', { name: /set as default/i })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'main' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'main' }))
     expect(screen.getByRole('button', { name: /set as default/i })).toBeInTheDocument()
   })
 
-  it('shows "Clear default" when the selection already is the default', () => {
+  it('shows "Clear default" in the modal when the selection already is the default', async () => {
+    const user = userEvent.setup()
     render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={['main']} />)
 
+    await user.click(screen.getByTestId('filters-button-desktop'))
     expect(screen.getByRole('button', { name: /clear default/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /set as default/i })).not.toBeInTheDocument()
-  })
-
-  it('still offers the default action when every tag sits in a named group', async () => {
-    const allGrouped: Taxonomy = {
-      groups: [{ id: 'g-course', name: 'Course', position: 0 }],
-      tags: {
-        main: { color: null, groupId: 'g-course' },
-        side: { color: null, groupId: 'g-course' },
-        italian: { color: null, groupId: 'g-course' },
-        asian: { color: null, groupId: 'g-course' },
-      },
-    }
-    const user = userEvent.setup()
-    render(<RecipeList recipes={recipes} taxonomy={allGrouped} defaultFilter={[]} />)
-
-    expect(screen.queryByTestId('tag-area-rest')).not.toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'main' }))
-    expect(screen.getByRole('button', { name: /set as default/i })).toBeInTheDocument()
   })
 
   it('saves the selection as the default', async () => {
@@ -248,6 +243,7 @@ describe('RecipeList default view', () => {
 
     render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
     await user.click(screen.getByRole('button', { name: 'main' }))
+    await user.click(screen.getByTestId('filters-button-desktop'))
     await user.click(screen.getByRole('button', { name: /set as default/i }))
 
     expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
@@ -266,6 +262,7 @@ describe('RecipeList default view', () => {
 
     render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
     await user.click(screen.getByRole('button', { name: 'main' }))
+    await user.click(screen.getByTestId('filters-button-desktop'))
     await user.click(screen.getByRole('button', { name: /set as default/i }))
 
     expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
