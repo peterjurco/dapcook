@@ -67,7 +67,7 @@ describe('GET /api/tag-groups', () => {
   })
 
   it('returns the household groups ordered by position', async () => {
-    const groups = [{ id: 'g1', name: 'Course', position: 0, is_pinned: true }]
+    const groups = [{ id: 'g1', name: 'Course', position: 0 }]
     const supabase = makeSupabase({ groupsResult: { data: groups, error: null } })
     vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
 
@@ -87,8 +87,8 @@ describe('POST /api/tag-groups', () => {
     expect(res.status).toBe(400)
   })
 
-  it('creates a group at the end of the ordering and returns 201', async () => {
-    const created = { id: 'g-new', name: 'Cuisine', position: 3, is_pinned: false }
+  it('creates a group at the start of the ordering and returns 201', async () => {
+    const created = { id: 'g-new', name: 'Cuisine', position: -1 }
     const supabase = {
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
       from: vi.fn((table: string) => {
@@ -107,10 +107,14 @@ describe('POST /api/tag-groups', () => {
     expect(res.status).toBe(201)
     expect(await res.json()).toEqual(created)
 
+    // New groups are always visible, so they're prepended (lowest position first),
+    // not appended.
+    const positionQB = supabase.from.mock.results[1].value
+    expect(positionQB.order).toHaveBeenCalledWith('position', { ascending: true })
+
     const insertQB = supabase.from.mock.results[2].value
     const inserted = insertQB.insert.mock.calls[0][0] as Record<string, unknown>
     expect(inserted.name).toBe('Cuisine')
     expect(inserted.household_id).toBe('hh-1')
-    expect(inserted.is_pinned).toBe(false)
   })
 })

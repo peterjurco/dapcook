@@ -1,6 +1,6 @@
 import type { Recipe, TagGroup } from '@/types/database'
 
-export type TagGroupView = Pick<TagGroup, 'id' | 'name' | 'position' | 'is_pinned'>
+export type TagGroupView = Pick<TagGroup, 'id' | 'name' | 'position'>
 
 export interface TagMeta {
   color: string | null
@@ -17,7 +17,7 @@ export function buildTagMeta(
 }
 
 export interface Taxonomy {
-  /** Every group in the household, pinned or not. */
+  /** Every group in the household. */
   groups: TagGroupView[]
   /** Tag name -> metadata. Tags absent from this map are ungrouped and uncoloured. */
   tags: Record<string, TagMeta>
@@ -33,10 +33,10 @@ export function tagGroupId(taxonomy: Taxonomy, name: string): string | null {
   return taxonomy.tags[name]?.groupId ?? null
 }
 
-export function pinnedGroups(taxonomy: Taxonomy): TagGroupView[] {
-  return taxonomy.groups
-    .filter((g) => g.is_pinned)
-    .sort((a, b) => a.position - b.position)
+/** Every group, ordered by position. Every group is always shown — there is
+ *  no hidden/unpinned state. */
+export function sortedGroups(taxonomy: Taxonomy): TagGroupView[] {
+  return [...taxonomy.groups].sort((a, b) => a.position - b.position)
 }
 
 /** Tag names used by at least one of the given recipes, most-used first. */
@@ -53,24 +53,24 @@ export function tagsByUsage(recipes: Recipe[]): string[] {
 }
 
 /**
- * Card ordering: tags belonging to pinned groups first (by group position),
- * then everything else. Relative order is preserved within each bucket.
+ * Card ordering: grouped tags first (by group position), then ungrouped
+ * tags. Relative order is preserved within each bucket.
  */
 export function orderTagsForCard(tags: string[], taxonomy: Taxonomy): string[] {
   const rank = new Map<string, number>()
-  pinnedGroups(taxonomy).forEach((group, index) => rank.set(group.id, index))
+  sortedGroups(taxonomy).forEach((group, index) => rank.set(group.id, index))
 
-  const pinned: { tag: string; rank: number }[] = []
-  const rest: string[] = []
+  const grouped: { tag: string; rank: number }[] = []
+  const ungrouped: string[] = []
   for (const tag of tags) {
     const groupId = tagGroupId(taxonomy, tag)
     const r = groupId !== null ? rank.get(groupId) : undefined
-    if (r !== undefined) pinned.push({ tag, rank: r })
-    else rest.push(tag)
+    if (r !== undefined) grouped.push({ tag, rank: r })
+    else ungrouped.push(tag)
   }
 
-  pinned.sort((a, b) => a.rank - b.rank)
-  return [...pinned.map((p) => p.tag), ...rest]
+  grouped.sort((a, b) => a.rank - b.rank)
+  return [...grouped.map((g) => g.tag), ...ungrouped]
 }
 
 export interface FilterSection {
@@ -79,31 +79,28 @@ export interface FilterSection {
 }
 
 export interface FilterSections {
-  /** One section per pinned group that has at least one in-use tag — an unused
-   *  pinned group is dropped rather than shown as an empty header. */
-  pinned: FilterSection[]
-  /** Everything not in a pinned group, flattened, most-used first. */
-  rest: string[]
+  /** One section per group that has at least one in-use tag — every group is
+   *  always shown; a group with no in-use tags is dropped rather than shown
+   *  as an empty header. */
+  groups: FilterSection[]
+  /** Ungrouped tags, flattened, most-used first. */
+  ungrouped: string[]
 }
 
 export function buildFilterSections(recipes: Recipe[], taxonomy: Taxonomy): FilterSections {
   const inUse = tagsByUsage(recipes)
-  const groups = pinnedGroups(taxonomy)
-  const pinnedIds = new Set(groups.map((g) => g.id))
+  const allGroups = sortedGroups(taxonomy)
 
-  const pinned: FilterSection[] = groups
+  const groups: FilterSection[] = allGroups
     .map((group) => ({
       group,
       tags: inUse.filter((tag) => tagGroupId(taxonomy, tag) === group.id),
     }))
     .filter((section) => section.tags.length > 0)
 
-  const rest = inUse.filter((tag) => {
-    const groupId = tagGroupId(taxonomy, tag)
-    return groupId === null || !pinnedIds.has(groupId)
-  })
+  const ungrouped = inUse.filter((tag) => tagGroupId(taxonomy, tag) === null)
 
-  return { pinned, rest }
+  return { groups, ungrouped }
 }
 
 /**

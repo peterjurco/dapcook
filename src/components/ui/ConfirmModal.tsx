@@ -7,9 +7,18 @@ interface ConfirmModalProps {
   confirmLabel?: string
   onConfirm: () => void
   onCancel: () => void
+  pending?: boolean
+  error?: string | null
 }
 
-export function ConfirmModal({ message, confirmLabel = 'Remove', onConfirm, onCancel }: ConfirmModalProps) {
+export function ConfirmModal({
+  message,
+  confirmLabel = 'Remove',
+  onConfirm,
+  onCancel,
+  pending = false,
+  error = null,
+}: ConfirmModalProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onCancel()
@@ -25,19 +34,25 @@ export function ConfirmModal({ message, confirmLabel = 'Remove', onConfirm, onCa
     >
       <div className="bg-white rounded-xl shadow-xl p-5 w-72 flex flex-col gap-4">
         <p className="text-sm text-gray-700">{message}</p>
+        {error && <p className="text-xs text-red-500">{error}</p>}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+            disabled={pending}
+            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="px-3 py-1.5 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+            disabled={pending}
+            className="px-3 py-1.5 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
           >
+            {pending && (
+              <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            )}
             {confirmLabel}
           </button>
         </div>

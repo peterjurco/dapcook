@@ -5,8 +5,8 @@ import {
   buildTagMeta,
   filterRecipesByTags,
   orderTagsForCard,
-  pinnedGroups,
   sanitizeDefaultFilter,
+  sortedGroups,
   tagColor,
   tagsByUsage,
   type Taxonomy,
@@ -38,9 +38,9 @@ function makeRecipe(id: string, tags: string[]): Recipe {
   } as Recipe
 }
 
-const course = { id: 'g-course', name: 'Course', position: 0, is_pinned: true }
-const cuisine = { id: 'g-cuisine', name: 'Cuisine', position: 1, is_pinned: true }
-const mood = { id: 'g-mood', name: 'Mood', position: 2, is_pinned: false }
+const course = { id: 'g-course', name: 'Course', position: 0 }
+const cuisine = { id: 'g-cuisine', name: 'Cuisine', position: 1 }
+const mood = { id: 'g-mood', name: 'Mood', position: 2 }
 
 const taxonomy: Taxonomy = {
   groups: [course, cuisine, mood],
@@ -56,13 +56,13 @@ const taxonomy: Taxonomy = {
   },
 }
 
-describe('pinnedGroups', () => {
-  it('returns only pinned groups, ordered by position', () => {
-    expect(pinnedGroups(taxonomy).map((g) => g.id)).toEqual(['g-course', 'g-cuisine'])
+describe('sortedGroups', () => {
+  it('returns every group, ordered by position', () => {
+    expect(sortedGroups(taxonomy).map((g) => g.id)).toEqual(['g-course', 'g-cuisine', 'g-mood'])
   })
 
   it('returns an empty array for a taxonomy with no groups', () => {
-    expect(pinnedGroups(EMPTY_TAXONOMY)).toEqual([])
+    expect(sortedGroups(EMPTY_TAXONOMY)).toEqual([])
   })
 })
 
@@ -107,12 +107,12 @@ describe('tagsByUsage', () => {
 })
 
 describe('orderTagsForCard', () => {
-  it('puts pinned-group tags first, ordered by group position', () => {
+  it('puts grouped tags first, ordered by group position, then ungrouped tags', () => {
     const result = orderTagsForCard(['quick', 'italian', 'main'], taxonomy)
     expect(result).toEqual(['main', 'italian', 'quick'])
   })
 
-  it('keeps tags from unpinned groups in the remainder', () => {
+  it('orders across every group by position, not just the first two', () => {
     const result = orderTagsForCard(['comfort', 'main'], taxonomy)
     expect(result).toEqual(['main', 'comfort'])
   })
@@ -135,31 +135,32 @@ describe('buildFilterSections', () => {
     makeRecipe('r3', ['dessert', 'vegan']),
   ]
 
-  it('returns no pinned sections and all tags in rest when there are no groups', () => {
+  it('returns no group sections and all tags ungrouped when there are no groups', () => {
     const sections = buildFilterSections(recipes, EMPTY_TAXONOMY)
-    expect(sections.pinned).toEqual([])
-    expect(sections.rest).toEqual(['main', 'italian', 'quick', 'comfort', 'dessert', 'vegan'])
+    expect(sections.groups).toEqual([])
+    expect(sections.ungrouped).toEqual(['main', 'italian', 'quick', 'comfort', 'dessert', 'vegan'])
   })
 
-  it('splits tags into pinned group sections and a flattened remainder', () => {
+  it('gives every group its own section, and flattens ungrouped tags', () => {
     const sections = buildFilterSections(recipes, taxonomy)
-    expect(sections.pinned.map((s) => s.group.id)).toEqual(['g-course', 'g-cuisine'])
-    expect(sections.pinned[0].tags).toEqual(['main', 'dessert'])
-    expect(sections.pinned[1].tags).toEqual(['italian'])
-    expect(sections.rest).toEqual(['quick', 'comfort', 'vegan'])
+    expect(sections.groups.map((s) => s.group.id)).toEqual(['g-course', 'g-cuisine', 'g-mood'])
+    expect(sections.groups[0].tags).toEqual(['main', 'dessert'])
+    expect(sections.groups[1].tags).toEqual(['italian'])
+    expect(sections.groups[2].tags).toEqual(['comfort'])
+    expect(sections.ungrouped).toEqual(['quick', 'vegan'])
   })
 
-  it('omits pinned group members that no recipe uses', () => {
+  it('omits group members that no recipe uses', () => {
     const sections = buildFilterSections([makeRecipe('r1', ['main'])], taxonomy)
-    expect(sections.pinned).toHaveLength(1)
-    expect(sections.pinned[0].group.id).toBe('g-course')
-    expect(sections.pinned[0].tags).toEqual(['main'])
+    expect(sections.groups).toHaveLength(1)
+    expect(sections.groups[0].group.id).toBe('g-course')
+    expect(sections.groups[0].tags).toEqual(['main'])
   })
 
-  it('drops pinned sections that end up empty', () => {
+  it('drops group sections that end up empty', () => {
     const sections = buildFilterSections([makeRecipe('r1', ['quick'])], taxonomy)
-    expect(sections.pinned).toEqual([])
-    expect(sections.rest).toEqual(['quick'])
+    expect(sections.groups).toEqual([])
+    expect(sections.ungrouped).toEqual(['quick'])
   })
 })
 
@@ -200,7 +201,7 @@ describe('filterRecipesByTags', () => {
     expect(result.map((r) => r.id)).toEqual(['r1'])
   })
 
-  it('treats tags from unpinned groups as grouped', () => {
+  it('filters correctly for a group with a single member tag', () => {
     const extra = [...recipes, makeRecipe('r5', ['comfort'])]
     const result = filterRecipesByTags(extra, ['comfort'], taxonomy)
     expect(result.map((r) => r.id)).toEqual(['r5'])

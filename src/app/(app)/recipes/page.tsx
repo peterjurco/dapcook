@@ -10,7 +10,7 @@ export default async function RecipesPage() {
   const [{ data: recipes }, { data: tagsMeta }, { data: groups }, { data: profile }] = await Promise.all([
     supabase.from('recipes').select('*').eq('is_archived', false).order('created_at', { ascending: false }),
     supabase.from('tags').select('name, color, group_id'),
-    supabase.from('tag_groups').select('id, name, position, is_pinned').order('position'),
+    supabase.from('tag_groups').select('id, name, position').order('position'),
     user
       ? supabase.from('profiles').select('default_recipe_filter').eq('id', user.id).single()
       : Promise.resolve({ data: null }),

@@ -17,15 +17,14 @@ export async function PATCH(
   const householdId = await getHouseholdId(supabase, user.id)
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
-  const body = await request.json() as { name?: string; is_pinned?: boolean; position?: number }
-  const updates: { name?: string; is_pinned?: boolean; position?: number } = {}
+  const body = await request.json() as { name?: string; position?: number }
+  const updates: { name?: string; position?: number } = {}
 
   if (body.name !== undefined) {
     const name = body.name.trim()
     if (!name) return NextResponse.json({ error: 'name cannot be empty' }, { status: 400 })
     updates.name = name
   }
-  if (body.is_pinned !== undefined) updates.is_pinned = body.is_pinned
   if (body.position !== undefined) updates.position = body.position
 
   if (Object.keys(updates).length === 0) {

@@ -5,7 +5,6 @@ CREATE TABLE tag_groups (
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
   name         TEXT NOT NULL,
   position     INT  NOT NULL DEFAULT 0,
-  is_pinned    BOOLEAN NOT NULL DEFAULT false,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(household_id, name)
 );

@@ -33,15 +33,17 @@ export async function POST(request: NextRequest) {
   const householdId = await getHouseholdId(supabase, user.id)
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
-  const body = await request.json() as { name?: string; is_pinned?: boolean }
+  const body = await request.json() as { name?: string }
   const name = body.name?.trim()
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
 
-  const { data: last } = await supabase
+  // New groups are immediately visible (there is no hidden/unpinned state), so
+  // they go to the top of the ordering rather than the end.
+  const { data: first } = await supabase
     .from('tag_groups')
     .select('position')
     .eq('household_id', householdId)
-    .order('position', { ascending: false })
+    .order('position', { ascending: true })
     .limit(1)
     .maybeSingle()
 
@@ -50,8 +52,7 @@ export async function POST(request: NextRequest) {
     .insert({
       household_id: householdId,
       name,
-      position: (last?.position ?? -1) + 1,
-      is_pinned: body.is_pinned ?? false,
+      position: (first?.position ?? 1) - 1,
     })
     .select()
     .single()

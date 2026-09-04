@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { InviteLink } from '@/components/settings/InviteLink'
 import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
-import { TagsEditor } from '@/components/settings/TagsEditor'
-import { TagGroupsEditor } from '@/components/settings/TagGroupsEditor'
+import { TagOrganizer } from '@/components/settings/TagOrganizer'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
@@ -121,10 +120,7 @@ export default async function SettingsPage() {
           <p className="text-xs text-gray-400 mb-4">
             Assign colors, rename, or remove tags. Renaming or deleting updates all recipes.
           </p>
-          <TagGroupsEditor initialGroups={tagGroups ?? []} />
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <TagsEditor initialTags={allTags} groups={tagGroups ?? []} />
-          </div>
+          <TagOrganizer initialGroups={tagGroups ?? []} initialTags={allTags} />
         </div>
       </section>
 

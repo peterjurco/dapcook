@@ -90,7 +90,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     )
   }
 
-  const hasTags = sections.pinned.length > 0 || sections.rest.length > 0
+  const hasTags = sections.groups.length > 0 || sections.ungrouped.length > 0
 
   return (
     <div>
@@ -134,7 +134,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
       {/* Tag filters */}
       {hasTags && (
         <div className="mb-6">
-          {sections.pinned.map((section) => (
+          {sections.groups.map((section) => (
             <div key={section.group.id} className="mb-3">
               <p className="text-xs text-gray-400 mb-1.5">{section.group.name}</p>
               <div className="flex flex-wrap gap-2">
@@ -143,23 +143,23 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             </div>
           ))}
 
-          {sections.rest.length > 0 && (
-            <div className={sections.pinned.length > 0 ? 'pt-3 border-t border-gray-100' : undefined}>
+          {sections.ungrouped.length > 0 && (
+            <div className={sections.groups.length > 0 ? 'pt-3 border-t border-gray-100' : undefined}>
               {/* Two-row clamp: pill height ~30px (py-1 text-sm) x 2 rows + 8px gap-2 = 68px.
                   Update this value if pill padding/gap classes change. */}
               <div
                 data-testid="tag-area-rest"
                 className={`flex flex-wrap gap-2${expanded ? '' : ' max-h-[68px] overflow-hidden'}`}
               >
-                {sections.rest.map(renderPill)}
+                {sections.ungrouped.map(renderPill)}
               </div>
             </div>
           )}
 
           {/* Action row. Lives outside the remainder block so the default-view
-              action in Task 10 still appears when every tag sits in a pinned group. */}
+              action still appears when every tag sits in a named group. */}
           <div className="mt-2 flex items-center justify-between gap-3">
-            {sections.rest.length > 0 ? (
+            {sections.ungrouped.length > 0 ? (
               <button
                 onClick={() => setExpanded((v) => !v)}
                 className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"

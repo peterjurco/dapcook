@@ -37,8 +37,8 @@ const baseRecipe = {
 
 const taxonomy: Taxonomy = {
   groups: [
-    { id: 'g-course', name: 'Course', position: 0, is_pinned: true },
-    { id: 'g-mood', name: 'Mood', position: 1, is_pinned: false },
+    { id: 'g-course', name: 'Course', position: 0 },
+    { id: 'g-mood', name: 'Mood', position: 1 },
   ],
   tags: {
     main: { color: null, groupId: 'g-course' },
@@ -59,18 +59,18 @@ describe('RecipeCard', () => {
     expect(planButton).toHaveClass('sm:group-hover:opacity-100')
   })
 
-  it('shows pinned-group tags before the rest within the three-tag budget', () => {
+  it('shows grouped tags before ungrouped ones within the three-tag budget', () => {
     const recipe = { ...baseRecipe, tags: ['quick', 'vegan', 'comfort', 'main'] }
     render(<RecipeCard recipe={recipe} taxonomy={taxonomy} />)
 
     expect(screen.getByText('main')).toBeInTheDocument()
+    expect(screen.getByText('comfort')).toBeInTheDocument()
     expect(screen.getByText('quick')).toBeInTheDocument()
-    expect(screen.getByText('vegan')).toBeInTheDocument()
-    expect(screen.queryByText('comfort')).not.toBeInTheDocument()
+    expect(screen.queryByText('vegan')).not.toBeInTheDocument()
     expect(screen.getByText('+1')).toBeInTheDocument()
   })
 
-  it('preserves the recipe tag order when no groups are pinned', () => {
+  it('preserves the recipe tag order when there are no groups', () => {
     const recipe = { ...baseRecipe, tags: ['quick', 'vegan'] }
     render(<RecipeCard recipe={recipe} taxonomy={EMPTY_TAXONOMY} />)
 

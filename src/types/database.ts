@@ -169,7 +169,6 @@ export interface Database {
           household_id: string
           name: string
           position: number
-          is_pinned: boolean
           created_at: string
         }
         Insert: {
@@ -177,7 +176,6 @@ export interface Database {
           household_id: string
           name: string
           position?: number
-          is_pinned?: boolean
           created_at?: string
         }
         Update: {
@@ -185,7 +183,6 @@ export interface Database {
           household_id?: string
           name?: string
           position?: number
-          is_pinned?: boolean
           created_at?: string
         }
         Relationships: []

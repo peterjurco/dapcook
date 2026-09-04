@@ -80,14 +80,14 @@ describe('PATCH /api/tag-groups/[id]', () => {
     expect(qb.eq).toHaveBeenCalledWith('household_id', 'hh-1')
   })
 
-  it('updates is_pinned and position together', async () => {
+  it('updates name and position together', async () => {
     const supabase = makeSupabase()
     vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
 
-    await PATCH(req({ is_pinned: true, position: 2 }), params)
+    await PATCH(req({ name: 'Course', position: 2 }), params)
 
     const qb = supabase.from.mock.results[1].value
-    expect(qb.update).toHaveBeenCalledWith({ is_pinned: true, position: 2 })
+    expect(qb.update).toHaveBeenCalledWith({ name: 'Course', position: 2 })
   })
 
   it('rejects an empty name', async () => {
