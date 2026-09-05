@@ -79,7 +79,7 @@ describe('ShoppingClient', () => {
   })
 
   it('shows Clear list button when list has items', () => {
-    const { getByText, getByRole } = render(
+    const { getByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
     )
     expect(getByRole('button', { name: 'Clear list' })).toBeTruthy()
@@ -110,7 +110,7 @@ describe('ShoppingClient', () => {
   })
 
   it('calls DELETE API and closes dialog when Clear is confirmed', () => {
-    const { getByText, queryByText, getByRole } = render(
+    const { queryByText, getByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
     )
     fireEvent.click(getByRole('button', { name: 'Clear list' }))
