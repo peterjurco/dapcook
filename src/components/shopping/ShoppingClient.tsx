@@ -24,6 +24,12 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
 
+/**
+ * Backstop for a socket that dies without saying so — realtime only notices on
+ * its next heartbeat, and nothing else fires while the tab stays open.
+ */
+const POLL_INTERVAL_MS = 10_000
+
 /** Category order comes from settings; items within a category keep their sort_order. */
 function sortItems(items: ShoppingItem[], categories: ShoppingCategory[]): ShoppingItem[] {
   const catOrder = new Map(categories.map((c, i) => [c.name, i]))
@@ -187,9 +193,13 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('pageshow', handlePageShow)
     window.addEventListener('online', resync)
+    const pollId = setInterval(() => {
+      if (document.visibilityState === 'visible') void resyncItems()
+    }, POLL_INTERVAL_MS)
 
     return () => {
       disposed = true
+      clearInterval(pollId)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('pageshow', handlePageShow)
       window.removeEventListener('online', resync)

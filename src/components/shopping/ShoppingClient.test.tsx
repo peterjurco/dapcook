@@ -265,6 +265,35 @@ describe('ShoppingClient', () => {
       expect(screen.queryByText('Bread')).toBeNull()
     })
 
+    it('polls the list while the tab is visible', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        renderList()
+        realtime.serverItems = [mockItem, bread]
+
+        await act(async () => { vi.advanceTimersByTime(10_000) })
+
+        expect(screen.getByText('Bread')).toBeTruthy()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('does not poll while the tab is hidden', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+      try {
+        renderList()
+
+        await act(async () => { vi.advanceTimersByTime(60_000) })
+
+        expect(realtime.selectCount).toBe(0)
+      } finally {
+        hidden.mockRestore()
+        vi.useRealTimers()
+      }
+    })
+
     it('keeps an unsaved new item across a resync', async () => {
       renderList([])
       fireEvent.click(screen.getByRole('button', { name: 'Add item' }))
