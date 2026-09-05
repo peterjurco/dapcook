@@ -79,42 +79,42 @@ describe('ShoppingClient', () => {
   })
 
   it('shows Clear list button when list has items', () => {
-    const { getByText } = render(
+    const { getByText, getByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
     )
-    expect(getByText('Clear list')).toBeTruthy()
+    expect(getByRole('button', { name: 'Clear list' })).toBeTruthy()
   })
 
   it('does not show Clear list button when list is empty', () => {
-    const { queryByText } = render(
+    const { queryByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[]} />
     )
-    expect(queryByText('Clear list')).toBeNull()
+    expect(queryByRole('button', { name: 'Clear list' })).toBeNull()
   })
 
   it('shows confirmation dialog when Clear list is clicked', () => {
-    const { getByText } = render(
+    const { getByText, getByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
     )
-    fireEvent.click(getByText('Clear list'))
+    fireEvent.click(getByRole('button', { name: 'Clear list' }))
     expect(getByText('Remove all items from the list?')).toBeTruthy()
   })
 
   it('hides confirmation dialog when Cancel is clicked', () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText, getByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
     )
-    fireEvent.click(getByText('Clear list'))
+    fireEvent.click(getByRole('button', { name: 'Clear list' }))
     fireEvent.click(getByText('Cancel'))
     expect(queryByText('Remove all items from the list?')).toBeNull()
   })
 
   it('calls DELETE API and closes dialog when Clear is confirmed', () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText, getByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
     )
-    fireEvent.click(getByText('Clear list'))
-    fireEvent.click(getByText('Clear'))
+    fireEvent.click(getByRole('button', { name: 'Clear list' }))
+    fireEvent.click(getByRole('button', { name: 'Clear' }))
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/api/shopping/list/list-1/items',
       { method: 'DELETE' }

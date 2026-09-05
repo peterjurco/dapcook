@@ -339,19 +339,21 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
             <button
               type="button"
               onClick={copyToClipboard}
+              aria-label={copied ? 'Copied!' : 'Copy list'}
               className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
             >
               {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
-              {copied ? 'Copied!' : 'Copy list'}
+              {copied ? 'Copied!' : <>Copy<span className="hidden sm:inline"> list</span></>}
             </button>
             {list && (
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(true)}
+                aria-label="Clear list"
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
               >
                 <Trash2 size={15} />
-                Clear list
+                Clear<span className="hidden sm:inline"> list</span>
               </button>
             )}
           </div>
