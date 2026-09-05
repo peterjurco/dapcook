@@ -28,10 +28,11 @@ export default async function RecipeDetailPage({ params }: Props) {
     <div className="flex items-center justify-between mb-6">
       <Link
         href="/recipes"
+        aria-label="All recipes"
         className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition-colors"
       >
         <ChevronLeft size={16} />
-        All recipes
+        <span className="hidden sm:inline">All recipes</span>
       </Link>
       <div className="flex items-center gap-2">
         <AddToPlanButton recipeId={r.id} />

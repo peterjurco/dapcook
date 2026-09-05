@@ -100,7 +100,7 @@ describe('RecipeForm — rendering', () => {
     expect(screen.getByLabelText(/prep time/i)).toHaveValue(15)
     expect(screen.getByLabelText(/cook time/i)).toHaveValue(45)
     expect(screen.getByLabelText(/servings/i)).toHaveValue(8)
-    expect(screen.getByText('Save changes')).toBeInTheDocument()
+    expect(screen.getByText('Save')).toBeInTheDocument()
   })
 
   it('renders pre-filled form in import mode', () => {
@@ -184,7 +184,7 @@ describe('RecipeForm — submission', () => {
 
   it('PUTs to /api/recipes/[id] for an edit', async () => {
     render(<RecipeForm recipe={sampleRecipe} />)
-    fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
       '/api/recipes/r-1',
@@ -305,7 +305,7 @@ describe('PostHog events', () => {
   it('does not capture recipe_created when editing an existing recipe', async () => {
     mockFetchSuccess('r-1')
     render(<RecipeForm recipe={sampleRecipe} />)
-    await userEvent.click(screen.getByRole('button', { name: /save changes/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
     await waitFor(() => expect(mockPush).toHaveBeenCalled())
     expect(mockCapture).not.toHaveBeenCalledWith('recipe_created')
   })
