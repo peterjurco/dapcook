@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 import { usePostHog } from 'posthog-js/react'
 import { Copy, Check, Trash2, Plus } from 'lucide-react'
@@ -20,8 +20,20 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
+
+/** Category order comes from settings; items within a category keep their sort_order. */
+function sortItems(items: ShoppingItem[], categories: ShoppingCategory[]): ShoppingItem[] {
+  const catOrder = new Map(categories.map((c, i) => [c.name, i]))
+  return [...items].sort((a, b) => {
+    const ai = a.category ? (catOrder.get(a.category) ?? 999) : 999
+    const bi = b.category ? (catOrder.get(b.category) ?? 999) : 999
+    if (ai !== bi) return ai - bi
+    return a.sort_order - b.sort_order
+  })
+}
 
 interface Props {
   initialList: ShoppingList | null
@@ -63,20 +75,24 @@ function SortableRow({ item, ...rowProps }: SortableRowProps) {
 
 export function ShoppingClient({ initialList, initialItems, initialCategories, initialRecipeNames }: Props) {
   const [list] = useState<ShoppingList | null>(initialList)
-  const [items, setItems] = useState<ShoppingItem[]>(() => {
-    const catOrder = new Map(initialCategories.map((c, i) => [c.name, i]))
-    return [...initialItems].sort((a, b) => {
-      const ai = a.category ? (catOrder.get(a.category) ?? 999) : 999
-      const bi = b.category ? (catOrder.get(b.category) ?? 999) : 999
-      if (ai !== bi) return ai - bi
-      return a.sort_order - b.sort_order
-    })
-  })
+  const [items, setItems] = useState<ShoppingItem[]>(() => sortItems(initialItems, initialCategories))
   const [pendingItemIds, setPendingItemIds] = useState<Set<string>>(() => new Set())
   const [categories] = useState<ShoppingCategory[]>(initialCategories)
   const [recipeNames] = useState<Record<string, string>>(initialRecipeNames)
   const [copied, setCopied] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [supabase] = useState(() => createClient())
+
+  // Rows a resync must not overwrite: not yet persisted, or with a write still
+  // in flight (the server may still answer with the pre-write value).
+  const pendingItemIdsRef = useRef(pendingItemIds)
+  useEffect(() => { pendingItemIdsRef.current = pendingItemIds }, [pendingItemIds])
+  const inFlightIdsRef = useRef<Set<string>>(new Set())
+
+  function markInFlight(ids: string[]) {
+    ids.forEach((id) => inFlightIdsRef.current.add(id))
+    return () => ids.forEach((id) => inFlightIdsRef.current.delete(id))
+  }
 
   const posthog = usePostHog()
 
@@ -88,55 +104,111 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     posthog.capture('shopping_list_viewed')
   }, [posthog])
 
+  // Realtime delivers changes while connected but never backfills the ones
+  // missed while it wasn't, so every (re)connect is followed by a full pull.
+  const resyncItems = useCallback(async () => {
+    if (!list) return
+    const { data, error } = await supabase
+      .from('shopping_items')
+      .select('*')
+      .eq('shopping_list_id', list.id)
+    if (error || !data) return
+    setItems((prev) => {
+      const locked = new Set<string>()
+      pendingItemIdsRef.current.forEach((id) => locked.add(id))
+      inFlightIdsRef.current.forEach((id) => locked.add(id))
+      const localRows = prev.filter((item) => locked.has(item.id))
+      const serverRows = (data as ShoppingItem[]).filter((item) => !locked.has(item.id))
+      return sortItems([...serverRows, ...localRows], categories)
+    })
+  }, [supabase, list, categories])
+
   useEffect(() => {
     if (!list) return
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`shopping-${list.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
-        (payload) => {
-          const updated = payload.new as ShoppingItem
-          setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item))
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
-        (payload) => {
-          const newItem = payload.new as ShoppingItem
-          setItems((prev) => {
-            if (prev.some((item) => item.id === newItem.id)) return prev
-            const catOrder = new Map(categories.map((c, i) => [c.name, i]))
-            return [...prev, newItem].sort((a, b) => {
-              const ai = a.category ? (catOrder.get(a.category) ?? 999) : 999
-              const bi = b.category ? (catOrder.get(b.category) ?? 999) : 999
-              if (ai !== bi) return ai - bi
-              return a.sort_order - b.sort_order
-            })
-          })
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'shopping_items' },
-        (payload) => {
-          const deletedId = (payload.old as { id: string }).id
-          setItems((prev) => prev.filter((item) => item.id !== deletedId))
-        }
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [list])
+    const listId = list.id
+    let channel: RealtimeChannel | null = null
+    let disposed = false
+
+    function subscribe() {
+      channel = supabase
+        .channel(`shopping-${listId}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${listId}` },
+          (payload) => {
+            const updated = payload.new as ShoppingItem
+            setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item))
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${listId}` },
+          (payload) => {
+            const newItem = payload.new as ShoppingItem
+            setItems((prev) => prev.some((item) => item.id === newItem.id)
+              ? prev
+              : sortItems([...prev, newItem], categories))
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'shopping_items' },
+          (payload) => {
+            const deletedId = (payload.old as { id: string }).id
+            setItems((prev) => prev.filter((item) => item.id !== deletedId))
+          }
+        )
+        .subscribe((status) => {
+          // Fires on the first connect and on every reconnect after a drop.
+          if (status === 'SUBSCRIBED') void resyncItems()
+        })
+    }
+
+    // The socket is usually dead after the tab was frozen (screen off, app
+    // switched). Pull the list straight away rather than waiting on the
+    // connection, and nudge the socket if it already knows it is down —
+    // realtime rejoins its channels itself once it is back up, which fires
+    // the SUBSCRIBED callback above and resyncs again.
+    function resync() {
+      if (disposed) return
+      void resyncItems()
+      if (!supabase.realtime.isConnected()) supabase.realtime.connect()
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') resync()
+    }
+
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) resync()   // restored from the bfcache (iOS Safari)
+    }
+
+    subscribe()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('pageshow', handlePageShow)
+    window.addEventListener('online', resync)
+
+    return () => {
+      disposed = true
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('pageshow', handlePageShow)
+      window.removeEventListener('online', resync)
+      if (channel) supabase.removeChannel(channel)
+    }
+  }, [list, supabase, categories, resyncItems])
 
   async function handleCheck(id: string, checked: boolean) {
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: checked } : item))
-    await fetch(`/api/shopping/items/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_checked: checked }),
-    })
+    const release = markInFlight([id])
+    try {
+      await fetch(`/api/shopping/items/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_checked: checked }),
+      })
+    } finally {
+      release()
+    }
   }
 
   async function handleUpdate(id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) {
@@ -179,11 +251,16 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       return
     }
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, ...changes } : item))
-    await fetch(`/api/shopping/items/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(changes),
-    })
+    const release = markInFlight([id])
+    try {
+      await fetch(`/api/shopping/items/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(changes),
+      })
+    } finally {
+      release()
+    }
   }
 
   async function handleDelete(id: string) {
@@ -196,7 +273,12 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
         return next
       })
     } else {
-      await fetch(`/api/shopping/items/${id}`, { method: 'DELETE' })
+      const release = markInFlight([id])
+      try {
+        await fetch(`/api/shopping/items/${id}`, { method: 'DELETE' })
+      } finally {
+        release()
+      }
     }
   }
 
@@ -272,20 +354,25 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     ])
 
     // Persist changed positions and/or category (skip unsaved pending items)
-    await Promise.all(
-      reordered.flatMap((item, i) => {
-        if (pendingItemIds.has(item.id)) return []
-        const patches: Record<string, unknown> = {}
-        if (item.sort_order !== i) patches.sort_order = i
-        if (item.id === draggedId && categoryChanged) patches.category = newCategory
-        if (Object.keys(patches).length === 0) return []
-        return [fetch(`/api/shopping/items/${item.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(patches),
-        })]
-      })
-    )
+    const release = markInFlight(reordered.map((item) => item.id))
+    try {
+      await Promise.all(
+        reordered.flatMap((item, i) => {
+          if (pendingItemIds.has(item.id)) return []
+          const patches: Record<string, unknown> = {}
+          if (item.sort_order !== i) patches.sort_order = i
+          if (item.id === draggedId && categoryChanged) patches.category = newCategory
+          if (Object.keys(patches).length === 0) return []
+          return [fetch(`/api/shopping/items/${item.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patches),
+          })]
+        })
+      )
+    } finally {
+      release()
+    }
   }
 
   const visibleItems = items.filter((item) => !item.is_checked)
@@ -305,9 +392,14 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     setShowClearConfirm(false)
     const snapshot = items
     setItems([])
-    const res = await fetch(`/api/shopping/list/${list!.id}/items`, { method: 'DELETE' })
-    if (!res.ok) {
-      setItems(snapshot)
+    const release = markInFlight(snapshot.map((item) => item.id))
+    try {
+      const res = await fetch(`/api/shopping/list/${list!.id}/items`, { method: 'DELETE' })
+      if (!res.ok) {
+        setItems(snapshot)
+      }
+    } finally {
+      release()
     }
   }
 

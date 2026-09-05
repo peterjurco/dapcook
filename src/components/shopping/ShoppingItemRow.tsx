@@ -100,7 +100,10 @@ export function ShoppingItemRow({
         await Promise.resolve(
           onUpdate(item.id, { name: trimmed, quantity: null, unit: null })
         )
-        // Success: parent replaces this item — nothing more to do here
+        // The persisted row keeps this row's id, so this component instance
+        // survives the save. Release the lock explicitly — otherwise `saving`
+        // stays true forever and startEdit() refuses to reopen the editor.
+        setSaving(false)
       } catch {
         setSaving(false)
         setSaveError('Failed to save')
@@ -122,6 +125,7 @@ export function ShoppingItemRow({
       await Promise.resolve(
         onUpdate(item.id, { name: editText.trim() || item.name, quantity: null, unit: null })
       )
+      setSaving(false)
     } catch {
       setSaving(false)
       setSaveError('Failed to save')
