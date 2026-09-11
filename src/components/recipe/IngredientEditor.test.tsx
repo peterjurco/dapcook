@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import React from 'react'
 import { IngredientEditor } from './IngredientEditor'
 import type { IngredientFormItem } from '@/types/recipe'
@@ -97,5 +97,50 @@ describe('IngredientEditor — drag to reorder', () => {
     capturedOnDragEnd!({ active: { id: 'id-a' }, over: null })
 
     expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('IngredientEditor — mobile edit modal', () => {
+  it('shows a collapsed summary for each ingredient on mobile', () => {
+    render(<IngredientEditor ingredients={[ingA]} onChange={vi.fn()} />)
+
+    expect(screen.getByText('1 cup Flour')).toBeInTheDocument()
+  })
+
+  it('shows a placeholder when the ingredient has no details yet', () => {
+    const empty = { id: 'id-empty', quantity: '', unit: '', name: '', notes: '' }
+    render(<IngredientEditor ingredients={[empty]} onChange={vi.fn()} />)
+
+    expect(screen.getByText('Tap to add ingredient')).toBeInTheDocument()
+  })
+
+  it('opens an edit modal with the ingredient fields when the summary is tapped', () => {
+    render(<IngredientEditor ingredients={[ingA]} onChange={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('1 cup Flour'))
+
+    const dialog = screen.getByRole('dialog', { name: 'Edit ingredient' })
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByDisplayValue('Flour')).toBeInTheDocument()
+  })
+
+  it('updates the ingredient when a field is edited inside the modal', () => {
+    const onChange = vi.fn()
+    render(<IngredientEditor ingredients={[ingA]} onChange={onChange} />)
+
+    fireEvent.click(screen.getByText('1 cup Flour'))
+    const dialog = screen.getByRole('dialog', { name: 'Edit ingredient' })
+    fireEvent.change(within(dialog).getByPlaceholderText('finely chopped'), { target: { value: 'sifted' } })
+
+    expect(onChange).toHaveBeenCalledWith([{ ...ingA, notes: 'sifted' }])
+  })
+
+  it('closes the modal when Done is clicked', () => {
+    render(<IngredientEditor ingredients={[ingA]} onChange={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('1 cup Flour'))
+    fireEvent.click(screen.getByText('Done'))
+
+    expect(screen.queryByRole('dialog', { name: 'Edit ingredient' })).not.toBeInTheDocument()
   })
 })
