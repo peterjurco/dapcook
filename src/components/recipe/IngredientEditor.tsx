@@ -150,10 +150,10 @@ function IngredientEditModal({ ing, onUpdate, onClose }: IngredientEditModalProp
       role="dialog"
       aria-modal="true"
       aria-label="Edit ingredient"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 pt-20 px-4"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-xl shadow-xl p-5 w-[calc(100%-2rem)] max-w-sm flex flex-col gap-3">
+      <div className="bg-white rounded-xl shadow-xl p-5 w-full max-w-sm flex flex-col gap-3">
         <div className="flex gap-2">
           <div className="w-20">
             <label className="text-xs text-gray-500 mb-1 block">Qty</label>
