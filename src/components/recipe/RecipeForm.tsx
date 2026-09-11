@@ -34,6 +34,13 @@ function parseQuantity(value: string): number | null {
   return isNaN(n) ? null : n
 }
 
+function autoResizeTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return
+  const borderY = parseFloat(getComputedStyle(el).borderTopWidth) + parseFloat(getComputedStyle(el).borderBottomWidth)
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight + borderY}px`
+}
+
 export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const router = useRouter()
   const posthog = usePostHog()
@@ -122,6 +129,9 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const inputClass =
     'w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white text-gray-900 placeholder:text-gray-400'
   const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+  // Reserves two lines so labels of different lengths (e.g. "Servings" vs "Prep time (min)")
+  // don't push the inputs below them out of alignment on narrow screens.
+  const gridLabelClass = labelClass + ' min-h-[2.5rem] flex items-end'
 
   return (
     <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
@@ -168,17 +178,19 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
             <label htmlFor="description" className={labelClass}>Description</label>
             <textarea
               id="description"
+              ref={autoResizeTextarea}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onInput={(e) => autoResizeTextarea(e.currentTarget)}
               placeholder="A short description of the recipe..."
               rows={2}
-              className={inputClass + ' resize-none'}
+              className={inputClass + ' resize-none overflow-hidden'}
             />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label htmlFor="prep-time" className={labelClass}>Prep time (min)</label>
+              <label htmlFor="prep-time" className={gridLabelClass}>Prep time (min)</label>
               <input
                 id="prep-time"
                 type="number"
@@ -190,7 +202,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
               />
             </div>
             <div>
-              <label htmlFor="cook-time" className={labelClass}>Cook time (min)</label>
+              <label htmlFor="cook-time" className={gridLabelClass}>Cook time (min)</label>
               <input
                 id="cook-time"
                 type="number"
@@ -202,7 +214,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
               />
             </div>
             <div>
-              <label htmlFor="servings" className={labelClass}>Servings</label>
+              <label htmlFor="servings" className={gridLabelClass}>Servings</label>
               <input
                 id="servings"
                 type="number"

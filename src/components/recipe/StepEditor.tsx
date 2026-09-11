@@ -9,6 +9,13 @@ interface StepEditorProps {
   onChange: (steps: Step[]) => void
 }
 
+function autoResizeTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return
+  const borderY = parseFloat(getComputedStyle(el).borderTopWidth) + parseFloat(getComputedStyle(el).borderBottomWidth)
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight + borderY}px`
+}
+
 export function StepEditor({ steps, onChange }: StepEditorProps) {
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
@@ -96,16 +103,13 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
           </div>
 
           <textarea
+            ref={autoResizeTextarea}
             value={step.text}
             onChange={(e) => update(step.id, e.target.value)}
             placeholder="Describe this step..."
             rows={2}
-            className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none leading-relaxed"
-            onInput={(e) => {
-              const el = e.currentTarget
-              el.style.height = 'auto'
-              el.style.height = el.scrollHeight + 'px'
-            }}
+            className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none overflow-hidden leading-relaxed"
+            onInput={(e) => autoResizeTextarea(e.currentTarget)}
           />
 
           <button
