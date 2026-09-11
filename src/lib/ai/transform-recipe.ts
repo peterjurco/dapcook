@@ -44,10 +44,8 @@ export async function transformRecipe(
   if (needsUnitConversion) {
     instructions.push(
       `Convert all quantities to ${targetUnits} units (e.g. ${
-        targetUnits === 'imperial'
-          ? 'oz, lb, fl oz, cups, pints, tsp, tbsp'
-          : 'g, kg, ml, l, tsp, tbsp'
-      }).`
+        targetUnits === 'imperial' ? 'oz, lb, fl oz, cups, pints' : 'g, kg, ml, l'
+      }). Do not convert teaspoon/tablespoon measurements to volume units like ml — keep them as teaspoon/tablespoon (or their translated equivalent, e.g. čl/PL in Slovak).`
     )
   }
 

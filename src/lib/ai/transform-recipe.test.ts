@@ -87,6 +87,16 @@ describe('transformRecipe', () => {
     expect(prompt).not.toContain('Translate')
   })
 
+  it('instructs the model to keep teaspoon/tablespoon instead of converting them to ml', async () => {
+    mockAnthropicResponse(mockContent)
+
+    await transformRecipe(mockContent, { targetLanguage: 'sk', targetUnits: 'metric' }, 'hh-1')
+
+    const prompt = (getCreateMock().mock.calls[0][0] as { messages: Array<{ content: string }> }).messages[0].content
+    expect(prompt).toContain('Do not convert teaspoon/tablespoon measurements to volume units like ml')
+    expect(prompt).toContain('čl/PL in Slovak')
+  })
+
   it('calls Anthropic when targetUnits is imperial', async () => {
     const converted: RecipeContent = {
       ...mockContent,
