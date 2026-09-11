@@ -333,7 +333,9 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     <div className="max-w-xl mx-auto px-0 sm:px-6 pt-3 pb-10 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-1 px-4 sm:px-0">
-        <h1 className="text-xl font-semibold text-gray-900">Shopping List</h1>
+        <h1 className="text-xl font-semibold text-gray-900">
+          <span className="text-emerald-700 font-fraunces">S</span>hopping List
+        </h1>
         {visibleItems.length > 0 && (
           <div className="flex items-center gap-2">
             <button

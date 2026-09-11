@@ -152,7 +152,9 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     <div>
       {/* Header */}
       <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex-shrink-0">Recipes</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex-shrink-0">
+          <span className="text-emerald-700 font-fraunces">R</span>ecipes
+        </h1>
 
         {/* Search — desktop only */}
         <div className="relative flex-1 max-w-md hidden sm:block">

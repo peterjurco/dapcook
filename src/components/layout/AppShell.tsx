@@ -46,7 +46,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
       {/* Sidebar — desktop only */}
       <aside className="hidden md:flex w-56 flex-shrink-0 bg-white border-r border-gray-200 flex-col">
         <div className="px-4 py-5 border-b border-gray-200">
-          <span className="text-lg font-bold text-gray-900">dapcook</span>
+          <span className="text-lg font-semibold text-emerald-700 font-fraunces">dapcook</span>
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1">
