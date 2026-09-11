@@ -12,7 +12,7 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
     : await getDefaultWeek()
 
   return (
-    <div className="px-6 py-8 max-w-6xl mx-auto">
+    <div className="px-6 pt-6 pb-8 max-w-6xl mx-auto">
       <PlannerClient weekStart={weekStart} />
     </div>
   )

@@ -330,7 +330,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }
 
   return (
-    <div className="max-w-xl mx-auto px-0 sm:px-6 pt-3 pb-10 overflow-x-hidden">
+    <div className="max-w-xl mx-auto px-0 sm:px-6 pt-6 pb-10 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-1 px-4 sm:px-0">
         <h1 className="text-xl font-semibold text-gray-900 font-fraunces">

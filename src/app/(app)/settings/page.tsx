@@ -65,7 +65,7 @@ export default async function SettingsPage() {
   const inviteUrl = `${origin}/join/${household?.invite_token}`
 
   return (
-    <div className="max-w-xl mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-xl mx-auto px-6 pt-6 pb-10 space-y-8">
       <h1 className="text-xl font-semibold text-gray-900 font-fraunces">
         <span className="text-emerald-700">S</span>ettings
       </h1>
