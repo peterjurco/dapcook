@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { RecipeView } from './RecipeView'
+import type { Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 const recipe = {
@@ -74,6 +75,28 @@ describe('RecipeView', () => {
       'href',
       'https://notes.test/timing'
     )
+  })
+
+  it('colors every tag from the taxonomy, not just the first', () => {
+    const taxonomy: Taxonomy = {
+      groups: [],
+      tags: {
+        quick: { color: '#b45309', groupId: null },
+        vegetarian: { color: '#047857', groupId: null },
+      },
+    }
+
+    render(<RecipeView recipe={recipe} taxonomy={taxonomy} />)
+
+    expect(screen.getByText('quick')).toHaveStyle({ color: '#b45309' })
+    expect(screen.getByText('vegetarian')).toHaveStyle({ color: '#047857' })
+  })
+
+  it('falls back to a neutral chip for tags with no configured color', () => {
+    render(<RecipeView recipe={recipe} />)
+
+    expect(screen.getByText('quick')).toHaveClass('bg-gray-100', 'text-gray-600')
+    expect(screen.getByText('vegetarian')).toHaveClass('bg-gray-100', 'text-gray-600')
   })
 
   it('renders Markdown note-link text without an anchor in public mode', () => {

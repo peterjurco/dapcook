@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Clock, ExternalLink, Users } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { cn } from '@/lib/utils/cn'
+import { EMPTY_TAXONOMY, tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 import type { Ingredient, Step } from '@/types/recipe'
 
@@ -9,6 +10,7 @@ interface RecipeViewProps {
   recipe: Recipe
   toolbar?: ReactNode
   mode?: 'authenticated' | 'public'
+  taxonomy?: Taxonomy
 }
 
 function formatTime(min: number | null, label: string) {
@@ -19,20 +21,7 @@ function formatTime(min: number | null, label: string) {
   return { label, time }
 }
 
-const TAG_COLORS: Record<string, string> = {
-  vegetarian: 'bg-green-100 text-green-700',
-  vegan: 'bg-emerald-100 text-emerald-700',
-  meat: 'bg-red-100 text-red-700',
-  fish: 'bg-blue-100 text-blue-700',
-  quick: 'bg-yellow-100 text-yellow-700',
-  healthy: 'bg-lime-100 text-lime-700',
-}
-
-function tagColor(tag: string) {
-  return TAG_COLORS[tag.toLowerCase()] ?? 'bg-gray-100 text-gray-600'
-}
-
-export function RecipeView({ recipe: r, toolbar, mode = 'authenticated' }: RecipeViewProps) {
+export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonomy = EMPTY_TAXONOMY }: RecipeViewProps) {
   const ingredients = (r.ingredients ?? []) as unknown as Ingredient[]
   const steps = (r.steps ?? []) as unknown as Step[]
   const totalTime = (r.prep_time_min ?? 0) + (r.cook_time_min ?? 0)
@@ -61,11 +50,18 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated' }: Recip
         {/* Tags */}
         {r.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
-            {r.tags.map((tag) => (
-              <span key={tag} className={cn('text-xs px-2.5 py-1 rounded-full font-medium', tagColor(tag))}>
-                {tag}
-              </span>
-            ))}
+            {r.tags.map((tag) => {
+              const color = tagColor(taxonomy, tag)
+              return (
+                <span
+                  key={tag}
+                  className={cn('text-xs px-2.5 py-1 rounded-full font-medium', !color && 'bg-gray-100 text-gray-600')}
+                  style={color ? { color, backgroundColor: color + '14' } : undefined}
+                >
+                  {tag}
+                </span>
+              )
+            })}
           </div>
         )}
 

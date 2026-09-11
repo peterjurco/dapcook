@@ -57,7 +57,14 @@ function setQueryResult(data: Recipe | null, error: unknown = null) {
   mocks.maybeSingle.mockResolvedValue({ data, error })
   mocks.eq.mockReturnValue({ eq: mocks.eq, maybeSingle: mocks.maybeSingle })
   mocks.select.mockReturnValue({ eq: mocks.eq })
-  mocks.from.mockReturnValue({ select: mocks.select })
+  mocks.from.mockImplementation((table: string) => {
+    if (table === 'recipes') return { select: mocks.select }
+    if (table === 'tags') return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) }
+    if (table === 'tag_groups') {
+      return { select: () => ({ eq: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }) }
+    }
+    throw new Error(`Unexpected table: ${table}`)
+  })
 }
 
 describe('SharedRecipePage', () => {

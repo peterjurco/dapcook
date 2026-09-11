@@ -42,13 +42,24 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: async () => ({ data: recipe, error: null }),
-        }),
-      }),
-    }),
+    from: (table: string) => {
+      if (table === 'recipes') {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: async () => ({ data: recipe, error: null }),
+            }),
+          }),
+        }
+      }
+      if (table === 'tags') {
+        return { select: () => Promise.resolve({ data: [], error: null }) }
+      }
+      if (table === 'tag_groups') {
+        return { select: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }
+      }
+      throw new Error(`Unexpected table: ${table}`)
+    },
   }),
 }))
 

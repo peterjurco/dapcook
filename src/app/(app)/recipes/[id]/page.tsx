@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AddToPlanButton } from '@/components/recipe/AddToPlanButton'
 import { RecipeView } from '@/components/recipe/RecipeView'
 import { ShareRecipeButton } from '@/components/recipe/ShareRecipeButton'
+import { buildTagMeta, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 interface Props {
@@ -14,15 +15,16 @@ interface Props {
 export default async function RecipeDetailPage({ params }: Props) {
   const supabase = createClient()
 
-  const { data: recipe, error } = await supabase
-    .from('recipes')
-    .select('*')
-    .eq('id', params.id)
-    .single()
+  const [{ data: recipe, error }, { data: tagsMeta }, { data: groups }] = await Promise.all([
+    supabase.from('recipes').select('*').eq('id', params.id).single(),
+    supabase.from('tags').select('name, color, group_id'),
+    supabase.from('tag_groups').select('id, name, position').order('position'),
+  ])
 
   if (error || !recipe) notFound()
 
   const r = recipe as Recipe
+  const taxonomy: Taxonomy = { groups: groups ?? [], tags: buildTagMeta(tagsMeta ?? []) }
 
   const toolbar = (
     <div className="flex items-center justify-between mb-6">
@@ -48,5 +50,5 @@ export default async function RecipeDetailPage({ params }: Props) {
     </div>
   )
 
-  return <RecipeView recipe={r} toolbar={toolbar} />
+  return <RecipeView recipe={r} toolbar={toolbar} taxonomy={taxonomy} />
 }
