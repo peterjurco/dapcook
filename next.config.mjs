@@ -4,6 +4,7 @@ const nextConfig = {
     staleTimes: {
       dynamic: 0,
     },
+    instrumentationHook: true,
   },
   async headers() {
     return [
