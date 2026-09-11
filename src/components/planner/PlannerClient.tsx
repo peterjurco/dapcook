@@ -159,8 +159,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       {/* Page heading */}
       <div className="mb-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            <span className="text-emerald-700 font-fraunces">W</span>eekly Planner
+          <h1 className="text-xl font-semibold text-gray-900 font-fraunces">
+            <span className="text-emerald-700">W</span>eekly Planner
           </h1>
           <p className="text-sm text-gray-500 mt-1">Plan your meals for the week</p>
         </div>
