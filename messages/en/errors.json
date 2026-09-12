@@ -1,1 +1,18 @@
-{}
+{
+  "unauthorized": "Unauthorized",
+  "noHousehold": "No household",
+  "titleRequired": "Title is required",
+  "notFound": "Not found",
+  "urlRequired": "URL is required",
+  "invalidUrl": "Invalid URL",
+  "contentRequired": "content is required",
+  "scrapeBlocked": "This site is blocking automated imports. Try adding the recipe manually instead.",
+  "scrapeNotFound": "That page couldn't be found. Double-check the URL.",
+  "scrapeTimeout": "That page took too long to respond. Try again, or add the recipe manually.",
+  "scrapeUnreachable": "Couldn't reach that page. Check the URL, or add the recipe manually.",
+  "scrapeGeneric": "Could not import this recipe automatically. Try adding it manually instead.",
+  "createHouseholdFailed": "Failed to create household",
+  "linkHouseholdFailed": "Failed to link household to profile",
+  "invalidInviteCode": "Invalid invite code",
+  "joinHouseholdFailed": "Failed to join household"
+}

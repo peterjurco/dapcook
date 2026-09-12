@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
+import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
 import type { Ingredient, Step } from '@/types/recipe'
 
 export async function GET(
@@ -8,7 +10,19 @@ export async function GET(
 ) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
+    return NextResponse.json({ error: t('unauthorized') }, { status: 401 })
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('ui_language')
+    .eq('id', user.id)
+    .single()
+
+  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
+  const t = await getTranslations({ locale, namespace: 'errors' })
 
   const { data, error } = await supabase
     .from('recipes')
@@ -16,7 +30,7 @@ export async function GET(
     .eq('id', params.id)
     .single()
 
-  if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (error || !data) return NextResponse.json({ error: t('notFound') }, { status: 404 })
 
   return NextResponse.json(data)
 }
@@ -27,7 +41,19 @@ export async function PUT(
 ) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
+    return NextResponse.json({ error: t('unauthorized') }, { status: 401 })
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('ui_language')
+    .eq('id', user.id)
+    .single()
+
+  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
+  const t = await getTranslations({ locale, namespace: 'errors' })
 
   const body = await request.json() as {
     title?: string
@@ -63,7 +89,7 @@ export async function PUT(
     .select()
     .single()
 
-  if (error || !data) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 404 })
+  if (error || !data) return NextResponse.json({ error: error?.message ?? t('notFound') }, { status: 404 })
 
   return NextResponse.json(data)
 }
@@ -74,7 +100,10 @@ export async function DELETE(
 ) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
+    return NextResponse.json({ error: t('unauthorized') }, { status: 401 })
+  }
 
   // Soft delete — archive instead of removing
   const { error } = await supabase

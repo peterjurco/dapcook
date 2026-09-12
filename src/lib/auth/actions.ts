@@ -2,8 +2,10 @@
 
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateInviteToken } from '@/lib/utils/invite'
+import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
 import { getOrigin } from './getOrigin'
 
 export async function signInWithGoogle(redirectTo?: string) {
@@ -71,6 +73,11 @@ export async function createHousehold(name: string) {
 
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles').select('ui_language').eq('id', user.id).single()
+  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
+  const t = await getTranslations({ locale, namespace: 'errors' })
+
   const inviteToken = generateInviteToken()
   const householdId = crypto.randomUUID()
 
@@ -79,7 +86,7 @@ export async function createHousehold(name: string) {
     .insert({ id: householdId, name, invite_token: inviteToken })
 
   if (householdError) {
-    return { error: 'Failed to create household' }
+    return { error: t('createHouseholdFailed') }
   }
 
   const { error: profileError } = await supabase
@@ -88,7 +95,7 @@ export async function createHousehold(name: string) {
     .eq('id', user.id)
 
   if (profileError) {
-    return { error: 'Failed to link household to profile' }
+    return { error: t('linkHouseholdFailed') }
   }
 
   await supabase
@@ -107,12 +114,17 @@ export async function joinHousehold(inviteToken: string) {
 
   if (!user) redirect(`/join/${inviteToken}`)
 
+  const { data: profile } = await supabase
+    .from('profiles').select('ui_language').eq('id', user.id).single()
+  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
+  const t = await getTranslations({ locale, namespace: 'errors' })
+
   const { data: householdRows, error: lookupError } = await supabase
     .rpc('get_household_by_invite_token', { token: inviteToken })
   const household = (householdRows as Array<{ id: string; name: string }> | null)?.[0] ?? null
 
   if (lookupError || !household) {
-    return { error: 'Invalid invite code' }
+    return { error: t('invalidInviteCode') }
   }
 
   const { error: profileError } = await supabase
@@ -121,7 +133,7 @@ export async function joinHousehold(inviteToken: string) {
     .eq('id', user.id)
 
   if (profileError) {
-    return { error: 'Failed to join household' }
+    return { error: t('joinHouseholdFailed') }
   }
 
   redirect('/recipes?ob=1')

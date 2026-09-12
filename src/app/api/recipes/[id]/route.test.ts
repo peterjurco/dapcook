@@ -2,12 +2,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET, PUT, DELETE } from './route'
+import { mockTranslate } from '@/test/mockMessages'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('next-intl/server', () => ({
+  getTranslations: async ({ namespace }: { namespace: string }) => (key: string) => mockTranslate(namespace, key),
+}))
 import { createClient } from '@/lib/supabase/server'
 
 const mockUser = { id: 'user-1' }
 const mockRecipe = { id: 'r-1', title: 'Pasta', is_archived: false }
+const mockProfile = { data: { ui_language: 'en' }, error: null }
 
 function makeQB(result: { data: unknown; error: null | { message: string } }) {
   const qb: Record<string, unknown> = {
@@ -28,6 +33,7 @@ function makeSupabase(user: typeof mockUser | null = mockUser, fromFn?: (table: 
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
     from: vi.fn(fromFn ?? ((table: string) => {
       if (table === 'recipes') return makeQB({ data: mockRecipe, error: null })
+      if (table === 'profiles') return makeQB(mockProfile)
       throw new Error(`Unexpected table: ${table}`)
     })),
   }
@@ -105,7 +111,7 @@ describe('PUT /api/recipes/[id]', () => {
       body: JSON.stringify({ tags: ['quick'] }),
     }), params)
 
-    const qb = supabase.from.mock.results[0].value
+    const qb = supabase.from.mock.results[1].value
     const updateArg = qb.update.mock.calls[0][0] as Record<string, unknown>
     expect(updateArg.tags).toEqual(['quick'])
     expect(updateArg.title).toBeUndefined()

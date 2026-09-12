@@ -2,8 +2,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET, POST } from './route'
+import { mockTranslate } from '@/test/mockMessages'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('next-intl/server', () => ({
+  getTranslations: async ({ namespace }: { namespace: string }) => (key: string) => mockTranslate(namespace, key),
+}))
 import { createClient } from '@/lib/supabase/server'
 
 const mockUser = { id: 'user-1' }

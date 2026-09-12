@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { scrapeRecipe } from '@/lib/scraper'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
@@ -6,6 +7,7 @@ import { transformRecipe } from '@/lib/ai/transform-recipe'
 import { categorizeTranslationError } from '@/lib/ai/translation-error'
 import { categorizeScrapeError } from '@/lib/scraper/scrape-error'
 import { LANGUAGE_NAMES } from '@/lib/constants/languages'
+import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
 import type { RecipeDraft } from '@/types/recipe'
 
 export type ImportEvent =
@@ -20,38 +22,45 @@ function encode(data: ImportEvent): Uint8Array {
 export async function POST(request: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const body = await request.json() as { url?: string }
-  const url = body.url?.trim()
-  if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
-  try { new URL(url) } catch {
-    return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+  if (!user) {
+    const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
+    return NextResponse.json({ error: t('unauthorized') }, { status: 401 })
   }
 
   const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
+    .from('profiles').select('household_id, ui_language').eq('id', user.id).single()
+
+  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
+  const t = await getTranslations({ locale, namespace: 'errors' })
+  const tRecipes = await getTranslations({ locale, namespace: 'recipes' })
+
+  const body = await request.json() as { url?: string }
+  const url = body.url?.trim()
+  if (!url) return NextResponse.json({ error: t('urlRequired') }, { status: 400 })
+  try { new URL(url) } catch {
+    return NextResponse.json({ error: t('invalidUrl') }, { status: 400 })
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: ImportEvent) => controller.enqueue(encode(event))
 
       // Step 1: Scrape
-      send({ type: 'step', key: 'scraping', message: 'Fetching recipe page...' })
+      send({ type: 'step', key: 'scraping', message: tRecipes('import.stepScraping') })
       let scrapeResult: Awaited<ReturnType<typeof scrapeRecipe>>
       try {
         scrapeResult = await scrapeRecipe(url, {
           householdId: profile?.household_id ?? undefined,
-          onExtracting: () => send({ type: 'step', key: 'extracting', message: 'Reading the full page with AI...' }),
+          onExtracting: () => send({ type: 'step', key: 'extracting', message: tRecipes('import.stepExtracting') }),
         })
       } catch (err) {
-        send({ type: 'error', error: categorizeScrapeError(err).message })
+        send({ type: 'error', error: categorizeScrapeError(err, t).message })
         controller.close()
         return
       }
 
       // Step 2: Parse + household lookup in parallel
-      send({ type: 'step', key: 'parsing', message: 'Reading ingredients and steps...' })
+      send({ type: 'step', key: 'parsing', message: tRecipes('import.stepParsing') })
       const { raw, detectedLanguage } = scrapeResult
       const { rawIngredients, rawSteps, ...meta } = raw
 
@@ -63,8 +72,8 @@ export async function POST(request: NextRequest) {
               supabase.from('tags').select('name').eq('household_id', profile.household_id),
             ]).then(([{ data: recipes }, { data: tagsMeta }]) => {
               const names = new Set<string>()
-              for (const r of recipes ?? []) for (const t of r.tags ?? []) names.add(t.toLowerCase())
-              for (const t of tagsMeta ?? []) names.add(t.name.toLowerCase())
+              for (const r of recipes ?? []) for (const tag of r.tags ?? []) names.add(tag.toLowerCase())
+              for (const tagRow of tagsMeta ?? []) names.add(tagRow.name.toLowerCase())
               return names
             })
           : Promise.resolve(new Set<string>()),
@@ -76,7 +85,7 @@ export async function POST(request: NextRequest) {
       const baseDraft: RecipeDraft = {
         ...meta,
         description: meta.description ?? '',
-        tags: (meta.tags ?? []).filter(t => existingTags.has(t.toLowerCase())),
+        tags: (meta.tags ?? []).filter(tag => existingTags.has(tag.toLowerCase())),
         ingredients,
         steps,
       }
@@ -97,9 +106,9 @@ export async function POST(request: NextRequest) {
       // Step 3: Transform (translate and/or convert units)
       if (needsTranslation) {
         const langName = LANGUAGE_NAMES[household!.preferred_language] ?? household!.preferred_language
-        send({ type: 'step', key: 'translating', message: `Translating to ${langName}...` })
+        send({ type: 'step', key: 'translating', message: tRecipes('import.stepTranslating', { language: langName }) })
       } else {
-        send({ type: 'step', key: 'converting', message: 'Converting units...' })
+        send({ type: 'step', key: 'converting', message: tRecipes('import.stepConverting') })
       }
 
       try {

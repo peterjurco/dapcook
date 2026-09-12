@@ -1,1 +1,18 @@
-{}
+{
+  "unauthorized": "Neautorizovaný prístup",
+  "noHousehold": "Žiadna domácnosť",
+  "titleRequired": "Názov je povinný",
+  "notFound": "Nenájdené",
+  "urlRequired": "URL je povinná",
+  "invalidUrl": "Neplatná URL",
+  "contentRequired": "Obsah je povinný",
+  "scrapeBlocked": "Táto stránka blokuje automatický import. Skúste recept pridať ručne.",
+  "scrapeNotFound": "Túto stránku sa nepodarilo nájsť. Skontrolujte URL.",
+  "scrapeTimeout": "Stránka odpovedala príliš dlho. Skúste to znova, alebo recept pridajte ručne.",
+  "scrapeUnreachable": "Stránku sa nepodarilo načítať. Skontrolujte URL, alebo recept pridajte ručne.",
+  "scrapeGeneric": "Recept sa nepodarilo automaticky importovať. Skúste ho pridať ručne.",
+  "createHouseholdFailed": "Nepodarilo sa vytvoriť domácnosť",
+  "linkHouseholdFailed": "Nepodarilo sa prepojiť domácnosť s profilom",
+  "invalidInviteCode": "Neplatný pozývací kód",
+  "joinHouseholdFailed": "Nepodarilo sa pripojiť k domácnosti"
+}

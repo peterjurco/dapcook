@@ -3,11 +3,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { POST } from './route'
 import type { ImportEvent } from './route'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 vi.mock('@/lib/scraper', () => ({ scrapeRecipe: vi.fn() }))
 vi.mock('@/lib/ai/parse-recipe', () => ({ parseRecipeData: vi.fn() }))
 vi.mock('@/lib/ai/transform-recipe', () => ({ transformRecipe: vi.fn() }))
+vi.mock('next-intl/server', () => ({
+  getTranslations: async ({ namespace }: { namespace: string }) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+}))
 
 import { createClient } from '@/lib/supabase/server'
 import { scrapeRecipe } from '@/lib/scraper'
