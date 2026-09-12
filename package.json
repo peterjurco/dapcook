@@ -27,6 +27,7 @@
     "linkedom": "0.16.11",
     "lucide-react": "^0.577.0",
     "next": "14.2.35",
+    "next-intl": "^4.14.4",
     "nextjs-toploader": "^3.9.17",
     "posthog-js": "^1.376.0",
     "posthog-node": "^5.52.1",
