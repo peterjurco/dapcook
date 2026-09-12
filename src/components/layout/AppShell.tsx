@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { BookOpen, Calendar, ShoppingCart, Settings, LogOut, Shield } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
 import { cn } from '@/lib/utils/cn'
@@ -16,13 +17,6 @@ interface NavItem {
   icon: React.ReactNode
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { href: '/recipes', label: 'Recipes', icon: <BookOpen size={18} /> },
-  { href: '/planner', label: 'Planner', icon: <Calendar size={18} /> },
-  { href: '/shopping', label: 'Shopping', icon: <ShoppingCart size={18} /> },
-  { href: '/settings', label: 'Settings', icon: <Settings size={18} /> },
-]
-
 interface AppShellProps {
   user: User
   profile: Profile
@@ -34,6 +28,14 @@ interface AppShellProps {
 export function AppShell({ user, profile, isAdmin = false, birthdayConfig, children }: AppShellProps) {
   const pathname = usePathname()
   const posthog = usePostHog()
+  const t = useTranslations('nav')
+
+  const navItems: NavItem[] = [
+    { href: '/recipes', label: t('recipes'), icon: <BookOpen size={18} /> },
+    { href: '/planner', label: t('planner'), icon: <Calendar size={18} /> },
+    { href: '/shopping', label: t('shopping'), icon: <ShoppingCart size={18} /> },
+    { href: '/settings', label: t('settings'), icon: <Settings size={18} /> },
+  ]
 
   return (
     <div className="flex flex-col md:flex-row min-h-dvh md:h-screen bg-gray-50">
@@ -50,7 +52,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -76,7 +78,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
               )}
             >
               <Shield size={18} />
-              Admin
+              {t('admin')}
             </Link>
           )}
         </nav>
@@ -87,7 +89,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profile.avatar_url}
-                alt={profile.display_name ?? 'User'}
+                alt={profile.display_name ?? t('userFallbackAlt')}
                 className="w-7 h-7 rounded-full"
               />
             ) : (
@@ -108,7 +110,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
             className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <LogOut size={14} />
-            Sign out
+            {t('signOut')}
           </button>
         </div>
       </aside>
@@ -118,7 +120,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
 
       {/* Bottom tab bar — mobile only */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 flex z-50">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -142,7 +144,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
             )}
           >
             <Shield size={18} />
-            Admin
+            {t('admin')}
           </Link>
         )}
       </nav>

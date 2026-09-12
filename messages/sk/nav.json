@@ -1,1 +1,9 @@
-{}
+{
+  "recipes": "Recepty",
+  "planner": "Plánovač",
+  "shopping": "Nákupy",
+  "settings": "Nastavenia",
+  "admin": "Administrácia",
+  "signOut": "Odhlásiť sa",
+  "userFallbackAlt": "Používateľ"
+}

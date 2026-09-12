@@ -1,1 +1,9 @@
-{}
+{
+  "recipes": "Recipes",
+  "planner": "Planner",
+  "shopping": "Shopping",
+  "settings": "Settings",
+  "admin": "Admin",
+  "signOut": "Sign out",
+  "userFallbackAlt": "User"
+}

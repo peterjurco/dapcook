@@ -3,6 +3,11 @@ import { render, screen } from '@testing-library/react'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
 import { AppShell } from './AppShell'
+import { mockTranslate } from '@/test/mockMessages'
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) => mockTranslate(namespace, key),
+}))
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
