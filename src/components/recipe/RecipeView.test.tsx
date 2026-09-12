@@ -1,8 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { RecipeView } from './RecipeView'
 import type { Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
+
+vi.mock('next-intl/server', () => ({ getLocale: async () => 'en' }))
 
 const recipe = {
   id: 'recipe-1',
@@ -34,8 +36,8 @@ const recipe = {
 } satisfies Recipe
 
 describe('RecipeView', () => {
-  it('presents the complete recipe without application actions', () => {
-    render(<RecipeView recipe={recipe} />)
+  it('presents the complete recipe without application actions', async () => {
+    render(await RecipeView({ recipe }))
 
     expect(screen.getByRole('img', { name: 'Tomato Pasta' })).toHaveAttribute(
       'src',
@@ -68,8 +70,8 @@ describe('RecipeView', () => {
     expect(document.querySelector('form')).toBeNull()
   })
 
-  it('preserves Markdown note links in authenticated mode', () => {
-    render(<RecipeView recipe={{ ...recipe, notes: 'See [timing tips](https://notes.test/timing).' }} />)
+  it('preserves Markdown note links in authenticated mode', async () => {
+    render(await RecipeView({ recipe: { ...recipe, notes: 'See [timing tips](https://notes.test/timing).' } }))
 
     expect(screen.getByRole('link', { name: 'timing tips' })).toHaveAttribute(
       'href',
@@ -77,7 +79,7 @@ describe('RecipeView', () => {
     )
   })
 
-  it('colors every tag from the taxonomy, not just the first', () => {
+  it('colors every tag from the taxonomy, not just the first', async () => {
     const taxonomy: Taxonomy = {
       groups: [],
       tags: {
@@ -86,25 +88,25 @@ describe('RecipeView', () => {
       },
     }
 
-    render(<RecipeView recipe={recipe} taxonomy={taxonomy} />)
+    render(await RecipeView({ recipe, taxonomy }))
 
     expect(screen.getByText('quick')).toHaveStyle({ color: '#b45309' })
     expect(screen.getByText('vegetarian')).toHaveStyle({ color: '#047857' })
   })
 
-  it('falls back to a neutral chip for tags with no configured color', () => {
-    render(<RecipeView recipe={recipe} />)
+  it('falls back to a neutral chip for tags with no configured color', async () => {
+    render(await RecipeView({ recipe }))
 
     expect(screen.getByText('quick')).toHaveClass('bg-gray-100', 'text-gray-600')
     expect(screen.getByText('vegetarian')).toHaveClass('bg-gray-100', 'text-gray-600')
   })
 
-  it('renders Markdown note-link text without an anchor in public mode', () => {
+  it('renders Markdown note-link text without an anchor in public mode', async () => {
     render(
-      <RecipeView
-        recipe={{ ...recipe, notes: 'See [timing tips](https://notes.test/timing).' }}
-        mode="public"
-      />
+      await RecipeView({
+        recipe: { ...recipe, notes: 'See [timing tips](https://notes.test/timing).' },
+        mode: 'public',
+      })
     )
 
     expect(screen.getByText('timing tips')).toBeInTheDocument()

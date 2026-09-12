@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { useLocale } from 'next-intl'
 import { Clock, Users } from 'lucide-react'
 import { AddToPlanButton } from './AddToPlanButton'
 import { orderTagsForCard, tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
+import { formatDuration } from '@/lib/utils/format'
 import type { Recipe } from '@/types/database'
 
 interface RecipeCardProps {
@@ -11,15 +13,8 @@ interface RecipeCardProps {
   taxonomy: Taxonomy
 }
 
-function formatTime(min: number | null): string | null {
-  if (!min) return null
-  if (min < 60) return `${min}m`
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
-}
-
 export function RecipeCard({ recipe, taxonomy }: RecipeCardProps) {
+  const locale = useLocale()
   const totalTime = (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0)
   const orderedTags = orderTagsForCard(recipe.tags, taxonomy)
 
@@ -85,7 +80,7 @@ export function RecipeCard({ recipe, taxonomy }: RecipeCardProps) {
             {totalTime > 0 && (
               <span className="flex items-center gap-1">
                 <Clock size={12} />
-                {formatTime(totalTime)}
+                {totalTime > 0 ? formatDuration(totalTime, locale) : null}
               </span>
             )}
             {recipe.servings && (

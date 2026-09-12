@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react'
+import { getLocale } from 'next-intl/server'
 import { Clock, ExternalLink, Users } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { cn } from '@/lib/utils/cn'
 import { EMPTY_TAXONOMY, tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
+import { formatDuration } from '@/lib/utils/format'
+import type { Locale } from '@/i18n/config'
 import type { Recipe } from '@/types/database'
 import type { Ingredient, Step } from '@/types/recipe'
 
@@ -13,22 +16,20 @@ interface RecipeViewProps {
   taxonomy?: Taxonomy
 }
 
-function formatTime(min: number | null, label: string) {
+function formatTime(min: number | null, label: string, locale: Locale) {
   if (!min) return null
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  const time = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`
-  return { label, time }
+  return { label, time: formatDuration(min, locale) }
 }
 
-export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonomy = EMPTY_TAXONOMY }: RecipeViewProps) {
+export async function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonomy = EMPTY_TAXONOMY }: RecipeViewProps) {
+  const locale = await getLocale()
   const ingredients = (r.ingredients ?? []) as unknown as Ingredient[]
   const steps = (r.steps ?? []) as unknown as Step[]
   const totalTime = (r.prep_time_min ?? 0) + (r.cook_time_min ?? 0)
   const times = [
-    formatTime(r.prep_time_min, 'Prep'),
-    formatTime(r.cook_time_min, 'Cook'),
-    totalTime > 0 ? formatTime(totalTime, 'Total') : null,
+    formatTime(r.prep_time_min, 'Prep', locale),
+    formatTime(r.cook_time_min, 'Cook', locale),
+    totalTime > 0 ? formatTime(totalTime, 'Total', locale) : null,
   ].filter(Boolean) as { label: string; time: string }[]
 
   return (

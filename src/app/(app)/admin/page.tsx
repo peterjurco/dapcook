@@ -1,4 +1,7 @@
+import { getLocale } from 'next-intl/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { formatRelativeTime as formatRelativeTimeShared } from '@/lib/utils/format'
+import type { Locale } from '@/i18n/config'
 
 interface HouseholdRow {
   id: string
@@ -22,18 +25,14 @@ function formatCost(inputTokens: number, outputTokens: number): string {
   return `$${cost.toFixed(4)}`
 }
 
-function formatRelativeTime(dateStr: string | null): string {
-  if (!dateStr) return 'never'
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60_000)
-  const hours = Math.floor(diff / 3_600_000)
-  const days = Math.floor(diff / 86_400_000)
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  return `${days}d ago`
+function formatRelativeTime(dateStr: string | null, locale: Locale): string {
+  if (!dateStr) return formatRelativeTimeShared(null, locale)
+  const minutesAgo = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60_000)
+  return formatRelativeTimeShared(minutesAgo, locale)
 }
 
 export default async function AdminPage() {
+  const locale = await getLocale()
   const adminClient = createAdminClient()
 
   // All queries use the service role client — ai_usage_logs has no SELECT policy for regular users
@@ -108,7 +107,7 @@ export default async function AdminPage() {
                   className="px-4 py-3 text-gray-600"
                   title={row.last_sign_in_at ?? undefined}
                 >
-                  {formatRelativeTime(row.last_sign_in_at)}
+                  {formatRelativeTime(row.last_sign_in_at, locale)}
                 </td>
                 <td className="px-4 py-3 text-right text-gray-600 font-mono text-xs">
                   {formatTokens(row.total_input_tokens)} in / {formatTokens(row.total_output_tokens)} out

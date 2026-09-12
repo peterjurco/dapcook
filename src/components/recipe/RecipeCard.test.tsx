@@ -12,6 +12,8 @@ vi.mock('next/link', () => ({
   ),
 }))
 
+vi.mock('next-intl', () => ({ useLocale: () => 'en' }))
+
 const baseRecipe = {
   id: 'recipe-1',
   household_id: 'household-1',

@@ -13,6 +13,8 @@ vi.mock('next/link', () => ({
   ),
 }))
 
+vi.mock('next-intl', () => ({ useLocale: () => 'en' }))
+
 function makeRecipe(id: string, title: string, tags: string[]): Recipe {
   return {
     id,
