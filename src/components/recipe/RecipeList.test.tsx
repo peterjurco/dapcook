@@ -230,6 +230,20 @@ describe('RecipeList Filters button and modal', () => {
     expect(screen.getByRole('button', { name: /show 2 recipes/i })).toBeInTheDocument()
   })
 
+  it('uses the singular ICU plural form when exactly one recipe matches', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+
+    const dialog = screen.getByRole('dialog')
+    // "side" only belongs to Garlic Bread, so this narrows the result set to 1.
+    await user.click(within(dialog).getByRole('button', { name: 'side' }))
+
+    expect(screen.getByRole('button', { name: /show 1 recipe$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /show 1 recipes/i })).not.toBeInTheDocument()
+  })
+
   it('clears the whole selection via Clear all', async () => {
     const user = userEvent.setup()
     render(<RecipeList recipes={recipes} taxonomy={grouped} defaultFilter={[]} />)

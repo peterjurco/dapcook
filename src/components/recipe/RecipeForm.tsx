@@ -46,6 +46,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const router = useRouter()
   const posthog = usePostHog()
   const t = useTranslations('recipes')
+  const tCommon = useTranslations('common')
   const isEdit = !!recipe
 
   // Initialise from recipe (edit), draft (import), or empty (new)
@@ -311,7 +312,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
               onClick={() => router.back()}
               className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              {t('form.cancel')}
+              {tCommon('actions.cancel')}
             </button>
           </div>
           {isEdit && <DeleteRecipeButton recipeId={recipe.id} />}

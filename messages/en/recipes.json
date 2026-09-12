@@ -60,7 +60,6 @@
     "draftWarning": "Some recipe details could not be extracted — please fill them in manually.",
     "saving": "Saving...",
     "save": "Save",
-    "saveRecipe": "Save recipe",
-    "cancel": "Cancel"
+    "saveRecipe": "Save recipe"
   }
 }

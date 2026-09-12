@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildRecipeJsonLd } from '@/lib/recipes/recipe-json-ld'
+import { mockTranslate } from '@/test/mockMessages'
 import type { Recipe } from '@/types/database'
 import SharedRecipePage, { dynamic, metadata } from './page'
 
@@ -44,7 +45,7 @@ vi.mock('next/cache', () => ({ unstable_noStore: mocks.noStore }))
 vi.mock('next/navigation', () => ({ notFound: mocks.notFound }))
 vi.mock('next-intl/server', () => ({
   getLocale: async () => 'en',
-  getTranslations: async () => (key: string) => key,
+  getTranslations: async ({ namespace }: { namespace: string }) => (key: string) => mockTranslate(namespace, key),
 }))
 
 vi.mock('@/lib/supabase/admin', () => ({
