@@ -43,6 +43,7 @@ export interface Database {
           display_name: string | null
           avatar_url: string | null
           default_recipe_filter: string[]
+          ui_language: string
           created_at: string
           updated_at: string
         }
@@ -52,6 +53,7 @@ export interface Database {
           display_name?: string | null
           avatar_url?: string | null
           default_recipe_filter?: string[]
+          ui_language?: string
           created_at?: string
           updated_at?: string
         }
@@ -61,6 +63,7 @@ export interface Database {
           display_name?: string | null
           avatar_url?: string | null
           default_recipe_filter?: string[]
+          ui_language?: string
           created_at?: string
           updated_at?: string
         }
