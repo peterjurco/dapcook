@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { locales, type Locale } from '@/i18n/config'
+import { locales, isLocale } from '@/i18n/config'
 import type { Database } from '@/types/database'
 
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
@@ -32,10 +32,11 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (body.ui_language !== undefined) {
-    if (typeof body.ui_language !== 'string' || !locales.includes(body.ui_language as Locale)) {
+    const candidate = typeof body.ui_language === 'string' ? body.ui_language : undefined
+    if (!isLocale(candidate)) {
       return NextResponse.json({ error: 'ui_language must be one of: ' + locales.join(', ') }, { status: 400 })
     }
-    update.ui_language = body.ui_language as Locale
+    update.ui_language = candidate
   }
 
   const { error } = await supabase
