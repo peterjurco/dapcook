@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
+import { defaultLocale, isLocale, toIntlLocale, type Locale } from '@/i18n/config'
 import type { Ingredient } from '@/types/recipe'
 
 export async function POST(request: NextRequest) {
@@ -140,6 +140,6 @@ function formatListName(dateFrom: string, dateTo: string, locale: Locale): strin
   const from = new Date(dateFrom + 'T00:00:00')
   const to = new Date(dateTo + 'T00:00:00')
   const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
-  const intlLocale = locale === 'sk' ? 'sk-SK' : 'en-GB'
+  const intlLocale = toIntlLocale(locale)
   return `Shopping list ${from.toLocaleDateString(intlLocale, opts)} – ${to.toLocaleDateString(intlLocale, opts)}`
 }

@@ -1,4 +1,4 @@
-import type { Locale } from '@/i18n/config'
+import { toIntlLocale, type Locale } from '@/i18n/config'
 
 /** Returns the Monday of the week containing the given date */
 export function getWeekStart(date: Date = new Date()): Date {
@@ -41,7 +41,7 @@ export function formatWeekLabel(weekStart: Date, locale: Locale, short = false):
   const startDay = weekStart.getDate()
   const endDay = weekEnd.getDate()
   const monthStyle = short ? 'short' : 'long'
-  const intlLocale = locale === 'sk' ? 'sk-SK' : 'en-GB'
+  const intlLocale = toIntlLocale(locale)
   const month = weekEnd.toLocaleDateString(intlLocale, { month: monthStyle })
   const year = weekEnd.getFullYear()
 
@@ -55,7 +55,7 @@ export function formatWeekLabel(weekStart: Date, locale: Locale, short = false):
 /** Short label for a day: "Mon 17" */
 export function formatDayLabel(date: Date, locale: Locale): { weekday: string; day: number } {
   return {
-    weekday: date.toLocaleDateString(locale === 'sk' ? 'sk-SK' : 'en-GB', { weekday: 'short' }),
+    weekday: date.toLocaleDateString(toIntlLocale(locale), { weekday: 'short' }),
     day: date.getDate(),
   }
 }

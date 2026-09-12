@@ -43,15 +43,16 @@ function rangeLabel(slot: MealSlotWithRecipe, weekDays: Date[], locale: Locale):
 function MealRow({
   slot,
   weekDays,
+  locale,
   onDelete,
   onSpanChange,
 }: {
   slot: MealSlotWithRecipe
   weekDays: Date[]
+  locale: Locale
   onDelete: () => void
   onSpanChange: (newSpan: number) => void
 }) {
-  const locale = useLocale()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
     data: { slot },
@@ -133,6 +134,7 @@ function MealRow({
 function DaySection({
   editDay,
   weekDays,
+  locale,
   isSearchOpen,
   isLoading,
   onOpenSearch,
@@ -144,6 +146,7 @@ function DaySection({
 }: {
   editDay: EditDay
   weekDays: Date[]
+  locale: Locale
   isSearchOpen: boolean
   isLoading: boolean
   onOpenSearch: () => void
@@ -153,7 +156,6 @@ function DaySection({
   onDelete: (slotId: string) => void
   onSpanChange: (slotId: string, newSpan: number) => void
 }) {
-  const locale = useLocale()
   const { setNodeRef, isOver } = useDroppable({
     id: `day-${editDay.dayOfWeek}`,
     data: { dayOfWeek: editDay.dayOfWeek },
@@ -175,6 +177,7 @@ function DaySection({
             key={slot.id}
             slot={slot}
             weekDays={weekDays}
+            locale={locale}
             onDelete={() => onDelete(slot.id)}
             onSpanChange={(newSpan) => onSpanChange(slot.id, newSpan)}
           />
@@ -223,6 +226,7 @@ export function MobileEditList({
   onAddRecipe,
   onAddCustom,
 }: MobileEditListProps) {
+  const locale = useLocale() as Locale
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
   const [loadingDay, setLoadingDay] = useState<number | null>(null)
 
@@ -258,6 +262,7 @@ export function MobileEditList({
             key={editDay.dayOfWeek}
             editDay={editDay}
             weekDays={weekDays}
+            locale={locale}
             isSearchOpen={openSearchDay === editDay.dayOfWeek}
             isLoading={loadingDay === editDay.dayOfWeek}
             onOpenSearch={() => setOpenSearchDay(editDay.dayOfWeek)}
