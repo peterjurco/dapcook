@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { ImagePlus, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -13,13 +14,14 @@ const ACCEPTED = 'image/jpeg,image/png,image/webp,image/gif'
 const MAX_SIZE_MB = 5
 
 export function ImageUpload({ value, onChange }: ImageUploadProps) {
+  const t = useTranslations('recipes')
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleFile(file: File) {
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(`Image must be under ${MAX_SIZE_MB}MB`)
+      setError(t('imageUpload.tooLarge', { maxSizeMb: MAX_SIZE_MB }))
       return
     }
 
@@ -35,7 +37,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       .upload(path, file, { upsert: false })
 
     if (uploadError) {
-      setError('Upload failed — ' + uploadError.message)
+      setError(t('imageUpload.uploadFailedPrefix') + uploadError.message)
       setUploading(false)
       return
     }
@@ -66,12 +68,12 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       {value ? (
         <div className="relative w-full aspect-video max-w-sm rounded-lg overflow-hidden bg-gray-100 group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="Recipe" className="w-full h-full object-cover" />
+          <img src={value} alt={t('imageUpload.alt')} className="w-full h-full object-cover" />
           <button
             type="button"
             onClick={clear}
             className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
-            aria-label="Remove image"
+            aria-label={t('imageUpload.removeAria')}
           >
             <X size={14} />
           </button>
@@ -88,13 +90,13 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
           {uploading ? (
             <>
               <Loader2 size={24} className="text-gray-400 animate-spin mb-2" />
-              <span className="text-sm text-gray-400">Uploading...</span>
+              <span className="text-sm text-gray-400">{t('imageUpload.uploading')}</span>
             </>
           ) : (
             <>
               <ImagePlus size={24} className="text-gray-400 mb-2" />
-              <span className="text-sm font-medium text-gray-500">Add photo</span>
-              <span className="text-xs text-gray-400 mt-1">or drag and drop</span>
+              <span className="text-sm font-medium text-gray-500">{t('imageUpload.addPhoto')}</span>
+              <span className="text-xs text-gray-400 mt-1">{t('imageUpload.dragDrop')}</span>
             </>
           )}
         </button>

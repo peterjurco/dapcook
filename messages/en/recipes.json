@@ -61,5 +61,116 @@
     "saving": "Saving...",
     "save": "Save",
     "saveRecipe": "Save recipe"
+  },
+  "ingredientEditor": {
+    "tapToAdd": "Tap to add ingredient",
+    "removeAria": "Remove ingredient",
+    "editAria": "Edit ingredient",
+    "qty": "Qty",
+    "unit": "Unit",
+    "ingredient": "Ingredient",
+    "notes": "Notes",
+    "done": "Done",
+    "parsePlaceholder": "200g chicken breast, sliced\n1 tbsp olive oil\nsalt to taste\n2 cloves garlic, minced",
+    "parse": "Parse",
+    "cancel": "Cancel",
+    "add": "Add ingredient",
+    "pasteText": "Paste text",
+    "examples": { "qty": "200", "unit": "g", "name": "chicken breast", "notes": "finely chopped" }
+  },
+  "stepEditor": {
+    "parsePlaceholder": "1. Preheat the oven to 200°C.\n2. Mix flour and butter until crumbly.\n3. Add eggs and stir until combined.",
+    "parse": "Parse",
+    "cancel": "Cancel",
+    "rowPlaceholder": "Describe this step...",
+    "removeAria": "Remove step",
+    "add": "Add step",
+    "pasteText": "Paste text"
+  },
+  "tagInput": {
+    "placeholder": "Type a tag and press Enter",
+    "helper": "Press Enter or comma to add",
+    "mostUsed": "Most used"
+  },
+  "imageUpload": {
+    "tooLarge": "Image must be under {maxSizeMb}MB",
+    "uploadFailedPrefix": "Upload failed — ",
+    "removeAria": "Remove image",
+    "uploading": "Uploading...",
+    "addPhoto": "Add photo",
+    "dragDrop": "or drag and drop",
+    "alt": "Recipe"
+  },
+  "delete": {
+    "confirmTitle": "Delete this recipe?",
+    "confirmYes": "Yes, delete",
+    "cancel": "Cancel",
+    "button": "Delete"
+  },
+  "share": {
+    "genericError": "Something went wrong. Try again.",
+    "button": "Share",
+    "dialogTitle": "Share recipe",
+    "closeAria": "Close",
+    "description": "Anyone with this link can view the recipe.",
+    "linkAria": "Share link",
+    "disable": "Disable sharing",
+    "copied": "Copied",
+    "copyLink": "Copy link",
+    "creating": "Creating link…",
+    "createLink": "Create share link",
+    "copyFailed": "Could not copy the link. Select and copy it manually."
+  },
+  "addToPlan": {
+    "buttonTitle": "Add to weekly plan",
+    "button": "Add to Plan",
+    "thisWeek": "this week",
+    "nextWeek": "next week",
+    "change": "Change",
+    "viewPlan": "View plan",
+    "heading": "Add to plan",
+    "thisWeekChip": "This week",
+    "nextWeekChip": "Next week",
+    "earlierWeekAria": "Earlier week",
+    "laterWeekAria": "Later week",
+    "addTo": "Add to {weekday} {day}",
+    "adding": "Adding…",
+    "added": "Added to {weekday} {day} · {week}"
+  },
+  "detailPage": {
+    "allRecipesAria": "All recipes",
+    "allRecipes": "All recipes",
+    "edit": "Edit"
+  },
+  "editPage": {
+    "backToRecipe": "Back to recipe",
+    "heading": "Edit recipe"
+  },
+  "newPage": {
+    "heading": "New recipe",
+    "subtitle": "Add a recipe from scratch"
+  },
+  "import": {
+    "rateLimitTitle": "Translation rate limit reached",
+    "unavailableTitle": "Translation unavailable",
+    "timedOutTitle": "Translation timed out",
+    "failedTitle": "Translation failed",
+    "couldNotImport": "Could not import this URL",
+    "genericError": "Something went wrong. Please try again.",
+    "reviewHeading": "Review imported recipe",
+    "reviewSubtitle": "Check the details and make any edits before saving",
+    "translationErrorHeading": "Import recipe",
+    "translationErrorBody": "The recipe was imported successfully but could not be translated. You can retry the translation, keep the recipe in its original language, or cancel.",
+    "retryTranslation": "Retry translation",
+    "keepAsIs": "Keep as-is",
+    "cancel": "Cancel",
+    "importingHeading": "Import recipe",
+    "starting": "Starting...",
+    "idleSubtitle": "Paste a link from any recipe website",
+    "urlPlaceholder": "https://www.bbcgoodfood.com/recipes/...",
+    "importButton": "Import",
+    "addManually": "Add recipe manually instead",
+    "worksWellWith": "Works well with",
+    "worksWellWithOther": "and most recipe sites with structured data"
   }
 }

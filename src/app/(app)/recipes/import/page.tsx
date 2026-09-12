@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Import, Loader2, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { RecipeForm } from '@/components/recipe/RecipeForm'
 import type { RecipeDraft } from '@/types/recipe'
@@ -15,14 +16,14 @@ interface Step {
   message: string
 }
 
-const TRANSLATION_ERROR_TITLES: Record<TranslationError['type'], string> = {
-  rate_limit: 'Translation rate limit reached',
-  billing: 'Translation unavailable',
-  timeout: 'Translation timed out',
-  unknown: 'Translation failed',
-}
-
 export default function ImportRecipePage() {
+  const t = useTranslations('recipes')
+  const TRANSLATION_ERROR_TITLES: Record<TranslationError['type'], string> = {
+    rate_limit: t('import.rateLimitTitle'),
+    billing: t('import.unavailableTitle'),
+    timeout: t('import.timedOutTitle'),
+    unknown: t('import.failedTitle'),
+  }
   const [url, setUrl] = useState('')
   const [pageState, setPageState] = useState<PageState>('idle')
   const [steps, setSteps] = useState<Step[]>([])
@@ -46,7 +47,7 @@ export default function ImportRecipePage() {
 
       if (!res.ok) {
         const data = await res.json() as { error?: string }
-        setError(data.error ?? 'Could not import this URL')
+        setError(data.error ?? t('import.couldNotImport'))
         setPageState('idle')
         return
       }
@@ -87,7 +88,7 @@ export default function ImportRecipePage() {
         }
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('import.genericError'))
       setPageState('idle')
     }
   }
@@ -121,7 +122,7 @@ export default function ImportRecipePage() {
         setPageState('review')
       }
     } catch {
-      setTranslationError({ type: 'unknown', message: 'Something went wrong. Please try again.' })
+      setTranslationError({ type: 'unknown', message: t('import.genericError') })
     } finally {
       setRetrying(false)
     }
@@ -143,8 +144,8 @@ export default function ImportRecipePage() {
     return (
       <div className="p-6 lg:p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Review imported recipe</h1>
-          <p className="text-sm text-gray-500 mt-1">Check the details and make any edits before saving</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('import.reviewHeading')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('import.reviewSubtitle')}</p>
         </div>
         <RecipeForm draft={draft} />
       </div>
@@ -155,7 +156,7 @@ export default function ImportRecipePage() {
     return (
       <div className="p-6 lg:p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Import recipe</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('import.translationErrorHeading')}</h1>
         </div>
         <div className="max-w-xl space-y-4">
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
@@ -167,7 +168,7 @@ export default function ImportRecipePage() {
               </div>
             </div>
             <p className="text-xs text-amber-700">
-              The recipe was imported successfully but could not be translated. You can retry the translation, keep the recipe in its original language, or cancel.
+              {t('import.translationErrorBody')}
             </p>
           </div>
           <div className="flex gap-2">
@@ -178,21 +179,21 @@ export default function ImportRecipePage() {
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {retrying ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              Retry translation
+              {t('import.retryTranslation')}
             </button>
             <button
               type="button"
               onClick={handleKeepUntranslated}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Keep as-is
+              {t('import.keepAsIs')}
             </button>
             <button
               type="button"
               onClick={handleCancel}
               className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
-              Cancel
+              {t('import.cancel')}
             </button>
           </div>
         </div>
@@ -204,13 +205,13 @@ export default function ImportRecipePage() {
     return (
       <div className="p-6 lg:p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Import recipe</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('import.importingHeading')}</h1>
         </div>
         <div className="max-w-xl space-y-3">
           {steps.length === 0 ? (
             <div className="flex items-center gap-3">
               <Loader2 size={15} className="animate-spin text-gray-500 flex-shrink-0" />
-              <span className="text-sm text-gray-500">Starting...</span>
+              <span className="text-sm text-gray-500">{t('import.starting')}</span>
             </div>
           ) : (
             steps.map((step, i) => {
@@ -236,8 +237,8 @@ export default function ImportRecipePage() {
   return (
     <div className="p-6 lg:p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Import recipe</h1>
-        <p className="text-sm text-gray-500 mt-1">Paste a link from any recipe website</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('import.importingHeading')}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t('import.idleSubtitle')}</p>
       </div>
 
       <div className="max-w-xl">
@@ -246,7 +247,7 @@ export default function ImportRecipePage() {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://www.bbcgoodfood.com/recipes/..."
+            placeholder={t('import.urlPlaceholder')}
             required
             className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
@@ -255,7 +256,7 @@ export default function ImportRecipePage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <Import size={15} />
-            Import
+            {t('import.importButton')}
           </button>
         </form>
 
@@ -266,20 +267,20 @@ export default function ImportRecipePage() {
               {error}
             </div>
             <Link href="/recipes/new" className="mt-2 inline-block font-medium underline hover:no-underline">
-              Add recipe manually instead
+              {t('import.addManually')}
             </Link>
           </div>
         )}
 
         <div className="mt-8 space-y-2">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Works well with</p>
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('import.worksWellWith')}</p>
           <ul className="text-sm text-gray-500 space-y-1">
             <li>bbcgoodfood.com</li>
             <li>bbc.co.uk/food</li>
             <li>kuchynalidla.sk</li>
             <li>gymbeam.sk</li>
             <li>themediterraneandish.com</li>
-            <li>and most recipe sites with structured data</li>
+            <li>{t('import.worksWellWithOther')}</li>
           </ul>
         </div>
       </div>

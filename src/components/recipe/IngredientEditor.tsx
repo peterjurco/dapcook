@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Trash2, GripVertical, Plus, ClipboardPaste, X } from 'lucide-react'
 import {
   DndContext,
@@ -30,6 +31,7 @@ interface SortableRowProps {
   onUpdate: (id: string, field: keyof IngredientFormItem, value: string) => void
   onRemove: (id: string) => void
   onEdit: (id: string) => void
+  t: ReturnType<typeof useTranslations>
 }
 
 function ingredientSummary(ing: IngredientFormItem) {
@@ -37,7 +39,7 @@ function ingredientSummary(ing: IngredientFormItem) {
   return [qty, ing.name].filter(Boolean).join(' ')
 }
 
-function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowProps) {
+function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit, t }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: ing.id,
   })
@@ -61,7 +63,7 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowP
 
         <button type="button" onClick={() => onEdit(ing.id)} className="flex-1 min-w-0 text-left py-1">
           <span className="text-sm text-gray-900">
-            {ingredientSummary(ing) || <span className="text-gray-400">Tap to add ingredient</span>}
+            {ingredientSummary(ing) || <span className="text-gray-400">{t('ingredientEditor.tapToAdd')}</span>}
           </span>
           {ing.notes && <p className="text-xs text-gray-400 mt-0.5">{ing.notes}</p>}
         </button>
@@ -70,7 +72,7 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowP
           type="button"
           onClick={() => onRemove(ing.id)}
           className="p-1 mt-1 text-gray-300 hover:text-red-400 transition-colors"
-          aria-label="Remove ingredient"
+          aria-label={t('ingredientEditor.removeAria')}
         >
           <Trash2 size={14} />
         </button>
@@ -89,7 +91,7 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowP
           type="text"
           value={ing.quantity}
           onChange={(e) => onUpdate(ing.id, 'quantity', e.target.value)}
-          placeholder="200"
+          placeholder={t('ingredientEditor.examples.qty')}
           className="w-16 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-center"
         />
 
@@ -97,7 +99,7 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowP
           type="text"
           value={ing.unit}
           onChange={(e) => onUpdate(ing.id, 'unit', e.target.value)}
-          placeholder="g"
+          placeholder={t('ingredientEditor.examples.unit')}
           className="w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
 
@@ -105,7 +107,7 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowP
           type="text"
           value={ing.name}
           onChange={(e) => onUpdate(ing.id, 'name', e.target.value)}
-          placeholder="chicken breast"
+          placeholder={t('ingredientEditor.examples.name')}
           className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
 
@@ -113,7 +115,7 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowP
           type="text"
           value={ing.notes}
           onChange={(e) => onUpdate(ing.id, 'notes', e.target.value)}
-          placeholder="finely chopped"
+          placeholder={t('ingredientEditor.examples.notes')}
           className="w-36 px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-gray-500"
         />
 
@@ -121,7 +123,7 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit }: SortableRowP
           type="button"
           onClick={() => onRemove(ing.id)}
           className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-          aria-label="Remove ingredient"
+          aria-label={t('ingredientEditor.removeAria')}
         >
           <Trash2 size={14} />
         </button>
@@ -134,9 +136,10 @@ interface IngredientEditModalProps {
   ing: IngredientFormItem
   onUpdate: (id: string, field: keyof IngredientFormItem, value: string) => void
   onClose: () => void
+  t: ReturnType<typeof useTranslations>
 }
 
-function IngredientEditModal({ ing, onUpdate, onClose }: IngredientEditModalProps) {
+function IngredientEditModal({ ing, onUpdate, onClose, t }: IngredientEditModalProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -149,53 +152,53 @@ function IngredientEditModal({ ing, onUpdate, onClose }: IngredientEditModalProp
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Edit ingredient"
+      aria-label={t('ingredientEditor.editAria')}
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 pt-20 px-4"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="bg-white rounded-xl shadow-xl p-5 w-full max-w-sm flex flex-col gap-3">
         <div className="flex gap-2">
           <div className="w-20">
-            <label className="text-xs text-gray-500 mb-1 block">Qty</label>
+            <label className="text-xs text-gray-500 mb-1 block">{t('ingredientEditor.qty')}</label>
             <input
               type="text"
               value={ing.quantity}
               onChange={(e) => onUpdate(ing.id, 'quantity', e.target.value)}
-              placeholder="200"
+              placeholder={t('ingredientEditor.examples.qty')}
               className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-center"
             />
           </div>
           <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">Unit</label>
+            <label className="text-xs text-gray-500 mb-1 block">{t('ingredientEditor.unit')}</label>
             <input
               type="text"
               value={ing.unit}
               onChange={(e) => onUpdate(ing.id, 'unit', e.target.value)}
-              placeholder="g"
+              placeholder={t('ingredientEditor.examples.unit')}
               className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Ingredient</label>
+          <label className="text-xs text-gray-500 mb-1 block">{t('ingredientEditor.ingredient')}</label>
           <input
             autoFocus
             type="text"
             value={ing.name}
             onChange={(e) => onUpdate(ing.id, 'name', e.target.value)}
-            placeholder="chicken breast"
+            placeholder={t('ingredientEditor.examples.name')}
             className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Notes</label>
+          <label className="text-xs text-gray-500 mb-1 block">{t('ingredientEditor.notes')}</label>
           <input
             type="text"
             value={ing.notes}
             onChange={(e) => onUpdate(ing.id, 'notes', e.target.value)}
-            placeholder="finely chopped"
+            placeholder={t('ingredientEditor.examples.notes')}
             className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 text-gray-500"
           />
         </div>
@@ -205,7 +208,7 @@ function IngredientEditModal({ ing, onUpdate, onClose }: IngredientEditModalProp
           onClick={onClose}
           className="self-end mt-1 px-3 py-1.5 text-sm rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors"
         >
-          Done
+          {t('ingredientEditor.done')}
         </button>
       </div>
     </div>
@@ -213,6 +216,7 @@ function IngredientEditModal({ ing, onUpdate, onClose }: IngredientEditModalProp
 }
 
 export function IngredientEditor({ ingredients, onChange }: IngredientEditorProps) {
+  const t = useTranslations('recipes')
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [isParsing, setIsParsing] = useState(false)
@@ -275,7 +279,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
           autoFocus
           value={pasteText}
           onChange={(e) => setPasteText(e.target.value)}
-          placeholder={"200g chicken breast, sliced\n1 tbsp olive oil\nsalt to taste\n2 cloves garlic, minced"}
+          placeholder={t('ingredientEditor.parsePlaceholder')}
           rows={8}
           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 font-mono leading-relaxed resize-y"
         />
@@ -291,7 +295,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
             ) : (
               <ClipboardPaste size={14} />
             )}
-            Parse
+            {t('ingredientEditor.parse')}
           </button>
           <button
             type="button"
@@ -299,7 +303,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 border border-gray-200 rounded-lg transition-colors"
           >
             <X size={14} />
-            Cancel
+            {t('ingredientEditor.cancel')}
           </button>
         </div>
       </div>
@@ -311,10 +315,10 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
       {ingredients.length > 0 && (
         <div className="hidden sm:grid grid-cols-[auto_64px_80px_1fr_140px_auto] gap-x-2 px-8 mb-1">
           <span />
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Qty</span>
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Unit</span>
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Ingredient</span>
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Notes</span>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.qty')}</span>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.unit')}</span>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.ingredient')}</span>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.notes')}</span>
           <span />
         </div>
       )}
@@ -322,7 +326,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={ingredients.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           {ingredients.map((ing) => (
-            <SortableIngredientRow key={ing.id} ing={ing} onUpdate={update} onRemove={remove} onEdit={setEditingId} />
+            <SortableIngredientRow key={ing.id} ing={ing} onUpdate={update} onRemove={remove} onEdit={setEditingId} t={t} />
           ))}
         </SortableContext>
       </DndContext>
@@ -330,7 +334,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
       {editingId && (() => {
         const editing = ingredients.find((i) => i.id === editingId)
         if (!editing) return null
-        return <IngredientEditModal ing={editing} onUpdate={update} onClose={() => setEditingId(null)} />
+        return <IngredientEditModal ing={editing} onUpdate={update} onClose={() => setEditingId(null)} t={t} />
       })()}
 
       <div className="flex items-center gap-3 mt-1">
@@ -340,7 +344,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
         >
           <Plus size={14} />
-          Add ingredient
+          {t('ingredientEditor.add')}
         </button>
         <button
           type="button"
@@ -348,7 +352,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
         >
           <ClipboardPaste size={14} />
-          Paste text
+          {t('ingredientEditor.pasteText')}
         </button>
       </div>
     </div>

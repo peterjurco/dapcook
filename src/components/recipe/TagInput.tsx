@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import type { TagData } from '@/app/api/tags/route'
 
@@ -30,6 +31,7 @@ function colorFor(name: string, allTags: TagData[]) {
 }
 
 export function TagInput({ tags, onChange, allTags }: TagInputProps) {
+  const t = useTranslations('recipes')
   const [input, setInput] = useState('')
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -110,10 +112,10 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           onBlur={() => { if (input.trim()) addTag(input) }}
-          placeholder="Type a tag and press Enter"
+          placeholder={t('tagInput.placeholder')}
           className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white text-gray-900 placeholder:text-gray-400"
         />
-        <p className="text-xs text-gray-400 mt-1">Press Enter or comma to add</p>
+        <p className="text-xs text-gray-400 mt-1">{t('tagInput.helper')}</p>
 
         {showDropdown && (
           <div className="absolute z-10 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
@@ -138,7 +140,7 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
       {/* Most used suggestions */}
       {mostUsed.length > 0 && (
         <div>
-          <p className="text-xs text-gray-400 mb-1.5">Most used</p>
+          <p className="text-xs text-gray-400 mb-1.5">{t('tagInput.mostUsed')}</p>
           <div className="flex flex-wrap gap-1.5">
             {mostUsed.map((t) => (
               <button

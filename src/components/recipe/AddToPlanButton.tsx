@@ -2,6 +2,7 @@
 
 import { useState, useRef, useLayoutEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslations } from 'next-intl'
 import { CalendarPlus } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { AddToPlanPicker } from './AddToPlanPicker'
@@ -15,6 +16,7 @@ const PICKER_WIDTH = 288 // matches w-72 in AddToPlanPicker
 const PICKER_EST_HEIGHT = 320 // enough to decide whether to flip upward
 
 export function AddToPlanButton({ recipeId, variant = 'toolbar' }: AddToPlanButtonProps) {
+  const t = useTranslations('recipes')
   const [open, setOpen] = useState(false)
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -62,11 +64,11 @@ export function AddToPlanButton({ recipeId, variant = 'toolbar' }: AddToPlanButt
             ? 'px-2.5 py-1.5 rounded-full text-xs shadow-sm bg-white text-gray-700 hover:bg-gray-900 hover:text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
             : 'px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-gray-900',
         )}
-        title="Add to weekly plan"
+        title={t('addToPlan.buttonTitle')}
         aria-expanded={open}
       >
         <CalendarPlus size={iconSize} />
-        Add to Plan
+        {t('addToPlan.button')}
       </button>
 
       {open &&

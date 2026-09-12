@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Trash2, Plus, ClipboardPaste, X } from 'lucide-react'
 import type { Step } from '@/types/recipe'
 
@@ -17,6 +18,7 @@ function autoResizeTextarea(el: HTMLTextAreaElement | null) {
 }
 
 export function StepEditor({ steps, onChange }: StepEditorProps) {
+  const t = useTranslations('recipes')
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [isParsing, setIsParsing] = useState(false)
@@ -63,7 +65,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
           autoFocus
           value={pasteText}
           onChange={(e) => setPasteText(e.target.value)}
-          placeholder={"1. Preheat the oven to 200°C.\n2. Mix flour and butter until crumbly.\n3. Add eggs and stir until combined."}
+          placeholder={t('stepEditor.parsePlaceholder')}
           rows={8}
           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 font-mono leading-relaxed resize-y"
         />
@@ -79,7 +81,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
             ) : (
               <ClipboardPaste size={14} />
             )}
-            Parse
+            {t('stepEditor.parse')}
           </button>
           <button
             type="button"
@@ -87,7 +89,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 border border-gray-200 rounded-lg transition-colors"
           >
             <X size={14} />
-            Cancel
+            {t('stepEditor.cancel')}
           </button>
         </div>
       </div>
@@ -106,7 +108,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
             ref={autoResizeTextarea}
             value={step.text}
             onChange={(e) => update(step.id, e.target.value)}
-            placeholder="Describe this step..."
+            placeholder={t('stepEditor.rowPlaceholder')}
             rows={2}
             className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none overflow-hidden leading-relaxed"
             onInput={(e) => autoResizeTextarea(e.currentTarget)}
@@ -116,7 +118,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
             type="button"
             onClick={() => remove(step.id)}
             className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 mt-2 flex-shrink-0"
-            aria-label="Remove step"
+            aria-label={t('stepEditor.removeAria')}
           >
             <Trash2 size={14} />
           </button>
@@ -130,7 +132,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
         >
           <Plus size={14} />
-          Add step
+          {t('stepEditor.add')}
         </button>
         <button
           type="button"
@@ -138,7 +140,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
         >
           <ClipboardPaste size={14} />
-          Paste text
+          {t('stepEditor.pasteText')}
         </button>
       </div>
     </div>

@@ -33,11 +33,11 @@ export default async function RecipeDetailPage({ params }: Props) {
     <div className="flex items-center justify-between mb-6">
       <Link
         href="/recipes"
-        aria-label="All recipes"
+        aria-label={t('detailPage.allRecipesAria')}
         className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition-colors"
       >
         <ChevronLeft size={16} />
-        <span className="hidden sm:inline">All recipes</span>
+        <span className="hidden sm:inline">{t('detailPage.allRecipes')}</span>
       </Link>
       <div className="flex items-center gap-2">
         <AddToPlanButton recipeId={r.id} />
@@ -47,7 +47,7 @@ export default async function RecipeDetailPage({ params }: Props) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <Pencil size={13} />
-          Edit
+          {t('detailPage.edit')}
         </Link>
       </div>
     </div>

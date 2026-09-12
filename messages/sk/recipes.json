@@ -61,5 +61,116 @@
     "saving": "Ukladá sa...",
     "save": "Uložiť",
     "saveRecipe": "Uložiť recept"
+  },
+  "ingredientEditor": {
+    "tapToAdd": "Ťuknutím pridáte surovinu",
+    "removeAria": "Odstrániť surovinu",
+    "editAria": "Upraviť surovinu",
+    "qty": "Množ.",
+    "unit": "Jedn.",
+    "ingredient": "Surovina",
+    "notes": "Poznámky",
+    "done": "Hotovo",
+    "parsePlaceholder": "200g kuracie prsia, nakrájané\n1 PL olivového oleja\nsoľ podľa chuti\n2 strúčiky cesnaku, nasekané",
+    "parse": "Rozpoznať",
+    "cancel": "Zrušiť",
+    "add": "Pridať surovinu",
+    "pasteText": "Vložiť text",
+    "examples": { "qty": "200", "unit": "g", "name": "kuracie prsia", "notes": "nadrobno nakrájaná" }
+  },
+  "stepEditor": {
+    "parsePlaceholder": "1. Rúru predhrejte na 200 °C.\n2. Múku a maslo premiešajte na drobenku.\n3. Pridajte vajcia a premiešajte.",
+    "parse": "Rozpoznať",
+    "cancel": "Zrušiť",
+    "rowPlaceholder": "Popíšte tento krok...",
+    "removeAria": "Odstrániť krok",
+    "add": "Pridať krok",
+    "pasteText": "Vložiť text"
+  },
+  "tagInput": {
+    "placeholder": "Napíšte štítok a stlačte Enter",
+    "helper": "Pridáte stlačením Enter alebo čiarky",
+    "mostUsed": "Najpoužívanejšie"
+  },
+  "imageUpload": {
+    "tooLarge": "Obrázok musí mať menej ako {maxSizeMb} MB",
+    "uploadFailedPrefix": "Nahrávanie zlyhalo — ",
+    "removeAria": "Odstrániť obrázok",
+    "uploading": "Nahrávanie...",
+    "addPhoto": "Pridať fotku",
+    "dragDrop": "alebo sem presuňte súbor",
+    "alt": "Recept"
+  },
+  "delete": {
+    "confirmTitle": "Odstrániť tento recept?",
+    "confirmYes": "Áno, odstrániť",
+    "cancel": "Zrušiť",
+    "button": "Odstrániť"
+  },
+  "share": {
+    "genericError": "Niečo sa pokazilo. Skúste to znova.",
+    "button": "Zdieľať",
+    "dialogTitle": "Zdieľať recept",
+    "closeAria": "Zavrieť",
+    "description": "Ktokoľvek s týmto odkazom si môže recept pozrieť.",
+    "linkAria": "Odkaz na zdieľanie",
+    "disable": "Vypnúť zdieľanie",
+    "copied": "Skopírované",
+    "copyLink": "Kopírovať odkaz",
+    "creating": "Vytváram odkaz…",
+    "createLink": "Vytvoriť odkaz na zdieľanie",
+    "copyFailed": "Odkaz sa nepodarilo skopírovať. Označte ho a skopírujte ručne."
+  },
+  "addToPlan": {
+    "buttonTitle": "Pridať do týždenného plánu",
+    "button": "Pridať do plánu",
+    "thisWeek": "tento týždeň",
+    "nextWeek": "budúci týždeň",
+    "change": "Zmeniť",
+    "viewPlan": "Zobraziť plán",
+    "heading": "Pridať do plánu",
+    "thisWeekChip": "Tento týždeň",
+    "nextWeekChip": "Budúci týždeň",
+    "earlierWeekAria": "Skorší týždeň",
+    "laterWeekAria": "Neskorší týždeň",
+    "addTo": "Pridať na {weekday} {day}",
+    "adding": "Pridávam…",
+    "added": "Pridané na {weekday} {day} · {week}"
+  },
+  "detailPage": {
+    "allRecipesAria": "Všetky recepty",
+    "allRecipes": "Všetky recepty",
+    "edit": "Upraviť"
+  },
+  "editPage": {
+    "backToRecipe": "Späť na recept",
+    "heading": "Upraviť recept"
+  },
+  "newPage": {
+    "heading": "Nový recept",
+    "subtitle": "Pridajte recept od začiatku"
+  },
+  "import": {
+    "rateLimitTitle": "Dosiahnutý limit prekladov",
+    "unavailableTitle": "Preklad nedostupný",
+    "timedOutTitle": "Vypršal čas na preklad",
+    "failedTitle": "Preklad zlyhal",
+    "couldNotImport": "Túto URL sa nepodarilo importovať",
+    "genericError": "Niečo sa pokazilo. Skúste to znova.",
+    "reviewHeading": "Skontrolujte importovaný recept",
+    "reviewSubtitle": "Pred uložením skontrolujte a upravte údaje",
+    "translationErrorHeading": "Importovať recept",
+    "translationErrorBody": "Recept sa podarilo importovať, ale nepodarilo sa ho preložiť. Preklad môžete skúsiť znova, ponechať recept v pôvodnom jazyku alebo import zrušiť.",
+    "retryTranslation": "Skúsiť preklad znova",
+    "keepAsIs": "Ponechať tak",
+    "cancel": "Zrušiť",
+    "importingHeading": "Importovať recept",
+    "starting": "Spúšťam...",
+    "idleSubtitle": "Vložte odkaz z ľubovoľnej stránky s receptami",
+    "urlPlaceholder": "https://www.bbcgoodfood.com/recipes/...",
+    "importButton": "Importovať",
+    "addManually": "Radšej pridať recept ručne",
+    "worksWellWith": "Funguje dobre s",
+    "worksWellWithOther": "a väčšinou stránok s receptami so štruktúrovanými dátami"
   }
 }

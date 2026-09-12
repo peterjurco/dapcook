@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   getWeekStart,
@@ -28,6 +28,7 @@ interface AddToPlanPickerProps {
 
 export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   const router = useRouter()
+  const t = useTranslations('recipes')
   const locale = useLocale()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -63,8 +64,8 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   }
 
   function weekDescriptor(w: Date): string {
-    if (isCurrentWeek(w)) return 'this week'
-    if (isNextWeek(w)) return 'next week'
+    if (isCurrentWeek(w)) return t('addToPlan.thisWeek')
+    if (isNextWeek(w)) return t('addToPlan.nextWeek')
     return formatWeekLabel(w, locale)
   }
 
@@ -114,7 +115,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
       <div className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
         <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
           <Check size={16} className="text-green-600 flex-shrink-0" />
-          <span>Added to {weekday} {day} · {weekDescriptor(weekStart)}</span>
+          <span>{t('addToPlan.added', { weekday, day, week: weekDescriptor(weekStart) })}</span>
         </div>
         <div className="mt-4 flex gap-2">
           <button
@@ -122,7 +123,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
             onClick={() => setConfirmedDay(null)}
             className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
-            Change
+            {t('addToPlan.change')}
           </button>
           <button
             type="button"
@@ -132,7 +133,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
             }}
             className="flex-1 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700"
           >
-            View plan
+            {t('addToPlan.viewPlan')}
           </button>
         </div>
       </div>
@@ -143,7 +144,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
 
   return (
     <div className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
-      <p className="mb-3 text-sm font-semibold text-gray-900">Add to plan</p>
+      <p className="mb-3 text-sm font-semibold text-gray-900">{t('addToPlan.heading')}</p>
 
       {/* Quick week chips */}
       <div className="mb-3 flex gap-2">
@@ -155,7 +156,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
             isCurrentWeek(weekStart) ? 'bg-gray-900 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}
         >
-          This week
+          {t('addToPlan.thisWeekChip')}
         </button>
         <button
           type="button"
@@ -165,7 +166,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
             isNextWeek(weekStart) ? 'bg-gray-900 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}
         >
-          Next week
+          {t('addToPlan.nextWeekChip')}
         </button>
       </div>
 
@@ -175,7 +176,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
           type="button"
           onClick={() => changeWeek(prevWeekStart(weekStart))}
           disabled={isCurrentWeek(weekStart)}
-          aria-label="Earlier week"
+          aria-label={t('addToPlan.earlierWeekAria')}
           className="text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronLeft size={16} />
@@ -184,7 +185,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
         <button
           type="button"
           onClick={() => changeWeek(nextWeekStart(weekStart))}
-          aria-label="Later week"
+          aria-label={t('addToPlan.laterWeekAria')}
           className="text-gray-400 hover:text-gray-700"
         >
           <ChevronRight size={16} />
@@ -225,7 +226,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
         disabled={submitting}
         className="w-full rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
       >
-        {submitting ? 'Adding…' : `Add to ${selectedLabel.weekday} ${selectedLabel.day}`}
+        {submitting ? t('addToPlan.adding') : t('addToPlan.addTo', { weekday: selectedLabel.weekday, day: selectedLabel.day })}
       </button>
     </div>
   )

@@ -2,7 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import React from 'react'
 import { IngredientEditor } from './IngredientEditor'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 import type { IngredientFormItem } from '@/types/recipe'
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+}))
 
 // Capture the onDragEnd handler passed to DndContext so tests can invoke it directly
 let capturedOnDragEnd: ((event: { active: { id: string }; over: { id: string } | null }) => void) | undefined

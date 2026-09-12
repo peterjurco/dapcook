@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Check, Copy, Link2Off, Share2, X } from 'lucide-react'
 
 interface ShareRecipeButtonProps {
@@ -8,11 +9,11 @@ interface ShareRecipeButtonProps {
   initialShareToken: string | null
 }
 
-const ACTION_ERROR = 'Something went wrong. Try again.'
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeButtonProps) {
+  const t = useTranslations('recipes')
   const [open, setOpen] = useState(false)
   const [shareToken, setShareToken] = useState(initialShareToken)
   const [shareUrl, setShareUrl] = useState('')
@@ -109,7 +110,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
       setShareToken(data.share_token)
       setShareUrl(data.share_url)
     } catch {
-      setError(ACTION_ERROR)
+      setError(t('share.genericError'))
     } finally {
       setLoading(false)
     }
@@ -127,7 +128,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
       setShareToken(null)
       setShareUrl('')
     } catch {
-      setError(ACTION_ERROR)
+      setError(t('share.genericError'))
     } finally {
       setLoading(false)
     }
@@ -141,7 +142,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
       await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
     } catch {
-      setError('Could not copy the link. Select and copy it manually.')
+      setError(t('share.copyFailed'))
     }
   }
 
@@ -154,7 +155,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
         className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
       >
         <Share2 size={13} />
-        Share
+        {t('share.button')}
       </button>
 
       {open && (
@@ -176,11 +177,11 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
           >
             <div className="flex items-start justify-between gap-4">
               <h2 id="share-recipe-title" className="text-lg font-semibold tracking-tight text-gray-900">
-                Share recipe
+                {t('share.dialogTitle')}
               </h2>
               <button
                 type="button"
-                aria-label="Close"
+                aria-label={t('share.closeAria')}
                 disabled={loading}
                 onClick={close}
                 className="-mr-1 -mt-1 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
@@ -191,12 +192,12 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
 
             {shareToken ? (
               <div className="mt-4 space-y-4">
-                <p className="text-sm leading-5 text-gray-500">Anyone with this link can view the recipe.</p>
+                <p className="text-sm leading-5 text-gray-500">{t('share.description')}</p>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
                   <input
                     data-autofocus
                     readOnly
-                    aria-label="Share link"
+                    aria-label={t('share.linkAria')}
                     value={shareUrl}
                     onClick={(event) => event.currentTarget.select()}
                     onFocus={(event) => event.currentTarget.select()}
@@ -211,7 +212,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Link2Off size={14} />
-                    Disable sharing
+                    {t('share.disable')}
                   </button>
                   <button
                     type="button"
@@ -220,7 +221,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'Copied' : 'Copy link'}
+                    {copied ? t('share.copied') : t('share.copyLink')}
                   </button>
                 </div>
               </div>
@@ -234,7 +235,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
                   className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Share2 size={14} />
-                  {loading ? 'Creating link…' : 'Create share link'}
+                  {loading ? t('share.creating') : t('share.createLink')}
                 </button>
               </div>
             )}
