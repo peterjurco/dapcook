@@ -27,7 +27,7 @@ function tagClass(color: string | null) {
 }
 
 function colorFor(name: string, allTags: TagData[]) {
-  return allTags.find((t) => t.name === name)?.color ?? null
+  return allTags.find((tag) => tag.name === name)?.color ?? null
 }
 
 export function TagInput({ tags, onChange, allTags }: TagInputProps) {
@@ -74,12 +74,12 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
 
   // Autocomplete: tags that match input and aren't already selected
   const suggestions = input
-    ? allTags.filter((t) => !tags.includes(t.name) && normalize(t.name).includes(norm))
+    ? allTags.filter((tag) => !tags.includes(tag.name) && normalize(tag.name).includes(norm))
     : []
 
   // Most used: top 8 unused tags shown when input is empty
   const mostUsed = !input
-    ? allTags.filter((t) => t.count > 0 && !tags.includes(t.name)).slice(0, 8)
+    ? allTags.filter((tag) => tag.count > 0 && !tags.includes(tag.name)).slice(0, 8)
     : []
 
   const showDropdown = open && suggestions.length > 0
@@ -119,18 +119,18 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
 
         {showDropdown && (
           <div className="absolute z-10 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-            {suggestions.map((t) => (
+            {suggestions.map((tag) => (
               <button
-                key={t.name}
+                key={tag.name}
                 type="button"
-                onMouseDown={(e) => { e.preventDefault(); addTag(t.name) }}
+                onMouseDown={(e) => { e.preventDefault(); addTag(tag.name) }}
                 className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 text-left"
               >
-                <span className={`inline-flex items-center gap-1.5 ${tagClass(t.color)}`} style={tagStyle(t.color)}>
-                  {t.color && <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: t.color }} />}
-                  {t.name}
+                <span className={`inline-flex items-center gap-1.5 ${tagClass(tag.color)}`} style={tagStyle(tag.color)}>
+                  {tag.color && <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: tag.color }} />}
+                  {tag.name}
                 </span>
-                <span className="text-xs text-gray-400">{t.count}×</span>
+                <span className="text-xs text-gray-400">{tag.count}×</span>
               </button>
             ))}
           </div>
@@ -142,15 +142,15 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
         <div>
           <p className="text-xs text-gray-400 mb-1.5">{t('tagInput.mostUsed')}</p>
           <div className="flex flex-wrap gap-1.5">
-            {mostUsed.map((t) => (
+            {mostUsed.map((tag) => (
               <button
-                key={t.name}
+                key={tag.name}
                 type="button"
-                onClick={() => addTag(t.name)}
-                className={`${tagClass(t.color)} hover:opacity-75 transition-opacity cursor-pointer`}
-                style={tagStyle(t.color)}
+                onClick={() => addTag(tag.name)}
+                className={`${tagClass(tag.color)} hover:opacity-75 transition-opacity cursor-pointer`}
+                style={tagStyle(tag.color)}
               >
-                {t.name}
+                {tag.name}
               </button>
             ))}
           </div>
