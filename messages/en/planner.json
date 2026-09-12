@@ -48,7 +48,7 @@
   },
   "slotCard": {
     "recipeFallback": "Recipe",
-    "portions": "({count} portions)",
+    "portions": "({count, plural, one {# portion} other {# portions}})",
     "dragAria": "Drag to move",
     "removeAria": "Remove from plan",
     "extendTitle": "Drag to extend or shrink across days",

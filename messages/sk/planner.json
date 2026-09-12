@@ -48,7 +48,7 @@
   },
   "slotCard": {
     "recipeFallback": "Recept",
-    "portions": "({count} porcií)",
+    "portions": "({count, plural, one {# porcia} few {# porcie} other {# porcií}})",
     "dragAria": "Presunúť ťahaním",
     "removeAria": "Odstrániť z plánu",
     "extendTitle": "Ťahaním predĺžite alebo skrátite naprieč dňami",
@@ -64,7 +64,7 @@
   },
   "rules": {
     "heading": "Pravidlá plánovania",
-    "activeCount": "{count} aktívnych",
+    "activeCount": "{count, plural, one {# aktívne} few {# aktívne} other {# aktívnych}}",
     "notEnforcedWarning": "Tieto pravidlá sú uložené, ale zatiaľ sa nevynucujú — plánovanie s AI je pripravovaná funkcia.",
     "noneYet": "Na tento týždeň zatiaľ nie sú žiadne pravidlá.",
     "disableTitle": "Vypnúť pravidlo",
