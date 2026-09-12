@@ -2,17 +2,19 @@
 
 import { signInWithGoogle } from '@/lib/auth/actions'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? undefined
+  const t = useTranslations('auth')
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-sm w-full space-y-8 p-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">dapcook</h1>
-          <p className="mt-2 text-sm text-gray-600">Your shared cookbook & meal planner</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('login.heading')}</h1>
+          <p className="mt-2 text-sm text-gray-600">{t('login.subtitle')}</p>
         </div>
 
         <form action={signInWithGoogle.bind(null, next)}>
@@ -21,7 +23,7 @@ export default function LoginPage() {
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <GoogleIcon />
-            Sign in with Google
+            {t('login.signInGoogle')}
           </button>
         </form>
       </div>

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import OnboardingPage from './page'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -9,6 +11,11 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/auth/actions', () => ({
   createHousehold: vi.fn(),
   joinHousehold: vi.fn(),
+}))
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
 }))
 
 describe('OnboardingPage', () => {
