@@ -20,6 +20,10 @@ Investigation found `LanguageSelector.tsx` is **dead code** — it's not importe
 
 **Plan change:** skip any edit to `LanguageSelector.tsx` (leave the dead file alone — deleting unused code is out of scope for this feature). No relabeling task is needed. The new "Your account" section with "Interface language" is added as originally planned.
 
+## Bug found during execution (fixed between Task 6 and Task 7)
+
+After Task 4/5 shipped, investigation found that `getTranslations()`/`getLocale()` calls in Server Components **without an explicit `locale` argument** (e.g. Task 5's `settings/page.tsx`) always silently resolved to English, ignoring `profile.ui_language` — because `src/i18n/request.ts`'s `getRequestConfig` callback only checked the explicit `locale` override and never consulted next-intl's ambient `requestLocale`. Fixed (commits `121da94`, `951f5de`) by: adding `setRequestLocale(locale)` in `src/app/(app)/layout.tsx`, and having `src/i18n/request.ts` fall back to `await requestLocale` via a new `resolveLocale()` helper in `src/i18n/config.ts`. **This means every later task's Server Component `getTranslations()`/`getLocale()` calls (Tasks 8-17) can safely omit an explicit `locale` argument** — the ambient locale now resolves correctly. No task text changes needed as a result; this is purely an infrastructure correction.
+
 ---
 
 ## Part A — Infrastructure
