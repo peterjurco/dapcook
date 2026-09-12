@@ -9,7 +9,8 @@
     "genericError": "Something went wrong. Please try again.",
     "networkError": "Network error. Please try again.",
     "generating": "Generating…",
-    "generate": "Generate shopping list"
+    "generate": "Generate shopping list",
+    "undo": "Undo"
   },
   "client": {
     "headingS": "S",

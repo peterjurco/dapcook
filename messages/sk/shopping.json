@@ -9,7 +9,8 @@
     "genericError": "Niečo sa pokazilo. Skúste to znova.",
     "networkError": "Chyba siete. Skúste to znova.",
     "generating": "Vytváram…",
-    "generate": "Vytvoriť nákupný zoznam"
+    "generate": "Vytvoriť nákupný zoznam",
+    "undo": "Späť"
   },
   "client": {
     "headingS": "N",

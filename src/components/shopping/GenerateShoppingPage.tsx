@@ -216,7 +216,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
                 onClick={() => toggleRemove(entry.key)}
                 className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-700 transition-colors mt-1"
               >
-                {entry.removed ? 'Undo' : <X size={14} />}
+                {entry.removed ? t('generate.undo') : <X size={14} />}
               </button>
             </div>
           ))}
