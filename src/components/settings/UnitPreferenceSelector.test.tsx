@@ -1,6 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { UnitPreferenceSelector } from './UnitPreferenceSelector'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+}))
 
 global.fetch = vi.fn()
 

@@ -19,6 +19,7 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { GroupModal } from './GroupModal'
 import { TagEditModal } from './TagEditModal'
 import type { TagData } from '@/app/api/tags/route'
@@ -83,7 +84,7 @@ function TagPill({ tag, moving, onClick }: { tag: TagData; moving: boolean; onCl
   )
 }
 
-function DropZone({ id, children, empty }: { id: string; children: React.ReactNode; empty: boolean }) {
+function DropZone({ id, children, empty, emptyLabel }: { id: string; children: React.ReactNode; empty: boolean; emptyLabel: string }) {
   const { setNodeRef, isOver } = useDroppable({ id, data: { type: 'zone' } })
   return (
     <div
@@ -93,18 +94,19 @@ function DropZone({ id, children, empty }: { id: string; children: React.ReactNo
       }`}
     >
       {children}
-      {empty && <span className="text-xs text-gray-300 py-1">No tags yet — drag one here</span>}
+      {empty && <span className="text-xs text-gray-300 py-1">{emptyLabel}</span>}
     </div>
   )
 }
 
 interface SortableGroupProps {
+  t: ReturnType<typeof useTranslations>
   group: TagGroup
   onEdit: () => void
   children: React.ReactNode
 }
 
-function SortableGroup({ group, onEdit, children }: SortableGroupProps) {
+function SortableGroup({ t, group, onEdit, children }: SortableGroupProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: group.id,
     data: { type: 'group' },
@@ -121,7 +123,7 @@ function SortableGroup({ group, onEdit, children }: SortableGroupProps) {
         <button
           type="button"
           className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
-          aria-label={`Drag to reorder ${group.name}`}
+          aria-label={t('tagOrganizer.dragGroupAria', { groupName: group.name })}
           {...listeners}
           {...attributes}
         >
@@ -146,6 +148,7 @@ interface TagOrganizerProps {
 }
 
 export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) {
+  const t = useTranslations('settings')
   const [groups, setGroups] = useState<TagGroup[]>(initialGroups)
   const [tags, setTags] = useState<TagData[]>(initialTags)
   const [editingGroup, setEditingGroup] = useState<TagGroup | 'new' | null>(null)
@@ -213,7 +216,7 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
     const res = await fetch(`/api/tag-groups/${group.id}`, { method: 'DELETE' })
     if (!res.ok) return false
     setGroups((prev) => prev.filter((g) => g.id !== group.id))
-    setTags((prev) => prev.map((t) => (t.groupId === group.id ? { ...t, groupId: null } : t)))
+    setTags((prev) => prev.map((tg) => (tg.groupId === group.id ? { ...tg, groupId: null } : tg)))
     return true
   }
 
@@ -239,11 +242,11 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
       )
       if (results.some((r) => !r.ok)) {
         setGroups(previous)
-        flashError("Couldn't reorder groups. Reverted.")
+        flashError(t('tagOrganizer.reorderFailed'))
       }
     } catch {
       setGroups(previous)
-      flashError("Couldn't reorder groups. Reverted.")
+      flashError(t('tagOrganizer.reorderFailed'))
     }
   }
 
@@ -254,24 +257,24 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
       body: JSON.stringify({ newName: updates.name, color: updates.color }),
     })
     if (!res.ok) return false
-    setTags((prev) => prev.map((t) => (t.name === tag.name ? { ...t, name: updates.name, color: updates.color } : t)))
+    setTags((prev) => prev.map((tg) => (tg.name === tag.name ? { ...tg, name: updates.name, color: updates.color } : tg)))
     return true
   }
 
   async function handleTagDelete(tag: TagData): Promise<boolean> {
     const res = await fetch(`/api/tags/${encodeURIComponent(tag.name)}`, { method: 'DELETE' })
     if (!res.ok) return false
-    setTags((prev) => prev.filter((t) => t.name !== tag.name))
+    setTags((prev) => prev.filter((tg) => tg.name !== tag.name))
     return true
   }
 
   async function handleTagMove(tagName: string, targetZoneId: string) {
     const targetGroupId = targetZoneId === UNCATEGORIZED_ZONE ? null : targetZoneId.replace(/^zone:/, '')
-    const tag = tags.find((t) => t.name === tagName)
+    const tag = tags.find((tg) => tg.name === tagName)
     if (!tag || tag.groupId === targetGroupId) return
 
     const previousGroupId = tag.groupId
-    setTags((prev) => prev.map((t) => (t.name === tagName ? { ...t, groupId: targetGroupId } : t)))
+    setTags((prev) => prev.map((tg) => (tg.name === tagName ? { ...tg, groupId: targetGroupId } : tg)))
     setMovingTag(tagName)
 
     const res = await fetch(`/api/tags/${encodeURIComponent(tagName)}`, {
@@ -280,8 +283,8 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
       body: JSON.stringify({ groupId: targetGroupId }),
     })
     if (!res.ok) {
-      setTags((prev) => prev.map((t) => (t.name === tagName ? { ...t, groupId: previousGroupId } : t)))
-      flashError(`Couldn't move "${tagName}". Reverted.`)
+      setTags((prev) => prev.map((tg) => (tg.name === tagName ? { ...tg, groupId: previousGroupId } : tg)))
+      flashError(t('tagOrganizer.moveFailed', { tagName }))
     }
     setMovingTag(null)
   }
@@ -303,11 +306,11 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
     }
   }
 
-  const uncategorized = tags.filter((t) => t.groupId === null)
-  const draggedTag = activeDrag?.type === 'tag' ? tags.find((t) => t.name === activeDrag.id) : undefined
+  const uncategorized = tags.filter((tg) => tg.groupId === null)
+  const draggedTag = activeDrag?.type === 'tag' ? tags.find((tg) => tg.name === activeDrag.id) : undefined
 
   if (tags.length === 0 && groups.length === 0) {
-    return <p className="text-sm text-gray-400">No tags yet. Add some to your recipes.</p>
+    return <p className="text-sm text-gray-400">{t('tagOrganizer.noTags')}</p>
   }
 
   return (
@@ -326,10 +329,10 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
         <SortableContext items={groups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-5">
             {groups.map((group) => {
-              const groupTags = tags.filter((t) => t.groupId === group.id)
+              const groupTags = tags.filter((tg) => tg.groupId === group.id)
               return (
-                <SortableGroup key={group.id} group={group} onEdit={() => setEditingGroup(group)}>
-                  <DropZone id={zoneId(group.id)} empty={groupTags.length === 0}>
+                <SortableGroup key={group.id} t={t} group={group} onEdit={() => setEditingGroup(group)}>
+                  <DropZone id={zoneId(group.id)} empty={groupTags.length === 0} emptyLabel={t('tagOrganizer.emptyZone')}>
                     {groupTags.map((tag) => (
                       <TagPill
                         key={tag.name}
@@ -344,8 +347,8 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
             })}
 
             <div>
-              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-1.5">Uncategorized</p>
-              <DropZone id={UNCATEGORIZED_ZONE} empty={uncategorized.length === 0}>
+              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-1.5">{t('tagOrganizer.uncategorized')}</p>
+              <DropZone id={UNCATEGORIZED_ZONE} empty={uncategorized.length === 0} emptyLabel={t('tagOrganizer.emptyZone')}>
                 {uncategorized.map((tag) => (
                   <TagPill
                     key={tag.name}
@@ -380,7 +383,7 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
         className="mt-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
       >
         <Plus size={14} />
-        New group
+        {t('tagOrganizer.newGroup')}
       </button>
 
       {editingGroup === 'new' && (

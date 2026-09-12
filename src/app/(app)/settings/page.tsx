@@ -16,7 +16,7 @@ import { isLocale, defaultLocale } from '@/i18n/config'
 
 export default async function SettingsPage() {
   const supabase = createClient()
-  const t = await getTranslations('settings.account')
+  const t = await getTranslations('settings')
 
   const {
     data: { user },
@@ -71,32 +71,32 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-xl mx-auto px-6 pt-6 pb-10 space-y-8">
       <h1 className="text-xl font-semibold text-gray-900 font-fraunces">
-        <span className="text-emerald-700">S</span>ettings
+        <span className="text-emerald-700">{t('page.headingS')}</span>{t('page.headingRest')}
       </h1>
 
       {/* Your account */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('heading')}</h2>
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('account.heading')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
-          <p className="text-xs text-gray-500 mb-1">{t('interfaceLanguage')}</p>
-          <p className="text-xs text-gray-400 mb-2">{t('interfaceLanguageHelp')}</p>
+          <p className="text-xs text-gray-500 mb-1">{t('account.interfaceLanguage')}</p>
+          <p className="text-xs text-gray-400 mb-2">{t('account.interfaceLanguageHelp')}</p>
           <InterfaceLanguageSelector initialValue={isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale} />
         </div>
       </section>
 
       {/* Household */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Household</h2>
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.household')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
           <div>
-            <p className="text-xs text-gray-500 mb-1">Name</p>
+            <p className="text-xs text-gray-500 mb-1">{t('page.name')}</p>
             <p className="text-sm font-medium text-gray-900">{household?.name}</p>
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-2">Translation</p>
+            <p className="text-xs text-gray-500 mb-2">{t('page.translationLabel')}</p>
             <p className="text-xs text-gray-400 mb-2">
-              When enabled, recipes are translated to your chosen language on import. Existing recipes can be updated via bulk translate.
+              {t('page.translationHelp')}
             </p>
             <TranslationSettings
               initialEnabled={household?.translation_enabled ?? false}
@@ -107,9 +107,9 @@ export default async function SettingsPage() {
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-2">Preferred units</p>
+            <p className="text-xs text-gray-500 mb-2">{t('page.unitsLabel')}</p>
             <p className="text-xs text-gray-400 mb-2">
-              Applied when importing new recipes.
+              {t('page.unitsHelp')}
             </p>
             <UnitPreferenceSelector
               initialValue={household?.preferred_units ?? 'metric'}
@@ -120,9 +120,9 @@ export default async function SettingsPage() {
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-2">Invite link</p>
+            <p className="text-xs text-gray-500 mb-2">{t('page.inviteLinkLabel')}</p>
             <p className="text-xs text-gray-400 mb-2">
-              Share this link with anyone you want to join this household.
+              {t('page.inviteLinkHelp')}
             </p>
             <InviteLink url={inviteUrl} />
           </div>
@@ -131,10 +131,10 @@ export default async function SettingsPage() {
 
       {/* Tags */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Tags</h2>
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.tags')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-xs text-gray-400 mb-4">
-            Assign colors, rename, or remove tags. Renaming or deleting updates all recipes.
+            {t('page.tagsHelp')}
           </p>
           <TagOrganizer initialGroups={tagGroups ?? []} initialTags={allTags} />
         </div>
@@ -142,10 +142,10 @@ export default async function SettingsPage() {
 
       {/* Shopping categories */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Shopping categories</h2>
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.shoppingCategories')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-xs text-gray-400 mb-4">
-            Categories group items on your shopping list. Order them to match your supermarket layout. If none are defined, the AI will generate them automatically.
+            {t('page.shoppingCategoriesHelp')}
           </p>
           <ShoppingCategoriesEditor initialCategories={shoppingCategories ?? []} />
         </div>
@@ -153,10 +153,10 @@ export default async function SettingsPage() {
 
       {/* Shopping rules */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Shopping rules</h2>
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.shoppingRules')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-xs text-gray-400 mb-4">
-            These rules are passed to the AI when generating a shopping list. Use them to exclude ingredients or adjust how items are merged.
+            {t('page.shoppingRulesHelp')}
           </p>
           <ShoppingRulesEditor initialRules={shoppingRules ?? []} />
         </div>
@@ -164,10 +164,10 @@ export default async function SettingsPage() {
 
       {/* Planner rules */}
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Planner rules</h2>
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.plannerRules')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-xs text-gray-400 mb-4">
-            Planner rules will guide the AI when it generates weekly plans — coming soon.
+            {t('page.plannerRulesHelp')}
           </p>
           <PlannerRulesEditor initialRules={plannerRules ?? []} />
         </div>
@@ -176,7 +176,7 @@ export default async function SettingsPage() {
       {/* Members */}
       <section className="space-y-4">
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-          Members ({members?.length ?? 0})
+          {t('page.members', { count: members?.length ?? 0 })}
         </h2>
         <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
           {members?.map((member) => (
@@ -185,7 +185,7 @@ export default async function SettingsPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={member.avatar_url}
-                  alt={member.display_name ?? 'Member'}
+                  alt={member.display_name ?? t('page.memberFallbackAlt')}
                   className="w-8 h-8 rounded-full"
                 />
               ) : (
@@ -195,9 +195,9 @@ export default async function SettingsPage() {
               )}
               <div>
                 <p className="text-sm font-medium text-gray-900">
-                  {member.display_name ?? 'Unknown'}
+                  {member.display_name ?? t('page.memberFallbackName')}
                   {member.id === user.id && (
-                    <span className="ml-2 text-xs text-gray-400 font-normal">you</span>
+                    <span className="ml-2 text-xs text-gray-400 font-normal">{t('page.you')}</span>
                   )}
                 </p>
               </div>
@@ -213,7 +213,7 @@ export default async function SettingsPage() {
             type="submit"
             className="w-full bg-white border border-gray-200 rounded-xl px-5 py-3 text-sm text-gray-500 hover:text-gray-700 transition-colors text-left"
           >
-            Sign out
+            {t('page.signOut')}
           </button>
         </form>
       </section>

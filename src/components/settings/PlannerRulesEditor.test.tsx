@@ -1,7 +1,14 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { PlannerRulesEditor } from './PlannerRulesEditor'
+import { mockTranslate } from '@/test/mockMessages'
 import type { PlannerRule } from '@/types/database'
+import type { TranslationValues } from 'use-intl'
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+}))
 
 function rule(p: { id: string; label: string; is_active?: boolean }): PlannerRule {
   return {

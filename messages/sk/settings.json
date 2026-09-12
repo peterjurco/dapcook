@@ -3,5 +3,116 @@
     "heading": "Váš účet",
     "interfaceLanguage": "Jazyk rozhrania",
     "interfaceLanguageHelp": "Platí iba pre vás — ostatní členovia domácnosti majú vlastné nastavenie."
+  },
+  "bulkTransform": {
+    "translateAndConvert": "Prekladám a prevádzam",
+    "translate": "Prekladám",
+    "convertUnits": "Prevádzam jednotky",
+    "done": "Hotovo",
+    "closeAria": "Zavrieť",
+    "progress": "{label} recepty…",
+    "completedUpdated": "Aktualizovaných: {count}.",
+    "completedWithFailures": "Aktualizovaných: {count}, zlyhalo: {failed}."
+  },
+  "confirmTransform": {
+    "message": "{count, plural, one {Aktualizuje sa # recept.} few {Aktualizujú sa # recepty.} other {Aktualizuje sa # receptov.}} Môže to chvíľu trvať.",
+    "notNow": "Teraz nie"
+  },
+  "groupModal": {
+    "nameLabel": "Názov skupiny",
+    "namePlaceholder": "napr. Chod",
+    "emptyNameError": "Názov nesmie byť prázdny.",
+    "saveError": "Uloženie zlyhalo. Skúste to znova.",
+    "deleteError": "Odstránenie zlyhalo. Skúste to znova.",
+    "deleteTitle": "Odstrániť skupinu",
+    "create": "Vytvoriť",
+    "save": "Uložiť",
+    "deleteConfirm": "Odstrániť skupinu „{name}“? Štítky zostanú na receptoch a stanú sa nezaradenými.",
+    "deleteConfirmLabel": "Odstrániť"
+  },
+  "inviteLink": {
+    "copied": "Skopírované",
+    "copy": "Kopírovať"
+  },
+  "plannerRules": {
+    "disableTitle": "Vypnúť pravidlo",
+    "enableTitle": "Zapnúť pravidlo",
+    "notice": "Pridávanie pravidiel bude dostupné po spustení plánovania s AI."
+  },
+  "shoppingCategories": {
+    "empty": "Nie sú definované žiadne kategórie. AI ich vygeneruje automaticky pri prvom použití funkcie „Zjednodušiť“.",
+    "dragAria": "Presunúť ťahaním",
+    "changeColorTitle": "Zmeniť farbu",
+    "removeColorTitle": "Odstrániť farbu",
+    "renameTitle": "Premenovať",
+    "deleteTitle": "Odstrániť",
+    "namePlaceholder": "Názov kategórie",
+    "add": "Pridať",
+    "addCategory": "Pridať kategóriu",
+    "deleteConfirm": "Odstrániť kategóriu „{name}“? Položky s touto kategóriou zostanú, ale stanú sa nezaradenými.",
+    "deleteConfirmLabel": "Odstrániť"
+  },
+  "shoppingRules": {
+    "removeAria": "Odstrániť pravidlo",
+    "placeholder": "napr. Nezahŕňať vodu",
+    "add": "Pridať pravidlo"
+  },
+  "tagEditModal": {
+    "nameLabel": "Názov",
+    "colorLabel": "Farba",
+    "emptyNameError": "Názov nesmie byť prázdny.",
+    "saveError": "Uloženie zlyhalo. Skúste to znova.",
+    "deleteError": "Odstránenie zlyhalo. Skúste to znova.",
+    "noColorTitle": "Bez farby",
+    "deleteTitle": "Odstrániť štítok",
+    "save": "Uložiť",
+    "removeFromRecipesConfirm": "Odstrániť štítok „{name}“ zo všetkých receptov? Túto akciu nemožno vrátiť späť.",
+    "deleteUnusedConfirm": "Odstrániť nepoužívaný štítok „{name}“?",
+    "deleteConfirmLabel": "Odstrániť"
+  },
+  "tagOrganizer": {
+    "noTags": "Zatiaľ žiadne štítky. Pridajte nejaké k svojim receptom.",
+    "emptyZone": "Zatiaľ žiadne štítky — presuňte sem jeden",
+    "dragGroupAria": "Presunúť ťahaním {groupName}",
+    "uncategorized": "Nezaradené",
+    "newGroup": "Nová skupina",
+    "reorderFailed": "Zmenu poradia skupín sa nepodarilo uložiť. Vrátené späť.",
+    "moveFailed": "Presun „{tagName}“ zlyhal. Vrátené späť."
+  },
+  "translation": {
+    "toggleLabel": "Prekladať importované recepty",
+    "confirmMessage": "Preložiť vaše recepty do jazyka {language}?",
+    "confirmLabel": "Preložiť všetko"
+  },
+  "units": {
+    "metric": "metrické",
+    "imperial": "imperiálne",
+    "confirmMessage": "Previesť vaše recepty na jednotky {units}?",
+    "confirmLabel": "Previesť všetko"
+  },
+  "page": {
+    "headingS": "N",
+    "headingRest": "astavenia",
+    "household": "Domácnosť",
+    "name": "Názov",
+    "translationLabel": "Preklad",
+    "translationHelp": "Ak je zapnuté, recepty sa pri importe preložia do zvoleného jazyka. Existujúce recepty možno aktualizovať hromadným prekladom.",
+    "unitsLabel": "Preferované jednotky",
+    "unitsHelp": "Použije sa pri importe nových receptov.",
+    "inviteLinkLabel": "Pozývací odkaz",
+    "inviteLinkHelp": "Zdieľajte tento odkaz s kýmkoľvek, koho chcete pozvať do tejto domácnosti.",
+    "tags": "Štítky",
+    "tagsHelp": "Priraďte farby, premenujte alebo odstráňte štítky. Premenovanie alebo odstránenie sa prejaví na všetkých receptoch.",
+    "shoppingCategories": "Nákupné kategórie",
+    "shoppingCategoriesHelp": "Kategórie zoskupujú položky v nákupnom zozname. Usporiadajte ich podľa rozloženia vášho obchodu. Ak žiadne nie sú definované, AI ich vygeneruje automaticky.",
+    "shoppingRules": "Nákupné pravidlá",
+    "shoppingRulesHelp": "Tieto pravidlá sa odovzdávajú AI pri vytváraní nákupného zoznamu. Použite ich na vylúčenie surovín alebo úpravu zlučovania položiek.",
+    "plannerRules": "Pravidlá plánovania",
+    "plannerRulesHelp": "Pravidlá plánovania budú AI usmerňovať pri generovaní týždenných plánov — už čoskoro.",
+    "members": "Členovia ({count})",
+    "memberFallbackAlt": "Člen",
+    "memberFallbackName": "Neznámy",
+    "you": "vy",
+    "signOut": "Odhlásiť sa"
   }
 }

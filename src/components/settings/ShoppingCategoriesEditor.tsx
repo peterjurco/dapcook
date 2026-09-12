@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { X, Check, Pencil, Plus, GripVertical } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { ShoppingCategory } from '@/types/database'
 
@@ -34,6 +35,7 @@ interface Props {
 }
 
 interface RowProps {
+  t: ReturnType<typeof useTranslations>
   cat: ShoppingCategory
   editingId: string | null
   renameValue: string
@@ -47,7 +49,7 @@ interface RowProps {
   onDeleteRequest: (id: string) => void
 }
 
-function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
+function SortableCategoryRow({ t, cat, ...rowProps }: RowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id })
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -69,7 +71,7 @@ function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
       <button
         type="button"
         className="text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
-        aria-label="Drag to reorder"
+        aria-label={t('shoppingCategories.dragAria')}
         {...listeners}
         {...attributes}
       >
@@ -83,7 +85,7 @@ function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
           onClick={() => onColorPickerToggle(cat.id)}
           className="w-5 h-5 rounded-full border border-gray-200 hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all flex-shrink-0"
           style={{ backgroundColor: cat.color ?? '#e5e7eb' }}
-          title="Change color"
+          title={t('shoppingCategories.changeColorTitle')}
         />
         {colorPickerFor === cat.id && (
           <div className="absolute z-10 top-7 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-wrap gap-1.5 w-56">
@@ -105,7 +107,7 @@ function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
                 type="button"
                 onClick={() => onColorChange(cat.id, null)}
                 className="w-6 h-6 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
-                title="Remove color"
+                title={t('shoppingCategories.removeColorTitle')}
               >
                 <X size={10} className="text-gray-400" />
               </button>
@@ -136,7 +138,7 @@ function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
             type="button"
             onClick={() => onRenameStart(cat.id, cat.name)}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-700"
-            title="Rename"
+            title={t('shoppingCategories.renameTitle')}
           >
             <Pencil size={12} />
           </button>
@@ -148,7 +150,7 @@ function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
         type="button"
         onClick={() => onDeleteRequest(cat.id)}
         className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 flex-shrink-0"
-        title="Delete"
+        title={t('shoppingCategories.deleteTitle')}
       >
         <X size={14} />
       </button>
@@ -157,6 +159,7 @@ function SortableCategoryRow({ cat, ...rowProps }: RowProps) {
 }
 
 export function ShoppingCategoriesEditor({ initialCategories }: Props) {
+  const t = useTranslations('settings')
   const [categories, setCategories] = useState<ShoppingCategory[]>(initialCategories)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
@@ -251,7 +254,7 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
     <>
       {categories.length === 0 && !addingNew && (
         <p className="text-sm text-gray-400 mb-3">
-          No categories defined. AI will generate them automatically when you first use &quot;Make smarter&quot;.
+          {t('shoppingCategories.empty')}
         </p>
       )}
 
@@ -261,6 +264,7 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
             {categories.map((cat) => (
               <SortableCategoryRow
                 key={cat.id}
+                t={t}
                 cat={cat}
                 editingId={editingId}
                 renameValue={renameValue}
@@ -289,7 +293,7 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
               if (e.key === 'Enter') handleAdd()
               if (e.key === 'Escape') { setAddingNew(false); setAddName('') }
             }}
-            placeholder="Category name"
+            placeholder={t('shoppingCategories.namePlaceholder')}
             className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
           <button
@@ -297,7 +301,7 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
             onClick={handleAdd}
             className="px-3 py-1.5 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
-            Add
+            {t('shoppingCategories.add')}
           </button>
           <button
             type="button"
@@ -314,14 +318,14 @@ export function ShoppingCategoriesEditor({ initialCategories }: Props) {
           className="mt-3 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
         >
           <Plus size={14} />
-          Add category
+          {t('shoppingCategories.addCategory')}
         </button>
       )}
 
       {deleteTarget && (
         <ConfirmModal
-          message={`Delete category "${categories.find((c) => c.id === deleteTarget)?.name}"? Items with this category will remain but become uncategorized.`}
-          confirmLabel="Delete"
+          message={t('shoppingCategories.deleteConfirm', { name: categories.find((c) => c.id === deleteTarget)?.name ?? '' })}
+          confirmLabel={t('shoppingCategories.deleteConfirmLabel')}
           onConfirm={() => handleDelete(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
         />

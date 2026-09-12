@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X, GripVertical } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { PlannerRule } from '@/types/database'
 import { RULE_TYPES } from '@/types/planner'
 
@@ -10,6 +11,7 @@ interface PlannerRulesEditorProps {
 }
 
 export function PlannerRulesEditor({ initialRules }: PlannerRulesEditorProps) {
+  const t = useTranslations('settings')
   const [rules, setRules] = useState<PlannerRule[]>(initialRules)
 
   async function handleToggle(rule: PlannerRule) {
@@ -41,7 +43,7 @@ export function PlannerRulesEditor({ initialRules }: PlannerRulesEditorProps) {
             className={`w-4 h-4 rounded border flex-shrink-0 transition-colors ${
               rule.is_active ? 'bg-gray-900 border-gray-900' : 'bg-white border-gray-300'
             }`}
-            title={rule.is_active ? 'Disable rule' : 'Enable rule'}
+            title={rule.is_active ? t('plannerRules.disableTitle') : t('plannerRules.enableTitle')}
           >
             {rule.is_active && (
               <svg viewBox="0 0 16 16" fill="none" className="w-full h-full p-0.5">
@@ -55,7 +57,7 @@ export function PlannerRulesEditor({ initialRules }: PlannerRulesEditorProps) {
               {rule.label}
             </p>
             <p className="text-xs text-gray-400">
-              {RULE_TYPES.find((t) => t.value === rule.rule_type)?.label ?? rule.rule_type}
+              {RULE_TYPES.find((rt) => rt.value === rule.rule_type)?.label ?? rule.rule_type}
             </p>
           </div>
 
@@ -71,7 +73,7 @@ export function PlannerRulesEditor({ initialRules }: PlannerRulesEditorProps) {
 
       {/* Adding is disabled until AI planning ships — rules have no effect yet. */}
       <p className="text-sm text-gray-400">
-        Adding rules will be available once AI planning ships.
+        {t('plannerRules.notice')}
       </p>
     </div>
   )

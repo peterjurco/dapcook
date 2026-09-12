@@ -1,6 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { LanguageSelector } from './LanguageSelector'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
+
+// LanguageSelector is unused dead code left over from before the i18n
+// migration (superseded by TranslationSettings), so it isn't itself
+// migrated — but it renders ConfirmTransformModal/BulkTransformModal, which
+// now call useTranslations, so this test still needs the mock.
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+}))
 
 global.fetch = vi.fn()
 

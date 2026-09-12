@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { ShoppingRule } from '@/types/database'
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function ShoppingRulesEditor({ initialRules }: Props) {
+  const t = useTranslations('settings')
   const [rules, setRules] = useState<ShoppingRule[]>(initialRules)
   const [addingRule, setAddingRule] = useState(false)
   const [newRule, setNewRule] = useState('')
@@ -46,7 +48,7 @@ export function ShoppingRulesEditor({ initialRules }: Props) {
               type="button"
               onClick={() => handleDeleteRule(r.id)}
               className="text-gray-400 hover:text-gray-700 transition-colors ml-0.5"
-              aria-label="Remove rule"
+              aria-label={t('shoppingRules.removeAria')}
             >
               <X size={11} />
             </button>
@@ -64,7 +66,7 @@ export function ShoppingRulesEditor({ initialRules }: Props) {
               if (e.key === 'Enter') handleAddRule()
               if (e.key === 'Escape') { setAddingRule(false); setNewRule('') }
             }}
-            placeholder="e.g. Do not include water"
+            placeholder={t('shoppingRules.placeholder')}
             className="flex-1 text-sm px-2.5 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
           <button type="button" onClick={handleAddRule} className="text-gray-500 hover:text-gray-900">
@@ -85,7 +87,7 @@ export function ShoppingRulesEditor({ initialRules }: Props) {
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
         >
           <Plus size={12} />
-          Add rule
+          {t('shoppingRules.add')}
         </button>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { BulkTransformModal } from './BulkTransformModal'
 import { ConfirmTransformModal } from './ConfirmTransformModal'
 
@@ -14,6 +15,7 @@ interface Props {
 type Phase = 'idle' | 'confirm' | 'bulk'
 
 export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage, translationEnabled, recipeIds }: Props) {
+  const t = useTranslations('settings')
   const [value, setValue] = useState<'metric' | 'imperial'>(initialValue)
   const [saving, setSaving] = useState(false)
   const [phase, setPhase] = useState<Phase>('idle')
@@ -62,7 +64,7 @@ export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage,
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
-            {option}
+            {t(`units.${option}`)}
           </button>
         ))}
       </div>
@@ -70,8 +72,8 @@ export function UnitPreferenceSelector({ initialValue, currentPreferredLanguage,
       {phase === 'confirm' && pendingUnits && (
         <ConfirmTransformModal
           recipeCount={recipeIds.length}
-          message={`Convert your recipes to ${pendingUnits} units?`}
-          confirmLabel="Convert all"
+          message={t('units.confirmMessage', { units: t(`units.${pendingUnits}`) })}
+          confirmLabel={t('units.confirmLabel')}
           onConfirm={handleConfirm}
           onCancel={handleCancel}
         />

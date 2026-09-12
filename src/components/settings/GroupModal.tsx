@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 interface GroupModalProps {
@@ -13,6 +14,8 @@ interface GroupModalProps {
 }
 
 export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModalProps) {
+  const t = useTranslations('settings')
+  const tCommon = useTranslations('common')
   const isEdit = initialName !== undefined
   const [name, setName] = useState(initialName ?? '')
   const [saving, setSaving] = useState(false)
@@ -32,7 +35,7 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
   async function handleSave() {
     const trimmed = name.trim()
     if (!trimmed) {
-      setError('Name cannot be empty.')
+      setError(t('groupModal.emptyNameError'))
       return
     }
     setSaving(true)
@@ -40,7 +43,7 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
     const ok = await onSave(trimmed)
     setSaving(false)
     if (ok) onClose()
-    else setError("Couldn't save. Try again.")
+    else setError(t('groupModal.saveError'))
   }
 
   async function handleDelete() {
@@ -50,7 +53,7 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
     const ok = await onDelete()
     setDeleting(false)
     if (ok) onClose()
-    else setDeleteError("Couldn't delete. Try again.")
+    else setDeleteError(t('groupModal.deleteError'))
   }
 
   return (
@@ -60,13 +63,13 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
     >
       <div className="bg-white rounded-xl shadow-xl p-5 w-80 flex flex-col gap-4">
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Group name</label>
+          <label className="text-xs text-gray-500 mb-1 block">{t('groupModal.nameLabel')}</label>
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-            placeholder="e.g. Course"
+            placeholder={t('groupModal.namePlaceholder')}
             disabled={saving}
             className="w-full text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-50"
           />
@@ -81,7 +84,7 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
               onClick={() => setConfirmingDelete(true)}
               disabled={saving}
               className="text-gray-300 hover:text-red-500 transition-colors disabled:opacity-50"
-              title="Delete group"
+              title={t('groupModal.deleteTitle')}
             >
               <Trash2 size={16} />
             </button>
@@ -93,7 +96,7 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
               disabled={saving}
               className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              Cancel
+              {tCommon('actions.cancel')}
             </button>
             <button
               type="button"
@@ -102,7 +105,7 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
               className="px-3 py-1.5 text-sm rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
             >
               {saving && <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-              {isEdit ? 'Save' : 'Create'}
+              {isEdit ? t('groupModal.save') : t('groupModal.create')}
             </button>
           </div>
         </div>
@@ -110,8 +113,8 @@ export function GroupModal({ initialName, onSave, onDelete, onClose }: GroupModa
 
       {confirmingDelete && (
         <ConfirmModal
-          message={`Delete the group "${initialName}"? Its tags stay on your recipes and simply become uncategorized.`}
-          confirmLabel="Delete"
+          message={t('groupModal.deleteConfirm', { name: initialName ?? '' })}
+          confirmLabel={t('groupModal.deleteConfirmLabel')}
           pending={deleting}
           error={deleteError}
           onConfirm={handleDelete}

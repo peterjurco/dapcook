@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { BulkTransformModal } from './BulkTransformModal'
 import { ConfirmTransformModal } from './ConfirmTransformModal'
 import { SUPPORTED_LANGUAGES } from '@/lib/constants/languages'
@@ -15,6 +16,7 @@ interface Props {
 type Phase = 'idle' | 'confirm' | 'bulk'
 
 export function TranslationSettings({ initialEnabled, initialLanguage, currentPreferredUnits, recipeIds }: Props) {
+  const t = useTranslations('settings')
   const [enabled, setEnabled] = useState(initialEnabled)
   const [language, setLanguage] = useState(initialLanguage)
   const [phase, setPhase] = useState<Phase>('idle')
@@ -87,7 +89,7 @@ export function TranslationSettings({ initialEnabled, initialLanguage, currentPr
               }`}
             />
           </button>
-          <span className="text-sm text-gray-700">Translate imported recipes</span>
+          <span className="text-sm text-gray-700">{t('translation.toggleLabel')}</span>
         </label>
 
         {enabled && (
@@ -108,8 +110,8 @@ export function TranslationSettings({ initialEnabled, initialLanguage, currentPr
       {phase === 'confirm' && pendingLanguage && (
         <ConfirmTransformModal
           recipeCount={recipeIds.length}
-          message={`Translate your recipes to ${targetLangLabel}?`}
-          confirmLabel="Translate all"
+          message={t('translation.confirmMessage', { language: targetLangLabel })}
+          confirmLabel={t('translation.confirmLabel')}
           onConfirm={handleConfirm}
           onCancel={handleCancel}
         />

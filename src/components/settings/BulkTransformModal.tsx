@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   recipeIds: string[]
@@ -15,6 +16,7 @@ type ModalState =
   | { phase: 'complete'; updated: number; failed: number }
 
 export function BulkTransformModal({ recipeIds, targetLanguage, targetUnits, onClose }: Props) {
+  const t = useTranslations('settings')
   const [state, setState] = useState<ModalState>({ phase: 'processing', done: 0, total: recipeIds.length })
   const dismissedRef = useRef(false)
 
@@ -56,12 +58,13 @@ export function BulkTransformModal({ recipeIds, targetLanguage, targetUnits, onC
     onClose()
   }
 
-  const label =
+  const labelKey =
     targetLanguage && targetUnits
-      ? 'Translating and converting'
+      ? 'translateAndConvert'
       : targetLanguage
-        ? 'Translating'
-        : 'Converting units'
+        ? 'translate'
+        : 'convertUnits'
+  const label = t(`bulkTransform.${labelKey}`)
 
   return (
     <div
@@ -71,13 +74,13 @@ export function BulkTransformModal({ recipeIds, targetLanguage, targetUnits, onC
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900">
-            {state.phase === 'complete' ? 'Done' : `${label} recipes…`}
+            {state.phase === 'complete' ? t('bulkTransform.done') : t('bulkTransform.progress', { label })}
           </h2>
           <button
             type="button"
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close"
+            aria-label={t('bulkTransform.closeAria')}
           >
             <X size={16} />
           </button>
@@ -100,8 +103,8 @@ export function BulkTransformModal({ recipeIds, targetLanguage, targetUnits, onC
         {state.phase === 'complete' && (
           <p className="text-sm text-gray-500">
             {state.failed === 0
-              ? `${state.updated} updated.`
-              : `${state.updated} updated, ${state.failed} failed.`}
+              ? t('bulkTransform.completedUpdated', { count: state.updated })
+              : t('bulkTransform.completedWithFailures', { count: state.updated, failed: state.failed })}
           </p>
         )}
       </div>

@@ -3,5 +3,116 @@
     "heading": "Your account",
     "interfaceLanguage": "Interface language",
     "interfaceLanguageHelp": "Applies only to you — everyone else in your household keeps their own setting."
+  },
+  "bulkTransform": {
+    "translateAndConvert": "Translating and converting",
+    "translate": "Translating",
+    "convertUnits": "Converting units",
+    "done": "Done",
+    "closeAria": "Close",
+    "progress": "{label} recipes…",
+    "completedUpdated": "{count} updated.",
+    "completedWithFailures": "{count} updated, {failed} failed."
+  },
+  "confirmTransform": {
+    "message": "{count, plural, one {# recipe will be updated.} other {# recipes will be updated.}} This may take a moment.",
+    "notNow": "Not now"
+  },
+  "groupModal": {
+    "nameLabel": "Group name",
+    "namePlaceholder": "e.g. Course",
+    "emptyNameError": "Name cannot be empty.",
+    "saveError": "Couldn't save. Try again.",
+    "deleteError": "Couldn't delete. Try again.",
+    "deleteTitle": "Delete group",
+    "create": "Create",
+    "save": "Save",
+    "deleteConfirm": "Delete the group \"{name}\"? Its tags stay on your recipes and simply become uncategorized.",
+    "deleteConfirmLabel": "Delete"
+  },
+  "inviteLink": {
+    "copied": "Copied",
+    "copy": "Copy"
+  },
+  "plannerRules": {
+    "disableTitle": "Disable rule",
+    "enableTitle": "Enable rule",
+    "notice": "Adding rules will be available once AI planning ships."
+  },
+  "shoppingCategories": {
+    "empty": "No categories defined. AI will generate them automatically when you first use \"Make smarter\".",
+    "dragAria": "Drag to reorder",
+    "changeColorTitle": "Change color",
+    "removeColorTitle": "Remove color",
+    "renameTitle": "Rename",
+    "deleteTitle": "Delete",
+    "namePlaceholder": "Category name",
+    "add": "Add",
+    "addCategory": "Add category",
+    "deleteConfirm": "Delete category \"{name}\"? Items with this category will remain but become uncategorized.",
+    "deleteConfirmLabel": "Delete"
+  },
+  "shoppingRules": {
+    "removeAria": "Remove rule",
+    "placeholder": "e.g. Do not include water",
+    "add": "Add rule"
+  },
+  "tagEditModal": {
+    "nameLabel": "Name",
+    "colorLabel": "Color",
+    "emptyNameError": "Name cannot be empty.",
+    "saveError": "Couldn't save. Try again.",
+    "deleteError": "Couldn't delete. Try again.",
+    "noColorTitle": "No color",
+    "deleteTitle": "Delete tag",
+    "save": "Save",
+    "removeFromRecipesConfirm": "Remove tag \"{name}\" from all recipes? This cannot be undone.",
+    "deleteUnusedConfirm": "Delete unused tag \"{name}\"?",
+    "deleteConfirmLabel": "Delete"
+  },
+  "tagOrganizer": {
+    "noTags": "No tags yet. Add some to your recipes.",
+    "emptyZone": "No tags yet — drag one here",
+    "dragGroupAria": "Drag to reorder {groupName}",
+    "uncategorized": "Uncategorized",
+    "newGroup": "New group",
+    "reorderFailed": "Couldn't reorder groups. Reverted.",
+    "moveFailed": "Couldn't move \"{tagName}\". Reverted."
+  },
+  "translation": {
+    "toggleLabel": "Translate imported recipes",
+    "confirmMessage": "Translate your recipes to {language}?",
+    "confirmLabel": "Translate all"
+  },
+  "units": {
+    "metric": "metric",
+    "imperial": "imperial",
+    "confirmMessage": "Convert your recipes to {units} units?",
+    "confirmLabel": "Convert all"
+  },
+  "page": {
+    "headingS": "S",
+    "headingRest": "ettings",
+    "household": "Household",
+    "name": "Name",
+    "translationLabel": "Translation",
+    "translationHelp": "When enabled, recipes are translated to your chosen language on import. Existing recipes can be updated via bulk translate.",
+    "unitsLabel": "Preferred units",
+    "unitsHelp": "Applied when importing new recipes.",
+    "inviteLinkLabel": "Invite link",
+    "inviteLinkHelp": "Share this link with anyone you want to join this household.",
+    "tags": "Tags",
+    "tagsHelp": "Assign colors, rename, or remove tags. Renaming or deleting updates all recipes.",
+    "shoppingCategories": "Shopping categories",
+    "shoppingCategoriesHelp": "Categories group items on your shopping list. Order them to match your supermarket layout. If none are defined, the AI will generate them automatically.",
+    "shoppingRules": "Shopping rules",
+    "shoppingRulesHelp": "These rules are passed to the AI when generating a shopping list. Use them to exclude ingredients or adjust how items are merged.",
+    "plannerRules": "Planner rules",
+    "plannerRulesHelp": "Planner rules will guide the AI when it generates weekly plans — coming soon.",
+    "members": "Members ({count})",
+    "memberFallbackAlt": "Member",
+    "memberFallbackName": "Unknown",
+    "you": "you",
+    "signOut": "Sign out"
   }
 }

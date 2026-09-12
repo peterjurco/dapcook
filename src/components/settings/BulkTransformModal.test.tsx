@@ -2,6 +2,13 @@ import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BulkTransformModal } from './BulkTransformModal'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+}))
 
 global.fetch = vi.fn()
 
