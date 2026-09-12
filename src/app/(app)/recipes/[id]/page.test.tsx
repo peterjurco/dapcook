@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import RecipeDetailPage from './page'
+import { mockTranslate } from '@/test/mockMessages'
 import type { Recipe } from '@/types/database'
 
 const recipe = {
@@ -32,7 +33,10 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-vi.mock('next-intl/server', () => ({ getLocale: async () => 'en' }))
+vi.mock('next-intl/server', () => ({
+  getLocale: async () => 'en',
+  getTranslations: async ({ namespace }: { namespace: string }) => (key: string) => mockTranslate(namespace, key),
+}))
 
 vi.mock('next/link', () => ({
   default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (

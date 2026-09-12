@@ -1,8 +1,14 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { RecipeView } from './RecipeView'
+import { mockTranslate } from '@/test/mockMessages'
 import type { Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
+
+// RecipeView is a synchronous Server Component — it receives its
+// translation function as a prop (resolved by its callers via
+// getTranslations) rather than calling a hook, so tests pass one directly.
+const t = (key: string) => mockTranslate('recipes', key)
 
 const recipe = {
   id: 'recipe-1',
@@ -35,7 +41,7 @@ const recipe = {
 
 describe('RecipeView', () => {
   it('presents the complete recipe without application actions', () => {
-    render(<RecipeView recipe={recipe} locale="en" />)
+    render(<RecipeView recipe={recipe} locale="en" t={t} />)
 
     expect(screen.getByRole('img', { name: 'Tomato Pasta' })).toHaveAttribute(
       'src',
@@ -69,7 +75,7 @@ describe('RecipeView', () => {
   })
 
   it('preserves Markdown note links in authenticated mode', () => {
-    render(<RecipeView recipe={{ ...recipe, notes: 'See [timing tips](https://notes.test/timing).' }} locale="en" />)
+    render(<RecipeView recipe={{ ...recipe, notes: 'See [timing tips](https://notes.test/timing).' }} locale="en" t={t} />)
 
     expect(screen.getByRole('link', { name: 'timing tips' })).toHaveAttribute(
       'href',
@@ -86,14 +92,14 @@ describe('RecipeView', () => {
       },
     }
 
-    render(<RecipeView recipe={recipe} taxonomy={taxonomy} locale="en" />)
+    render(<RecipeView recipe={recipe} taxonomy={taxonomy} locale="en" t={t} />)
 
     expect(screen.getByText('quick')).toHaveStyle({ color: '#b45309' })
     expect(screen.getByText('vegetarian')).toHaveStyle({ color: '#047857' })
   })
 
   it('falls back to a neutral chip for tags with no configured color', () => {
-    render(<RecipeView recipe={recipe} locale="en" />)
+    render(<RecipeView recipe={recipe} locale="en" t={t} />)
 
     expect(screen.getByText('quick')).toHaveClass('bg-gray-100', 'text-gray-600')
     expect(screen.getByText('vegetarian')).toHaveClass('bg-gray-100', 'text-gray-600')
@@ -105,6 +111,7 @@ describe('RecipeView', () => {
         recipe={{ ...recipe, notes: 'See [timing tips](https://notes.test/timing).' }}
         mode="public"
         locale="en"
+        t={t}
       />
     )
 

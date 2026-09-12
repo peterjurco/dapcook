@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Search, Import, Plus, SlidersHorizontal } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
 import { RecipeFiltersModal } from './RecipeFiltersModal'
@@ -27,11 +28,13 @@ function FiltersButton({
   showLabel,
   count,
   onClick,
+  label,
 }: {
   testId: string
   showLabel: boolean
   count: number
   onClick: () => void
+  label: string
 }) {
   return (
     <button
@@ -41,7 +44,7 @@ function FiltersButton({
       className="relative inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors flex-shrink-0"
     >
       <SlidersHorizontal size={14} />
-      {showLabel && 'Filters'}
+      {showLabel && label}
       {count > 0 && (
         <span className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center text-[10px] font-semibold bg-gray-900 text-white rounded-full">
           {count}
@@ -52,6 +55,7 @@ function FiltersButton({
 }
 
 export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps) {
+  const t = useTranslations('recipes')
   const knownTags = tagsByUsage(recipes)
   const initialDefault = sanitizeDefaultFilter(defaultFilter, knownTags)
   const initialRowTags = [...initialDefault, ...knownTags.filter((t) => !initialDefault.includes(t))]
@@ -153,7 +157,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
       {/* Header */}
       <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-fraunces flex-shrink-0">
-          <span className="text-emerald-700">R</span>ecipes
+          <span className="text-emerald-700">{t('list.headingR')}</span>{t('list.headingRest')}
         </h1>
 
         {/* Search — desktop only */}
@@ -163,7 +167,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search recipes..."
+            placeholder={t('list.searchPlaceholder')}
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
         </div>
@@ -174,15 +178,15 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <Import size={14} />
-            Import
+            {t('list.import')}
           </Link>
           <Link
             href="/recipes/new"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Plus size={14} />
-            <span className="hidden sm:inline">New recipe</span>
-            <span className="sm:hidden">New</span>
+            <span className="hidden sm:inline">{t('list.newRecipe')}</span>
+            <span className="sm:hidden">{t('list.new')}</span>
           </Link>
           {/* Filters — mobile only, grouped with the other action buttons
               on the right rather than floating between title and them */}
@@ -192,13 +196,14 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
               showLabel={false}
               count={selection.length}
               onClick={() => setFiltersOpen(true)}
+              label={t('list.filters')}
             />
           </div>
         </div>
       </div>
 
       {defaultBypassed && (
-        <p className="text-xs text-gray-400 mb-3">Searching all recipes, ignoring your default view.</p>
+        <p className="text-xs text-gray-400 mb-3">{t('list.searchingAllNotice')}</p>
       )}
 
       {/* Tag row — as many pills as fit on one line, no scrolling. The
@@ -213,6 +218,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
               showLabel
               count={selection.length}
               onClick={() => setFiltersOpen(true)}
+              label={t('list.filters')}
             />
           </div>
           <RecipeTagStrip tags={rowTags} renderPill={renderPill} onVisibleCountChange={setVisibleRowCount} />
@@ -246,27 +252,27 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
         <div className="text-center py-20 text-gray-400">
           {recipes.length === 0 ? (
             <div>
-              <p className="text-lg font-medium text-gray-500 mb-2">No recipes yet</p>
-              <p className="text-sm mb-6">Import from a URL or add one manually</p>
+              <p className="text-lg font-medium text-gray-500 mb-2">{t('list.emptyHeading')}</p>
+              <p className="text-sm mb-6">{t('list.emptySubtitle')}</p>
               <div className="flex justify-center gap-3">
                 <Link
                   href="/recipes/import"
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   <Import size={15} />
-                  Import recipe
+                  {t('list.importRecipe')}
                 </Link>
                 <Link
                   href="/recipes/new"
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Plus size={15} />
-                  Add manually
+                  {t('list.addManually')}
                 </Link>
               </div>
             </div>
           ) : (
-            <p>No recipes match your search</p>
+            <p>{t('list.noMatch')}</p>
           )}
         </div>
       )}

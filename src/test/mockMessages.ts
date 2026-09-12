@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import { createTranslator, type TranslationValues } from 'use-intl'
+
 /**
  * Real English message catalogs, keyed by next-intl namespace. Used to mock
  * `useTranslations` in component tests so assertions check actual copy
@@ -20,32 +22,49 @@ const messagesByNamespace: Record<string, Record<string, unknown>> = Object.from
   })
 )
 
-function getByPath(obj: unknown, path: string): unknown {
-  return path.split('.').reduce<unknown>((acc, key) => {
-    if (acc && typeof acc === 'object' && key in acc) {
-      return (acc as Record<string, unknown>)[key]
-    }
-    return undefined
-  }, obj)
+// One real next-intl translator per namespace, built from the actual English
+// messages. Using the real translator (rather than a plain dot-path lookup)
+// means ICU features used in the messages — plurals, number/date
+// interpolation — resolve exactly as they do in production.
+const translatorsByNamespace: Record<string, ReturnType<typeof createTranslator>> = {}
+
+function getTranslator(namespace: string) {
+  if (!(namespace in messagesByNamespace)) {
+    throw new Error(`mockTranslate: no message file found for namespace "${namespace}" — is messages/en/${namespace}.json present?`)
+  }
+  if (!translatorsByNamespace[namespace]) {
+    translatorsByNamespace[namespace] = createTranslator({
+      locale: 'en',
+      namespace,
+      messages: { [namespace]: messagesByNamespace[namespace] },
+      // Throw loudly on a missing key instead of use-intl's default
+      // behaviour of logging and falling back to the key path — a typo'd
+      // key should fail the test, not silently render as `namespace.key`.
+      onError: (error) => {
+        throw error
+      },
+    })
+  }
+  return translatorsByNamespace[namespace]
 }
 
 /**
  * Resolves `key` (e.g. `'actions.cancel'`) against the real English messages
- * for `namespace` (e.g. `'common'`). Throws if the key doesn't exist, so a
- * component referencing a key that isn't in the message file fails its test
- * rather than rendering nothing.
+ * for `namespace` (e.g. `'common'`), using the real next-intl translator so
+ * ICU messages (e.g. plurals) are formatted exactly as in production. Pass
+ * `values` for any message that takes interpolation arguments (e.g.
+ * `t('filtersModal.showResults', { count })`). Throws if the key doesn't
+ * exist, so a component referencing a key that isn't in the message file
+ * fails its test rather than rendering nothing.
  *
  * Use in a per-file `vi.mock`:
  * ```ts
  * vi.mock('next-intl', () => ({
- *   useTranslations: (namespace: string) => (key: string) => mockTranslate(namespace, key),
+ *   useTranslations: (namespace: string) => (key: string, values?: Record<string, unknown>) =>
+ *     mockTranslate(namespace, key, values),
  * }))
  * ```
  */
-export function mockTranslate(namespace: string, key: string): string {
-  const value = getByPath(messagesByNamespace[namespace], key)
-  if (typeof value !== 'string') {
-    throw new Error(`mockTranslate: no string found for "${namespace}.${key}" — is the key in messages/en/${namespace}.json?`)
-  }
-  return value
+export function mockTranslate(namespace: string, key: string, values?: TranslationValues): string {
+  return getTranslator(namespace)(key, values) as string
 }

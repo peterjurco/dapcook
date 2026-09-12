@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { usePostHog } from 'posthog-js/react'
 import { ExternalLink, AlertTriangle } from 'lucide-react'
 import { IngredientEditor } from './IngredientEditor'
@@ -44,6 +45,7 @@ function autoResizeTextarea(el: HTMLTextAreaElement | null) {
 export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const router = useRouter()
   const posthog = usePostHog()
+  const t = useTranslations('recipes')
   const isEdit = !!recipe
 
   // Initialise from recipe (edit), draft (import), or empty (new)
@@ -78,7 +80,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) {
-      setError('Title is required')
+      setError(t('form.titleRequired'))
       return
     }
     setSaving(true)
@@ -115,7 +117,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({})) as { error?: string }
-      setError(body.error ?? 'Something went wrong')
+      setError(body.error ?? t('form.genericError'))
       setSaving(false)
       return
     }
@@ -139,7 +141,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
       {draft?.partial && (
         <div className="mb-6 flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
           <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
-          <p>{draft.partial_reason ?? 'Some recipe details could not be extracted — please fill them in manually.'}</p>
+          <p>{draft.partial_reason ?? t('form.draftWarning')}</p>
         </div>
       )}
 
@@ -162,27 +164,27 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
         {/* Basic info */}
         <section className="space-y-4">
           <div>
-            <label htmlFor="title" className={labelClass}>Title *</label>
+            <label htmlFor="title" className={labelClass}>{t('form.titleLabel')}</label>
             <input
               id="title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Segedínsky guláš"
+              placeholder={t('form.titlePlaceholder')}
               required
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="description" className={labelClass}>Description</label>
+            <label htmlFor="description" className={labelClass}>{t('form.descriptionLabel')}</label>
             <textarea
               id="description"
               ref={autoResizeTextarea}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onInput={(e) => autoResizeTextarea(e.currentTarget)}
-              placeholder="A short description of the recipe..."
+              placeholder={t('form.descriptionPlaceholder')}
               rows={2}
               className={inputClass + ' resize-none overflow-hidden'}
             />
@@ -190,38 +192,38 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label htmlFor="prep-time" className={gridLabelClass}>Prep time (min)</label>
+              <label htmlFor="prep-time" className={gridLabelClass}>{t('form.prepTimeLabel')}</label>
               <input
                 id="prep-time"
                 type="number"
                 min={0}
                 value={prepTime}
                 onChange={(e) => setPrepTime(e.target.value)}
-                placeholder="15"
+                placeholder={t('form.prepTimePlaceholder')}
                 className={inputClass}
               />
             </div>
             <div>
-              <label htmlFor="cook-time" className={gridLabelClass}>Cook time (min)</label>
+              <label htmlFor="cook-time" className={gridLabelClass}>{t('form.cookTimeLabel')}</label>
               <input
                 id="cook-time"
                 type="number"
                 min={0}
                 value={cookTime}
                 onChange={(e) => setCookTime(e.target.value)}
-                placeholder="30"
+                placeholder={t('form.cookTimePlaceholder')}
                 className={inputClass}
               />
             </div>
             <div>
-              <label htmlFor="servings" className={gridLabelClass}>Servings</label>
+              <label htmlFor="servings" className={gridLabelClass}>{t('form.servingsLabel')}</label>
               <input
                 id="servings"
                 type="number"
                 min={1}
                 value={servings}
                 onChange={(e) => setServings(e.target.value)}
-                placeholder="4"
+                placeholder={t('form.servingsPlaceholder')}
                 className={inputClass}
               />
             </div>
@@ -229,47 +231,47 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
 
           {/* Tags */}
           <div>
-            <label className={labelClass}>Tags</label>
+            <label className={labelClass}>{t('form.tagsLabel')}</label>
             <TagInput tags={tags} onChange={setTags} allTags={allTags} />
           </div>
         </section>
 
         {/* Ingredients */}
         <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Ingredients</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{t('form.ingredientsHeading')}</h2>
           <IngredientEditor ingredients={ingredients} onChange={setIngredients} />
         </section>
 
         {/* Steps */}
         <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Method</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{t('form.methodHeading')}</h2>
           <StepEditor steps={steps} onChange={setSteps} />
         </section>
 
         {/* Optional fields */}
         <section className="space-y-4 pt-2 border-t border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">Optional</h2>
+          <h2 className="text-base font-semibold text-gray-900">{t('form.optionalHeading')}</h2>
 
           <div>
-            <label htmlFor="notes" className={labelClass}>Notes</label>
+            <label htmlFor="notes" className={labelClass}>{t('form.notesLabel')}</label>
             <textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Personal notes, variations, tips..."
+              placeholder={t('form.notesPlaceholder')}
               rows={3}
               className={inputClass + ' resize-none'}
             />
           </div>
 
           <div>
-            <label className={labelClass}>Image</label>
+            <label className={labelClass}>{t('form.imageLabel')}</label>
             {draft ? (
               <input
                 type="url"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://..."
+                placeholder={t('form.urlPlaceholder')}
                 className={inputClass}
               />
             ) : (
@@ -278,13 +280,13 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
           </div>
 
           <div>
-            <label htmlFor="source-url" className={labelClass}>Source URL</label>
+            <label htmlFor="source-url" className={labelClass}>{t('form.sourceUrlLabel')}</label>
             <input
               id="source-url"
               type="url"
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder={t('form.urlPlaceholder')}
               className={inputClass}
             />
           </div>
@@ -302,14 +304,14 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
               disabled={saving}
               className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {saving ? 'Saving...' : isEdit ? 'Save' : 'Save recipe'}
+              {saving ? t('form.saving') : isEdit ? t('form.save') : t('form.saveRecipe')}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
               className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              Cancel
+              {t('form.cancel')}
             </button>
           </div>
           {isEdit && <DeleteRecipeButton recipeId={recipe.id} />}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import { tagColor, type FilterSections, type Taxonomy } from '@/lib/tags/taxonomy'
 
@@ -31,6 +32,8 @@ export function RecipeFiltersModal({
   onToggleDefault,
   onClose,
 }: RecipeFiltersModalProps) {
+  const t = useTranslations('recipes')
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -68,7 +71,7 @@ export function RecipeFiltersModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Filters"
+        aria-label={t('filtersModal.dialogAria')}
         className="fixed inset-0 bg-white flex flex-col sm:static sm:inset-auto sm:w-[560px] sm:max-h-[85vh] sm:rounded-2xl sm:shadow-xl sm:overflow-hidden"
       >
         {/* Header */}
@@ -76,12 +79,12 @@ export function RecipeFiltersModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close filters"
+            aria-label={t('filtersModal.closeAria')}
             className="text-gray-400 hover:text-gray-700 transition-colors"
           >
             <X size={18} />
           </button>
-          <h2 className="text-sm font-semibold text-gray-900">Filters</h2>
+          <h2 className="text-sm font-semibold text-gray-900">{t('filtersModal.heading')}</h2>
           <div className="w-[18px]" />
         </div>
 
@@ -101,7 +104,7 @@ export function RecipeFiltersModal({
           {sections.ungrouped.length > 0 && (
             <div>
               {sections.groups.length > 0 && (
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Other</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('filtersModal.other')}</p>
               )}
               <div className="flex flex-wrap gap-2">
                 {sections.ungrouped.map(renderPill)}
@@ -110,7 +113,7 @@ export function RecipeFiltersModal({
           )}
 
           {sections.groups.length === 0 && sections.ungrouped.length === 0 && (
-            <p className="text-sm text-gray-400">No tags yet. Add some to your recipes.</p>
+            <p className="text-sm text-gray-400">{t('filtersModal.noTags')}</p>
           )}
         </div>
 
@@ -123,7 +126,7 @@ export function RecipeFiltersModal({
               disabled={selection.length === 0}
               className="text-sm font-medium text-gray-900 underline hover:text-gray-600 transition-colors disabled:opacity-40 disabled:no-underline"
             >
-              Clear all
+              {t('filtersModal.clearAll')}
             </button>
             {showDefaultAction && (
               <button
@@ -132,7 +135,7 @@ export function RecipeFiltersModal({
                 disabled={savingDefault}
                 className="text-sm text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50"
               >
-                {selectionIsDefault ? 'Clear default' : 'Set as default'}
+                {selectionIsDefault ? t('filtersModal.clearDefault') : t('filtersModal.setAsDefault')}
               </button>
             )}
           </div>
@@ -141,7 +144,7 @@ export function RecipeFiltersModal({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
-            Show {resultCount} {resultCount === 1 ? 'recipe' : 'recipes'}
+            {t('filtersModal.showResults', { count: resultCount })}
           </button>
         </div>
       </div>

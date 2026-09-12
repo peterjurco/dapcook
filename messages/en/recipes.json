@@ -1,1 +1,66 @@
-{}
+{
+  "list": {
+    "headingR": "R",
+    "headingRest": "ecipes",
+    "searchPlaceholder": "Search recipes...",
+    "filters": "Filters",
+    "import": "Import",
+    "newRecipe": "New recipe",
+    "new": "New",
+    "searchingAllNotice": "Searching all recipes, ignoring your default view.",
+    "emptyHeading": "No recipes yet",
+    "emptySubtitle": "Import from a URL or add one manually",
+    "importRecipe": "Import recipe",
+    "addManually": "Add manually",
+    "noMatch": "No recipes match your search"
+  },
+  "filtersModal": {
+    "closeAria": "Close filters",
+    "heading": "Filters",
+    "other": "Other",
+    "noTags": "No tags yet. Add some to your recipes.",
+    "clearAll": "Clear all",
+    "clearDefault": "Clear default",
+    "setAsDefault": "Set as default",
+    "dialogAria": "Filters",
+    "showResults": "{count, plural, one {Show # recipe} other {Show # recipes}}"
+  },
+  "view": {
+    "prep": "Prep",
+    "cook": "Cook",
+    "total": "Total",
+    "ingredients": "Ingredients",
+    "method": "Method",
+    "servings": "Servings",
+    "notes": "Notes",
+    "originalRecipe": "Original recipe"
+  },
+  "form": {
+    "titleRequired": "Title is required",
+    "genericError": "Something went wrong",
+    "titleLabel": "Title *",
+    "titlePlaceholder": "e.g. Segedínsky guláš",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "A short description of the recipe...",
+    "prepTimeLabel": "Prep time (min)",
+    "prepTimePlaceholder": "15",
+    "cookTimeLabel": "Cook time (min)",
+    "cookTimePlaceholder": "30",
+    "servingsLabel": "Servings",
+    "servingsPlaceholder": "4",
+    "tagsLabel": "Tags",
+    "ingredientsHeading": "Ingredients",
+    "methodHeading": "Method",
+    "optionalHeading": "Optional",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Personal notes, variations, tips...",
+    "imageLabel": "Image",
+    "sourceUrlLabel": "Source URL",
+    "urlPlaceholder": "https://...",
+    "draftWarning": "Some recipe details could not be extracted — please fill them in manually.",
+    "saving": "Saving...",
+    "save": "Save",
+    "saveRecipe": "Save recipe",
+    "cancel": "Cancel"
+  }
+}

@@ -1,1 +1,66 @@
-{}
+{
+  "list": {
+    "headingR": "R",
+    "headingRest": "ecepty",
+    "searchPlaceholder": "Hľadať recepty...",
+    "filters": "Filtre",
+    "import": "Importovať",
+    "newRecipe": "Nový recept",
+    "new": "Nový",
+    "searchingAllNotice": "Prehľadávam všetky recepty, bez ohľadu na predvolené zobrazenie.",
+    "emptyHeading": "Zatiaľ žiadne recepty",
+    "emptySubtitle": "Importujte z URL alebo pridajte ručne",
+    "importRecipe": "Importovať recept",
+    "addManually": "Pridať ručne",
+    "noMatch": "Vyhľadávaniu nezodpovedajú žiadne recepty"
+  },
+  "filtersModal": {
+    "closeAria": "Zavrieť filtre",
+    "heading": "Filtre",
+    "other": "Ostatné",
+    "noTags": "Zatiaľ žiadne štítky. Pridajte nejaké k svojim receptom.",
+    "clearAll": "Zrušiť všetko",
+    "clearDefault": "Zrušiť predvolené",
+    "setAsDefault": "Nastaviť ako predvolené",
+    "dialogAria": "Filtre",
+    "showResults": "{count, plural, one {Zobraziť # recept} few {Zobraziť # recepty} other {Zobraziť # receptov}}"
+  },
+  "view": {
+    "prep": "Príprava",
+    "cook": "Varenie",
+    "total": "Spolu",
+    "ingredients": "Suroviny",
+    "method": "Postup",
+    "servings": "Porcie",
+    "notes": "Poznámky",
+    "originalRecipe": "Pôvodný recept"
+  },
+  "form": {
+    "titleRequired": "Názov je povinný",
+    "genericError": "Niečo sa pokazilo",
+    "titleLabel": "Názov *",
+    "titlePlaceholder": "napr. Segedínsky guláš",
+    "descriptionLabel": "Popis",
+    "descriptionPlaceholder": "Krátky popis receptu...",
+    "prepTimeLabel": "Príprava (min)",
+    "prepTimePlaceholder": "15",
+    "cookTimeLabel": "Varenie (min)",
+    "cookTimePlaceholder": "30",
+    "servingsLabel": "Porcie",
+    "servingsPlaceholder": "4",
+    "tagsLabel": "Štítky",
+    "ingredientsHeading": "Suroviny",
+    "methodHeading": "Postup",
+    "optionalHeading": "Voliteľné",
+    "notesLabel": "Poznámky",
+    "notesPlaceholder": "Osobné poznámky, obmeny, tipy...",
+    "imageLabel": "Obrázok",
+    "sourceUrlLabel": "Zdrojová URL",
+    "urlPlaceholder": "https://...",
+    "draftWarning": "Niektoré údaje receptu sa nepodarilo vytiahnuť — doplňte ich prosím ručne.",
+    "saving": "Ukladá sa...",
+    "save": "Uložiť",
+    "saveRecipe": "Uložiť recept",
+    "cancel": "Zrušiť"
+  }
+}

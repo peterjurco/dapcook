@@ -14,6 +14,7 @@ interface RecipeViewProps {
   mode?: 'authenticated' | 'public'
   taxonomy?: Taxonomy
   locale: Locale
+  t: (key: string) => string
 }
 
 function formatTime(min: number | null, label: string, locale: Locale) {
@@ -21,14 +22,14 @@ function formatTime(min: number | null, label: string, locale: Locale) {
   return { label, time: formatDuration(min, locale) }
 }
 
-export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonomy = EMPTY_TAXONOMY, locale }: RecipeViewProps) {
+export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonomy = EMPTY_TAXONOMY, locale, t }: RecipeViewProps) {
   const ingredients = (r.ingredients ?? []) as unknown as Ingredient[]
   const steps = (r.steps ?? []) as unknown as Step[]
   const totalTime = (r.prep_time_min ?? 0) + (r.cook_time_min ?? 0)
   const times = [
-    formatTime(r.prep_time_min, 'Prep', locale),
-    formatTime(r.cook_time_min, 'Cook', locale),
-    totalTime > 0 ? formatTime(totalTime, 'Total', locale) : null,
+    formatTime(r.prep_time_min, t('view.prep'), locale),
+    formatTime(r.cook_time_min, t('view.cook'), locale),
+    totalTime > 0 ? formatTime(totalTime, t('view.total'), locale) : null,
   ].filter(Boolean) as { label: string; time: string }[]
 
   return (
@@ -86,7 +87,7 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
               <div className="flex items-center gap-2">
                 <Users size={15} className="text-gray-400" />
                 <div>
-                  <p className="text-xs text-gray-400">Servings</p>
+                  <p className="text-xs text-gray-400">{t('view.servings')}</p>
                   <p className="text-sm font-semibold text-gray-800">{r.servings}</p>
                 </div>
               </div>
@@ -99,7 +100,7 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
           {/* Ingredients */}
           {ingredients.length > 0 && (
             <aside>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Ingredients</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('view.ingredients')}</h2>
               <ul className="space-y-2.5">
                 {ingredients.map((ing) => (
                   <li key={ing.id} className="flex gap-3 text-sm">
@@ -120,7 +121,7 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
           {/* Steps */}
           {steps.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Method</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('view.method')}</h2>
               <ol className="space-y-6">
                 {steps.map((step, index) => (
                   <li key={step.id} className="flex gap-4">
@@ -138,7 +139,7 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
         {/* Notes */}
         {r.notes && (
           <div className="mt-10 p-4 bg-amber-50 border border-amber-100 rounded-lg">
-            <p className="text-sm font-medium text-amber-800 mb-2">Notes</p>
+            <p className="text-sm font-medium text-amber-800 mb-2">{t('view.notes')}</p>
             <div className="text-sm text-amber-700 leading-relaxed">
               <ReactMarkdown
                 components={{
@@ -169,7 +170,7 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
               className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
             >
               <ExternalLink size={13} />
-              Original recipe
+              {t('view.originalRecipe')}
             </a>
           </div>
         )}

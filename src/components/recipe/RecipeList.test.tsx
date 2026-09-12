@@ -3,6 +3,8 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RecipeList } from './RecipeList'
 import { EMPTY_TAXONOMY, type Taxonomy } from '@/lib/tags/taxonomy'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 import type { Recipe } from '@/types/database'
 
 vi.mock('next/link', () => ({
@@ -13,7 +15,11 @@ vi.mock('next/link', () => ({
   ),
 }))
 
-vi.mock('next-intl', () => ({ useLocale: () => 'en' }))
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+  useLocale: () => 'en',
+}))
 
 function makeRecipe(id: string, title: string, tags: string[]): Recipe {
   return {

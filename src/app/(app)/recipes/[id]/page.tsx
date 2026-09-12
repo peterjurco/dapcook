@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { ChevronLeft, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { AddToPlanButton } from '@/components/recipe/AddToPlanButton'
@@ -15,6 +15,7 @@ interface Props {
 
 export default async function RecipeDetailPage({ params }: Props) {
   const locale = await getLocale()
+  const t = await getTranslations({ locale, namespace: 'recipes' })
   const supabase = createClient()
 
   const [{ data: recipe, error }, { data: tagsMeta }, { data: groups }] = await Promise.all([
@@ -52,5 +53,5 @@ export default async function RecipeDetailPage({ params }: Props) {
     </div>
   )
 
-  return <RecipeView recipe={r} toolbar={toolbar} taxonomy={taxonomy} locale={locale} />
+  return <RecipeView recipe={r} toolbar={toolbar} taxonomy={taxonomy} locale={locale} t={t} />
 }

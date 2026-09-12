@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RecipeForm } from './RecipeForm'
+import { mockTranslate } from '@/test/mockMessages'
 import type { Recipe } from '@/types/database'
 import type { RecipeDraft } from '@/types/recipe'
 
@@ -14,6 +15,10 @@ const mockCapture = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, back: mockBack, refresh: mockRefresh }),
+}))
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) => mockTranslate(namespace, key),
 }))
 
 vi.mock('posthog-js/react', () => ({
