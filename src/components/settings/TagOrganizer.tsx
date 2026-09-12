@@ -216,7 +216,7 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
     const res = await fetch(`/api/tag-groups/${group.id}`, { method: 'DELETE' })
     if (!res.ok) return false
     setGroups((prev) => prev.filter((g) => g.id !== group.id))
-    setTags((prev) => prev.map((tg) => (tg.groupId === group.id ? { ...tg, groupId: null } : tg)))
+    setTags((prev) => prev.map((tag) => (tag.groupId === group.id ? { ...tag, groupId: null } : tag)))
     return true
   }
 
@@ -270,11 +270,11 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
 
   async function handleTagMove(tagName: string, targetZoneId: string) {
     const targetGroupId = targetZoneId === UNCATEGORIZED_ZONE ? null : targetZoneId.replace(/^zone:/, '')
-    const tag = tags.find((tg) => tg.name === tagName)
+    const tag = tags.find((tag) => tag.name === tagName)
     if (!tag || tag.groupId === targetGroupId) return
 
     const previousGroupId = tag.groupId
-    setTags((prev) => prev.map((tg) => (tg.name === tagName ? { ...tg, groupId: targetGroupId } : tg)))
+    setTags((prev) => prev.map((tag) => (tag.name === tagName ? { ...tag, groupId: targetGroupId } : tag)))
     setMovingTag(tagName)
 
     const res = await fetch(`/api/tags/${encodeURIComponent(tagName)}`, {
@@ -283,7 +283,7 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
       body: JSON.stringify({ groupId: targetGroupId }),
     })
     if (!res.ok) {
-      setTags((prev) => prev.map((tg) => (tg.name === tagName ? { ...tg, groupId: previousGroupId } : tg)))
+      setTags((prev) => prev.map((tag) => (tag.name === tagName ? { ...tag, groupId: previousGroupId } : tag)))
       flashError(t('tagOrganizer.moveFailed', { tagName }))
     }
     setMovingTag(null)
@@ -306,8 +306,8 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
     }
   }
 
-  const uncategorized = tags.filter((tg) => tg.groupId === null)
-  const draggedTag = activeDrag?.type === 'tag' ? tags.find((tg) => tg.name === activeDrag.id) : undefined
+  const uncategorized = tags.filter((tag) => tag.groupId === null)
+  const draggedTag = activeDrag?.type === 'tag' ? tags.find((tag) => tag.name === activeDrag.id) : undefined
 
   if (tags.length === 0 && groups.length === 0) {
     return <p className="text-sm text-gray-400">{t('tagOrganizer.noTags')}</p>
@@ -329,7 +329,7 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
         <SortableContext items={groups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-5">
             {groups.map((group) => {
-              const groupTags = tags.filter((tg) => tg.groupId === group.id)
+              const groupTags = tags.filter((tag) => tag.groupId === group.id)
               return (
                 <SortableGroup key={group.id} t={t} group={group} onEdit={() => setEditingGroup(group)}>
                   <DropZone id={zoneId(group.id)} empty={groupTags.length === 0} emptyLabel={t('tagOrganizer.emptyZone')}>

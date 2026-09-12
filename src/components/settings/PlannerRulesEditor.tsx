@@ -57,7 +57,7 @@ export function PlannerRulesEditor({ initialRules }: PlannerRulesEditorProps) {
               {rule.label}
             </p>
             <p className="text-xs text-gray-400">
-              {RULE_TYPES.find((rt) => rt.value === rule.rule_type)?.label ?? rule.rule_type}
+              {RULE_TYPES.find((ruleType) => ruleType.value === rule.rule_type)?.label ?? rule.rule_type}
             </p>
           </div>
 
