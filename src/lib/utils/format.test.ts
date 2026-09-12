@@ -24,6 +24,16 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime(5, 'sk')).toBe('pred 5 min')
   })
 
+  it('formats hours ago', () => {
+    expect(formatRelativeTime(90, 'en')).toBe('1h ago')
+    expect(formatRelativeTime(90, 'sk')).toBe('pred 1 h')
+  })
+
+  it('formats days ago', () => {
+    expect(formatRelativeTime(3000, 'en')).toBe('2d ago')
+    expect(formatRelativeTime(3000, 'sk')).toBe('pred 2 d')
+  })
+
   it('formats never', () => {
     expect(formatRelativeTime(null, 'en')).toBe('never')
     expect(formatRelativeTime(null, 'sk')).toBe('nikdy')
