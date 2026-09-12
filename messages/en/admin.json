@@ -1,1 +1,12 @@
-{}
+{
+  "heading": "Admin — Households",
+  "table": {
+    "household": "Household",
+    "members": "Members",
+    "recipes": "Recipes",
+    "lastSignIn": "Last sign-in",
+    "aiTokens": "AI tokens",
+    "estCost": "Est. cost"
+  },
+  "empty": "No households yet."
+}

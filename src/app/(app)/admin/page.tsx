@@ -1,4 +1,4 @@
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatRelativeTime } from '@/lib/utils/format'
 
@@ -26,6 +26,7 @@ function formatCost(inputTokens: number, outputTokens: number): string {
 
 export default async function AdminPage() {
   const locale = await getLocale()
+  const t = await getTranslations('admin')
   const adminClient = createAdminClient()
 
   // All queries use the service role client — ai_usage_logs has no SELECT policy for regular users
@@ -72,17 +73,17 @@ export default async function AdminPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-xl font-semibold text-gray-900 mb-6">Admin — Households</h1>
+      <h1 className="text-xl font-semibold text-gray-900 mb-6">{t('heading')}</h1>
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Household</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Members</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Recipes</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Last sign-in</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">AI tokens</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Est. cost</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-600">{t('table.household')}</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-600">{t('table.members')}</th>
+              <th className="px-4 py-3 text-right font-medium text-gray-600">{t('table.recipes')}</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-600">{t('table.lastSignIn')}</th>
+              <th className="px-4 py-3 text-right font-medium text-gray-600">{t('table.aiTokens')}</th>
+              <th className="px-4 py-3 text-right font-medium text-gray-600">{t('table.estCost')}</th>
             </tr>
           </thead>
           <tbody>
@@ -118,7 +119,7 @@ export default async function AdminPage() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                  No households yet.
+                  {t('empty')}
                 </td>
               </tr>
             )}
