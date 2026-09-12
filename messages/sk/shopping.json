@@ -1,1 +1,52 @@
-{}
+{
+  "generate": {
+    "plannerLink": "Plánovač",
+    "heading": "Vytvoriť nákupný zoznam",
+    "emptyPlan": "V pláne na tento týždeň nie sú žiadne jedlá.",
+    "backToPlanner": "Späť na plánovač",
+    "noServingsWarning": "Počet porcií nie je určený — používa sa 1",
+    "portions": "Porcie",
+    "genericError": "Niečo sa pokazilo. Skúste to znova.",
+    "networkError": "Chyba siete. Skúste to znova.",
+    "generating": "Vytváram…",
+    "generate": "Vytvoriť nákupný zoznam"
+  },
+  "client": {
+    "headingS": "N",
+    "headingRest": "ákupný zoznam",
+    "copied": "Skopírované!",
+    "copy": "Kopírovať",
+    "copyListSuffix": " zoznam",
+    "clear": "Vymazať",
+    "clearListSuffix": " zoznam",
+    "itemCount": "{count, plural, one {# položka} few {# položky} other {# položiek}}",
+    "empty": "Váš nákupný zoznam je prázdny. Pridajte položky ručne alebo ho vytvorte z plánovača.",
+    "addItem": "Pridať položku",
+    "otherCategory": "Ostatné",
+    "clearConfirm": "Odstrániť všetky položky zo zoznamu?",
+    "cancel": "Zrušiť",
+    "clearConfirmLabel": "Vymazať",
+    "copyAria": "Kopírovať zoznam",
+    "copiedAria": "Skopírované!",
+    "clearAria": "Vymazať zoznam"
+  },
+  "itemRow": {
+    "dragAria": "Presunúť ťahaním",
+    "cancelEditAria": "Zrušiť úpravu",
+    "deleteTitle": "Odstrániť",
+    "unknownRecipe": "Neznámy recept",
+    "saveFailed": "Uloženie zlyhalo",
+    "retry": "Skúsiť znova"
+  },
+  "review": {
+    "plannerLink": "Plánovač",
+    "emptyHeading": "Nie je čo skontrolovať.",
+    "backToPlanner": "Späť na plánovač",
+    "emptyTrailing": "a vytvorte zoznam.",
+    "heading": "Skontrolovať nákupný zoznam",
+    "body": "Upravte alebo odškrtnite položky a potom ich pridajte do zoznamu.",
+    "itemCount": "{count, plural, one {# položka} few {# položky} other {# položiek}}",
+    "otherCategory": "Ostatné",
+    "addToList": "{count, plural, one {Pridať # položku do zoznamu} few {Pridať # položky do zoznamu} other {Pridať # položiek do zoznamu}}"
+  }
+}

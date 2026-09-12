@@ -1,11 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { ShoppingClient } from './ShoppingClient'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 import type { ShoppingItem, ShoppingList, ShoppingCategory } from '@/types/database'
 
 const mockCapture = vi.fn()
 const realtime = vi.hoisted(() => ({
   insertHandler: null as null | ((payload: { new: ShoppingItem }) => void),
+}))
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
 }))
 
 vi.mock('posthog-js/react', () => ({
@@ -71,6 +78,20 @@ describe('ShoppingClient', () => {
   it('captures shopping_list_viewed on mount', () => {
     render(<ShoppingClient {...defaultProps} />)
     expect(mockCapture).toHaveBeenCalledWith('shopping_list_viewed')
+  })
+
+  it('pluralizes the item count for singular vs plural', () => {
+    const singular = render(
+      <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
+    )
+    expect(singular.getByText('1 item')).toBeTruthy()
+    singular.unmount()
+
+    const secondItem: ShoppingItem = { ...mockItem, id: 'item-2', name: 'Eggs' }
+    const plural = render(
+      <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem, secondItem]} />
+    )
+    expect(plural.getByText('2 items')).toBeTruthy()
   })
 
   it('shows empty state when there are no items', () => {

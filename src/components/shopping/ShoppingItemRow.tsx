@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { X, Info, GripVertical } from 'lucide-react'
 import type { ShoppingItem } from '@/types/database'
 import { formatQtyUnit } from '@/lib/shopping/format-quantity'
@@ -34,6 +35,7 @@ export function ShoppingItemRow({
   dragHandleListeners, dragHandleAttributes,
   isNewItem, onCreateBelow,
 }: Props) {
+  const t = useTranslations('shopping')
   const [editing, setEditing] = useState(isNewItem ?? false)
   const [editText, setEditText] = useState(() => {
     if (isNewItem) return ''
@@ -103,7 +105,7 @@ export function ShoppingItemRow({
         // Success: parent replaces this item — nothing more to do here
       } catch {
         setSaving(false)
-        setSaveError('Failed to save')
+        setSaveError(t('itemRow.saveFailed'))
       }
     } else {
       // Regular item: optimistic update
@@ -124,7 +126,7 @@ export function ShoppingItemRow({
       )
     } catch {
       setSaving(false)
-      setSaveError('Failed to save')
+      setSaveError(t('itemRow.saveFailed'))
     }
   }
 
@@ -165,7 +167,7 @@ export function ShoppingItemRow({
             <button
               type="button"
               className="self-stretch flex items-center text-gray-300 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
-              aria-label="Drag to reorder"
+              aria-label={t('itemRow.dragAria')}
               {...(dragHandleListeners ?? {})}
               {...(dragHandleAttributes ?? {})}
             >
@@ -197,7 +199,7 @@ export function ShoppingItemRow({
               type="button"
               onMouseDown={(e) => { e.preventDefault(); cancel() }}
               className="text-gray-300 hover:text-gray-700 transition-colors flex-shrink-0"
-              aria-label="Cancel edit"
+              aria-label={t('itemRow.cancelEditAria')}
             >
               <X size={18} />
             </button>
@@ -209,7 +211,7 @@ export function ShoppingItemRow({
               <button
                 type="button"
                 className="self-stretch flex items-center text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
-                aria-label="Drag to reorder"
+                aria-label={t('itemRow.dragAria')}
                 {...(dragHandleListeners ?? {})}
                 {...(dragHandleAttributes ?? {})}
               >
@@ -247,7 +249,7 @@ export function ShoppingItemRow({
                     {/* Tooltip rendered above: z-50 ensures it floats over sibling rows */}
                     <div className="absolute z-50 bottom-full right-0 mb-2 hidden group-hover/tooltip:block">
                       <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 w-max max-w-[200px] break-words shadow-lg">
-                        {item.source_recipe_ids.map((id) => recipeNames[id] ?? 'Unknown recipe').join(', ')}
+                        {item.source_recipe_ids.map((id) => recipeNames[id] ?? t('itemRow.unknownRecipe')).join(', ')}
                         <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-900" />
                       </div>
                     </div>
@@ -260,7 +262,7 @@ export function ShoppingItemRow({
                   onMouseEnter={() => setDeleteHovered(true)}
                   onMouseLeave={() => setDeleteHovered(false)}
                   className={`transition-colors ${deleteHovered ? 'text-red-500' : 'text-gray-300'}`}
-                  title="Delete"
+                  title={t('itemRow.deleteTitle')}
                 >
                   <X size={18} />
                 </button>
@@ -276,7 +278,7 @@ export function ShoppingItemRow({
                   onMouseDown={(e) => { e.preventDefault(); retry() }}
                   className="text-xs text-red-500 underline hover:text-red-700 transition-colors flex-shrink-0"
                 >
-                  Retry
+                  {t('itemRow.retry')}
                 </button>
               </div>
             )}

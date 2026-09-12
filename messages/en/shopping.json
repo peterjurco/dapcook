@@ -1,1 +1,52 @@
-{}
+{
+  "generate": {
+    "plannerLink": "Planner",
+    "heading": "Generate shopping list",
+    "emptyPlan": "No meals in this week's plan.",
+    "backToPlanner": "Go back to the planner",
+    "noServingsWarning": "No servings defined — using 1",
+    "portions": "Portions",
+    "genericError": "Something went wrong. Please try again.",
+    "networkError": "Network error. Please try again.",
+    "generating": "Generating…",
+    "generate": "Generate shopping list"
+  },
+  "client": {
+    "headingS": "S",
+    "headingRest": "hopping List",
+    "copied": "Copied!",
+    "copy": "Copy",
+    "copyListSuffix": " list",
+    "clear": "Clear",
+    "clearListSuffix": " list",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "empty": "Your shopping list is empty. Add items manually or generate from the planner.",
+    "addItem": "Add item",
+    "otherCategory": "Other",
+    "clearConfirm": "Remove all items from the list?",
+    "cancel": "Cancel",
+    "clearConfirmLabel": "Clear",
+    "copyAria": "Copy list",
+    "copiedAria": "Copied!",
+    "clearAria": "Clear list"
+  },
+  "itemRow": {
+    "dragAria": "Drag to reorder",
+    "cancelEditAria": "Cancel edit",
+    "deleteTitle": "Delete",
+    "unknownRecipe": "Unknown recipe",
+    "saveFailed": "Failed to save",
+    "retry": "Retry"
+  },
+  "review": {
+    "plannerLink": "Planner",
+    "emptyHeading": "Nothing to review.",
+    "backToPlanner": "Go back to the planner",
+    "emptyTrailing": "and generate a list.",
+    "heading": "Review shopping list",
+    "body": "Edit or cross off items, then add to your list.",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "otherCategory": "Other",
+    "addToList": "{count, plural, one {Add # item to shopping list} other {Add # items to shopping list}}"
+  }
+}

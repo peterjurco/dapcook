@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 import { usePostHog } from 'posthog-js/react'
 import { Copy, Check, Trash2, Plus } from 'lucide-react'
@@ -62,6 +63,7 @@ function SortableRow({ item, ...rowProps }: SortableRowProps) {
 }
 
 export function ShoppingClient({ initialList, initialItems, initialCategories, initialRecipeNames }: Props) {
+  const t = useTranslations('shopping')
   const [list] = useState<ShoppingList | null>(initialList)
   const [items, setItems] = useState<ShoppingItem[]>(() => {
     const catOrder = new Map(initialCategories.map((c, i) => [c.name, i]))
@@ -291,7 +293,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const visibleItems = items.filter((item) => !item.is_checked)
   const colorMap = new Map(categories.map((c) => [c.name, c.color]))
 
-  const distinctCats = new Set(visibleItems.map((i) => i.category ?? 'Other'))
+  const distinctCats = new Set(visibleItems.map((i) => i.category ?? t('client.otherCategory')))
   const showHeaders = distinctCats.size >= 1
 
   function getListLines() {
@@ -334,35 +336,35 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       {/* Header */}
       <div className="flex items-center justify-between mb-1 px-4 sm:px-0">
         <h1 className="text-xl font-semibold text-gray-900 font-fraunces">
-          <span className="text-emerald-700">S</span>hopping List
+          <span className="text-emerald-700">{t('client.headingS')}</span>{t('client.headingRest')}
         </h1>
         {visibleItems.length > 0 && (
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={copyToClipboard}
-              aria-label={copied ? 'Copied!' : 'Copy list'}
+              aria-label={copied ? t('client.copiedAria') : t('client.copyAria')}
               className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
             >
               {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
-              {copied ? 'Copied!' : <>Copy<span className="hidden sm:inline"> list</span></>}
+              {copied ? t('client.copied') : <>{t('client.copy')}<span className="hidden sm:inline">{t('client.copyListSuffix')}</span></>}
             </button>
             {list && (
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(true)}
-                aria-label="Clear list"
+                aria-label={t('client.clearAria')}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
               >
                 <Trash2 size={15} />
-                Clear<span className="hidden sm:inline"> list</span>
+                {t('client.clear')}<span className="hidden sm:inline">{t('client.clearListSuffix')}</span>
               </button>
             )}
           </div>
         )}
       </div>
       <p className="text-xs text-gray-400 mb-4 px-4 sm:px-0">
-        {visibleItems.length} item{visibleItems.length !== 1 ? 's' : ''}
+        {t('client.itemCount', { count: visibleItems.length })}
       </p>
 
       {/* List card — full-width on mobile, rounded on sm+ */}
@@ -370,7 +372,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
         {visibleItems.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
             <p className="text-sm text-gray-400">
-              Your shopping list is empty. Add items manually or generate from the planner.
+              {t('client.empty')}
             </p>
             <button
               type="button"
@@ -378,7 +380,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <Plus size={15} />
-              Add item
+              {t('client.addItem')}
             </button>
           </div>
         ) : (
@@ -387,8 +389,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
               <div className="px-3 pb-1">
                 {visibleItems.map((item, index) => {
                   const prevItem = index > 0 ? visibleItems[index - 1] : null
-                  const currentCat = item.category ?? 'Other'
-                  const prevCat = prevItem ? (prevItem.category ?? 'Other') : null
+                  const currentCat = item.category ?? t('client.otherCategory')
+                  const prevCat = prevItem ? (prevItem.category ?? t('client.otherCategory')) : null
                   const showHeader = showHeaders && currentCat !== prevCat
                   return (
                     <div key={item.id}>
@@ -432,21 +434,21 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
             className="bg-white rounded-xl p-6 shadow-xl max-w-sm mx-4 w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-gray-900 font-medium mb-5">Remove all items from the list?</p>
+            <p className="text-gray-900 font-medium mb-5">{t('client.clearConfirm')}</p>
             <div className="flex gap-3 justify-end">
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                Cancel
+                {t('client.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleClearList}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
               >
-                Clear
+                {t('client.clearConfirmLabel')}
               </button>
             </div>
           </div>

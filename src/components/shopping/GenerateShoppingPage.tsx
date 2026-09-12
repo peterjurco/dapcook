@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import { CUSTOM_LABELS } from '@/types/planner'
@@ -36,6 +36,7 @@ interface Props {
 export function GenerateShoppingPage({ slots, weekStart }: Props) {
   const router = useRouter()
   const locale = useLocale()
+  const t = useTranslations('shopping')
   const weekDays = getWeekDays(weekStart)
 
   function dayLabel(slot: MealSlotWithRecipe): string {
@@ -126,7 +127,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
       })
 
       if (!res.ok) {
-        setError('Something went wrong. Please try again.')
+        setError(t('generate.genericError'))
         setIsGenerating(false)
         return
       }
@@ -145,7 +146,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
 
       router.push('/shopping/review')
     } catch {
-      setError('Network error. Please try again.')
+      setError(t('generate.networkError'))
       setIsGenerating(false)
     }
   }
@@ -160,16 +161,16 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={16} />
-          Planner
+          {t('generate.plannerLink')}
         </button>
-        <h1 className="text-xl font-semibold text-gray-900">Generate shopping list</h1>
+        <h1 className="text-xl font-semibold text-gray-900">{t('generate.heading')}</h1>
       </div>
 
       {entries.length === 0 ? (
         <p className="text-sm text-gray-500 text-center mt-20">
-          No meals in this week&apos;s plan.{' '}
+          {t('generate.emptyPlan')}{' '}
           <button type="button" onClick={() => router.push('/planner')} className="underline hover:text-gray-900">
-            Go back to the planner
+            {t('generate.backToPlanner')}
           </button>
         </p>
       ) : (
@@ -189,7 +190,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
                 {entry.kind === 'recipe' && entry.servings == null && !entry.removed && (
                   <p className="flex items-center gap-1 text-xs text-amber-600 mt-1">
                     <AlertTriangle size={11} />
-                    No servings defined — using 1
+                    {t('generate.noServingsWarning')}
                   </p>
                 )}
               </div>
@@ -197,7 +198,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
               {/* Portions input */}
               {!entry.removed && (
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <label className="text-xs text-gray-400">Portions</label>
+                  <label className="text-xs text-gray-400">{t('generate.portions')}</label>
                   <input
                     type="number"
                     min={1}
@@ -235,7 +236,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
             {isGenerating ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : null}
-            {isGenerating ? 'Generating…' : `Generate shopping list`}
+            {isGenerating ? t('generate.generating') : t('generate.generate')}
           </button>
         </div>
       </div>

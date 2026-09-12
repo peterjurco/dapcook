@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { ArrowLeft } from 'lucide-react'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import type { ShoppingItem, ShoppingCategory } from '@/types/database'
@@ -29,7 +30,7 @@ interface GroupedItems {
   items: ShoppingItem[]
 }
 
-function groupItems(items: ShoppingItem[], categories: ShoppingCategory[]): GroupedItems[] {
+function groupItems(items: ShoppingItem[], categories: ShoppingCategory[], otherCategory: string): GroupedItems[] {
   const categoryOrder = new Map(categories.map((c, i) => [c.name, i]))
   const colorMap = new Map(categories.map((c) => [c.name, c.color]))
 
@@ -42,7 +43,7 @@ function groupItems(items: ShoppingItem[], categories: ShoppingCategory[]): Grou
 
   const groups = new Map<string, ShoppingItem[]>()
   for (const item of sorted) {
-    const cat = item.category && categoryOrder.has(item.category) ? item.category : 'Other'
+    const cat = item.category && categoryOrder.has(item.category) ? item.category : otherCategory
     if (!groups.has(cat)) groups.set(cat, [])
     groups.get(cat)!.push(item)
   }
@@ -56,6 +57,7 @@ function groupItems(items: ShoppingItem[], categories: ShoppingCategory[]): Grou
 
 export function ShoppingReviewClient() {
   const router = useRouter()
+  const t = useTranslations('shopping')
   const [items, setItems] = useState<ShoppingItem[]>([])
   const [categories, setCategories] = useState<ShoppingCategory[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -151,22 +153,23 @@ export function ShoppingReviewClient() {
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft size={16} />
-            Planner
+            {t('review.plannerLink')}
           </button>
         </div>
         <p className="text-sm text-gray-500 text-center mt-20">
-          Nothing to review.{' '}
+          {t('review.emptyHeading')}{' '}
           <button type="button" onClick={() => router.push('/planner')} className="underline hover:text-gray-900">
-            Go back to the planner
+            {t('review.backToPlanner')}
           </button>{' '}
-          and generate a list.
+          {t('review.emptyTrailing')}
         </p>
       </div>
     )
   }
 
   const uncheckedItems = items.filter((item) => !item.is_checked)
-  const grouped = groupItems(items, categories)
+  const otherCategory = t('review.otherCategory')
+  const grouped = groupItems(items, categories, otherCategory)
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 pb-28">
@@ -178,24 +181,24 @@ export function ShoppingReviewClient() {
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={16} />
-          Planner
+          {t('review.plannerLink')}
         </button>
-        <h1 className="text-xl font-semibold text-gray-900">Review shopping list</h1>
+        <h1 className="text-xl font-semibold text-gray-900">{t('review.heading')}</h1>
       </div>
 
       <p className="text-sm text-gray-500 mb-4">
-        Edit or cross off items, then add to your list.
+        {t('review.body')}
       </p>
 
       <p className="text-xs text-gray-400 mb-4">
-        {uncheckedItems.length} item{uncheckedItems.length !== 1 ? 's' : ''}
+        {t('review.itemCount', { count: uncheckedItems.length })}
       </p>
 
       {/* Grouped items */}
       <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-50 mb-6">
         {grouped.map((group) => (
           <div key={group.category}>
-            {(group.category !== 'Other' || grouped.length > 1) && (
+            {(group.category !== otherCategory || grouped.length > 1) && (
               <div className="px-4 pt-3 pb-1 flex items-center gap-1.5">
                 {group.color && (
                   <span
@@ -236,7 +239,7 @@ export function ShoppingReviewClient() {
             {isAdding ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : null}
-            Add {uncheckedItems.length} item{uncheckedItems.length !== 1 ? 's' : ''} to shopping list
+            {t('review.addToList', { count: uncheckedItems.length })}
           </button>
         </div>
       </div>
