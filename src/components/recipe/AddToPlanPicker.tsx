@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   getWeekStart,
@@ -27,6 +28,7 @@ interface AddToPlanPickerProps {
 
 export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   const router = useRouter()
+  const locale = useLocale()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const thisWeek = getWeekStart(today)
@@ -63,7 +65,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   function weekDescriptor(w: Date): string {
     if (isCurrentWeek(w)) return 'this week'
     if (isNextWeek(w)) return 'next week'
-    return formatWeekLabel(w)
+    return formatWeekLabel(w, locale)
   }
 
   async function handleAdd() {
@@ -107,7 +109,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   }
 
   if (confirmedDay != null) {
-    const { weekday, day } = formatDayLabel(weekDays[confirmedDay - 1])
+    const { weekday, day } = formatDayLabel(weekDays[confirmedDay - 1], locale)
     return (
       <div className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
         <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
@@ -137,7 +139,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
     )
   }
 
-  const selectedLabel = formatDayLabel(weekDays[selectedDay - 1])
+  const selectedLabel = formatDayLabel(weekDays[selectedDay - 1], locale)
 
   return (
     <div className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
@@ -178,7 +180,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
         >
           <ChevronLeft size={16} />
         </button>
-        <span className="text-xs font-semibold text-gray-900">{formatWeekLabel(weekStart)}</span>
+        <span className="text-xs font-semibold text-gray-900">{formatWeekLabel(weekStart, locale)}</span>
         <button
           type="button"
           onClick={() => changeWeek(nextWeekStart(weekStart))}
@@ -193,7 +195,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
       <div className="mb-4 grid grid-cols-7 gap-1.5">
         {weekDays.map((date, i) => {
           const d = i + 1
-          const { weekday, day } = formatDayLabel(date)
+          const { weekday, day } = formatDayLabel(date, locale)
           const isSelected = selectedDay === d
           const isToday = toDateString(date) === todayStr
           return (

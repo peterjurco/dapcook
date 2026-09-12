@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useLocale } from 'next-intl'
 import { buildMobileAgenda } from '@/lib/planner/layout'
 import { formatDayLabel, toDateString } from '@/lib/utils/week'
 import type { MealSlotWithRecipe } from '@/types/planner'
@@ -13,6 +14,7 @@ interface PlannerMobileAgendaProps {
 
 /** Mobile View: a read-only day-by-day agenda. Multi-day meals repeat on each covered day. */
 export function PlannerMobileAgenda({ weekDays, today, slots }: PlannerMobileAgendaProps) {
+  const locale = useLocale()
   const days = buildMobileAgenda(slots)
   const todayStr = toDateString(today)
 
@@ -20,7 +22,7 @@ export function PlannerMobileAgenda({ weekDays, today, slots }: PlannerMobileAge
     <div className="space-y-5">
       {days.map((agendaDay) => {
         const date = weekDays[agendaDay.dayOfWeek - 1]
-        const { weekday, day } = formatDayLabel(date)
+        const { weekday, day } = formatDayLabel(date, locale)
         const isToday = toDateString(date) === todayStr
         return (
           <section key={agendaDay.dayOfWeek}>

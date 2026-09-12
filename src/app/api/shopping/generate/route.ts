@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
 import type { Ingredient } from '@/types/recipe'
 
 export async function POST(request: NextRequest) {
@@ -8,9 +9,10 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
+    .from('profiles').select('household_id, ui_language').eq('id', user.id).single()
   if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
   const householdId = profile.household_id
+  const locale: Locale = isLocale(profile.ui_language) ? profile.ui_language : defaultLocale
 
   const body = await request.json() as { date_from: string; date_to: string; confirm_overwrite?: boolean }
   const { date_from, date_to, confirm_overwrite } = body
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
     // No plans in range — create empty list
     const { data: newList, error } = await supabase
       .from('shopping_lists')
-      .insert({ household_id: householdId, name: formatListName(date_from, date_to), date_from, date_to })
+      .insert({ household_id: householdId, name: formatListName(date_from, date_to, locale), date_from, date_to })
       .select()
       .single()
     if (error || !newList) return NextResponse.json({ error: 'Failed to create list' }, { status: 500 })
@@ -114,7 +116,7 @@ export async function POST(request: NextRequest) {
   // Create shopping list
   const { data: newList, error: listError } = await supabase
     .from('shopping_lists')
-    .insert({ household_id: householdId, name: formatListName(date_from, date_to), date_from, date_to })
+    .insert({ household_id: householdId, name: formatListName(date_from, date_to, locale), date_from, date_to })
     .select()
     .single()
 
@@ -134,9 +136,10 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ list: newList, items })
 }
 
-function formatListName(dateFrom: string, dateTo: string): string {
+function formatListName(dateFrom: string, dateTo: string, locale: Locale): string {
   const from = new Date(dateFrom + 'T00:00:00')
   const to = new Date(dateTo + 'T00:00:00')
   const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
-  return `Shopping list ${from.toLocaleDateString('en-GB', opts)} – ${to.toLocaleDateString('en-GB', opts)}`
+  const intlLocale = locale === 'sk' ? 'sk-SK' : 'en-GB'
+  return `Shopping list ${from.toLocaleDateString(intlLocale, opts)} – ${to.toLocaleDateString(intlLocale, opts)}`
 }

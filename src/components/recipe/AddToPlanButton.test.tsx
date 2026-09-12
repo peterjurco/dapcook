@@ -7,6 +7,7 @@ const mockPush = vi.fn()
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
+vi.mock('next-intl', () => ({ useLocale: () => 'en' }))
 
 beforeEach(() => {
   vi.clearAllMocks()

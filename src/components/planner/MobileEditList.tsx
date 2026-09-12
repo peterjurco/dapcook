@@ -13,10 +13,12 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
+import { useLocale } from 'next-intl'
 import { GripVertical, Trash2, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { RecipeSearch } from './RecipeSearch'
 import { maxSpanForStart, type EditDay } from '@/lib/planner/layout'
 import { formatDayLabel } from '@/lib/utils/week'
+import type { Locale } from '@/i18n/config'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import type { Recipe } from '@/types/database'
 
@@ -31,10 +33,10 @@ interface MobileEditListProps {
 }
 
 /** "Tue 9" for a single day, "Tue 9 → Fri 12 · 4 days" for a span. */
-function rangeLabel(slot: MealSlotWithRecipe, weekDays: Date[]): string {
-  const start = formatDayLabel(weekDays[slot.day_of_week - 1])
+function rangeLabel(slot: MealSlotWithRecipe, weekDays: Date[], locale: Locale): string {
+  const start = formatDayLabel(weekDays[slot.day_of_week - 1], locale)
   if (slot.span_days <= 1) return `${start.weekday} ${start.day} · 1 day`
-  const end = formatDayLabel(weekDays[slot.day_of_week + slot.span_days - 2])
+  const end = formatDayLabel(weekDays[slot.day_of_week + slot.span_days - 2], locale)
   return `${start.weekday} ${start.day} → ${end.weekday} ${end.day} · ${slot.span_days} days`
 }
 
@@ -49,6 +51,7 @@ function MealRow({
   onDelete: () => void
   onSpanChange: (newSpan: number) => void
 }) {
+  const locale = useLocale()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
     data: { slot },
@@ -91,7 +94,7 @@ function MealRow({
 
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs font-semibold text-gray-500 leading-none">{rangeLabel(slot, weekDays)}</p>
+            <p className="text-xs font-semibold text-gray-500 leading-none">{rangeLabel(slot, weekDays, locale)}</p>
             <button
               type="button"
               onClick={() => onSpanChange(slot.span_days - 1)}
@@ -150,11 +153,12 @@ function DaySection({
   onDelete: (slotId: string) => void
   onSpanChange: (slotId: string, newSpan: number) => void
 }) {
+  const locale = useLocale()
   const { setNodeRef, isOver } = useDroppable({
     id: `day-${editDay.dayOfWeek}`,
     data: { dayOfWeek: editDay.dayOfWeek },
   })
-  const { weekday, day } = formatDayLabel(weekDays[editDay.dayOfWeek - 1])
+  const { weekday, day } = formatDayLabel(weekDays[editDay.dayOfWeek - 1], locale)
 
   return (
     <section

@@ -1,3 +1,5 @@
+import type { Locale } from '@/i18n/config'
+
 /** Returns the Monday of the week containing the given date */
 export function getWeekStart(date: Date = new Date()): Date {
   const d = new Date(date)
@@ -32,27 +34,28 @@ export function prevWeekStart(weekStart: Date): Date {
 }
 
 /** Formats a week as "17 – 23 March 2025" */
-export function formatWeekLabel(weekStart: Date, short = false): string {
+export function formatWeekLabel(weekStart: Date, locale: Locale, short = false): string {
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekEnd.getDate() + 6)
 
   const startDay = weekStart.getDate()
   const endDay = weekEnd.getDate()
   const monthStyle = short ? 'short' : 'long'
-  const month = weekEnd.toLocaleDateString('en-GB', { month: monthStyle })
+  const intlLocale = locale === 'sk' ? 'sk-SK' : 'en-GB'
+  const month = weekEnd.toLocaleDateString(intlLocale, { month: monthStyle })
   const year = weekEnd.getFullYear()
 
   if (weekStart.getMonth() === weekEnd.getMonth()) {
     return `${startDay} – ${endDay} ${month} ${year}`
   }
-  const startMonth = weekStart.toLocaleDateString('en-GB', { month: monthStyle })
+  const startMonth = weekStart.toLocaleDateString(intlLocale, { month: monthStyle })
   return `${startDay} ${startMonth} – ${endDay} ${month} ${year}`
 }
 
 /** Short label for a day: "Mon 17" */
-export function formatDayLabel(date: Date): { weekday: string; day: number } {
+export function formatDayLabel(date: Date, locale: Locale): { weekday: string; day: number } {
   return {
-    weekday: date.toLocaleDateString('en-GB', { weekday: 'short' }),
+    weekday: date.toLocaleDateString(locale === 'sk' ? 'sk-SK' : 'en-GB', { weekday: 'short' }),
     day: date.getDate(),
   }
 }

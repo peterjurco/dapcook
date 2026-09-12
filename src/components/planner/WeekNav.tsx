@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import { formatWeekLabel, nextWeekStart, prevWeekStart, toDateString, isCurrentWeek, isNextWeek } from '@/lib/utils/week'
 
@@ -10,6 +11,7 @@ interface WeekNavProps {
 
 export function WeekNav({ weekStart }: WeekNavProps) {
   const router = useRouter()
+  const locale = useLocale()
 
   function navigate(date: Date) {
     router.push(`/planner?week=${toDateString(date)}`)
@@ -31,8 +33,8 @@ export function WeekNav({ weekStart }: WeekNavProps) {
       <div className="flex min-w-0 items-center gap-2">
         <CalendarDays size={16} className="hidden shrink-0 text-gray-400 sm:block" />
         <h2 className="whitespace-nowrap text-sm font-semibold text-gray-900 sm:text-base">
-          <span className="sm:hidden">{formatWeekLabel(weekStart, true)}</span>
-          <span className="hidden sm:inline">{formatWeekLabel(weekStart)}</span>
+          <span className="sm:hidden">{formatWeekLabel(weekStart, locale, true)}</span>
+          <span className="hidden sm:inline">{formatWeekLabel(weekStart, locale)}</span>
         </h2>
         {isCurrentWeek(weekStart) && (
           <span className="whitespace-nowrap text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">

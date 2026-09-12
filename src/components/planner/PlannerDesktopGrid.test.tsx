@@ -9,6 +9,8 @@ vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }))
 
+vi.mock('next-intl', () => ({ useLocale: () => 'en' }))
+
 function recipeSlot(p: { id: string; day_of_week: number; span_days: number; title: string }): MealSlotWithRecipe {
   return {
     id: p.id,

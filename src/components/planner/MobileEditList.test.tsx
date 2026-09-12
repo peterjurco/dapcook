@@ -6,6 +6,8 @@ import { buildEditDays } from '@/lib/planner/layout'
 import { getWeekDays } from '@/lib/utils/week'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
+vi.mock('next-intl', () => ({ useLocale: () => 'en' }))
+
 function recipeSlot(p: { id: string; day_of_week: number; span_days: number; title: string }): MealSlotWithRecipe {
   return {
     id: p.id,

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import { CUSTOM_LABELS } from '@/types/planner'
@@ -34,10 +35,11 @@ interface Props {
 
 export function GenerateShoppingPage({ slots, weekStart }: Props) {
   const router = useRouter()
+  const locale = useLocale()
   const weekDays = getWeekDays(weekStart)
 
   function dayLabel(slot: MealSlotWithRecipe): string {
-    const { weekday, day } = formatDayLabel(weekDays[slot.day_of_week - 1])
+    const { weekday, day } = formatDayLabel(weekDays[slot.day_of_week - 1], locale)
     return `${weekday} ${day}`
   }
 

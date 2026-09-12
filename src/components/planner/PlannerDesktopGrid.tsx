@@ -1,6 +1,7 @@
 'use client'
 
 import { useDroppable } from '@dnd-kit/core'
+import { useLocale } from 'next-intl'
 import { Plus } from 'lucide-react'
 import { DayHeader } from './DayHeader'
 import { SlotCard } from './SlotCard'
@@ -52,6 +53,7 @@ export function PlannerDesktopGrid({
   onSpanPreview,
   onSpanCommit,
 }: PlannerDesktopGridProps) {
+  const locale = useLocale()
   const lanes = packLanes(slots)
   const todayStr = toDateString(today)
 
@@ -71,7 +73,7 @@ export function PlannerDesktopGrid({
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-3 mb-2">
         {weekDays.map((date, index) => {
-          const { weekday, day } = formatDayLabel(date)
+          const { weekday, day } = formatDayLabel(date, locale)
           return (
             <DayHeader
               key={index}
@@ -130,7 +132,7 @@ export function PlannerDesktopGrid({
             const maxLane = maxCoveringLane(day)
             const isEmptyDay = maxLane === -1
             const gridRow = isEmptyDay ? 1 : maxLane + 2
-            const weekday = formatDayLabel(weekDays[index]).weekday
+            const weekday = formatDayLabel(weekDays[index], locale).weekday
 
             const search = (
               <RecipeSearch
