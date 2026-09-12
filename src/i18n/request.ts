@@ -1,8 +1,23 @@
 import { getRequestConfig } from 'next-intl/server'
-import { defaultLocale, isLocale } from './config'
+import { defaultLocale, isLocale, type Locale } from './config'
 
-export default getRequestConfig(async ({ locale }) => {
-  const resolved = isLocale(locale) ? locale : defaultLocale
+/**
+ * Resolves the locale for the current request.
+ *
+ * `locale` is only set when a caller passes an explicit override (e.g.
+ * `getMessages({ locale: 'sk' })`). Otherwise we fall back to the ambient
+ * `requestLocale`, which is populated by `setRequestLocale()` calls upstream
+ * in the same request (see `app/(app)/layout.tsx`). This lets parameterless
+ * calls like `getTranslations('namespace')` resolve to the user's actual
+ * locale instead of always falling back to `defaultLocale`.
+ */
+export function resolveLocale(locale: string | undefined, requestLocale: string | undefined): Locale {
+  const requested = locale ?? requestLocale
+  return isLocale(requested) ? requested : defaultLocale
+}
+
+export default getRequestConfig(async ({ locale, requestLocale }) => {
+  const resolved = resolveLocale(locale, await requestLocale)
 
   const [common, nav, recipes, planner, shopping, settings, auth, admin, errors] = await Promise.all([
     import(`../../messages/${resolved}/common.json`),
