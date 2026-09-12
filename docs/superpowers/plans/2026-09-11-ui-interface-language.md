@@ -30,7 +30,7 @@ Investigation found `LanguageSelector.tsx` is **dead code** — it's not importe
 - Modify: `package.json`
 - Create: `src/i18n/request.ts`
 - Create: `src/i18n/config.ts`
-- Modify: `next.config.ts`
+- Modify: `next.config.mjs`
 
 - [ ] **Step 1: Install the dependency**
 
@@ -73,9 +73,9 @@ export default getRequestConfig(async ({ locale }) => {
 })
 ```
 
-- [ ] **Step 4: Wire the next-intl plugin into next.config.ts**
+- [ ] **Step 4: Wire the next-intl plugin into next.config.mjs**
 
-Replace the contents of `next.config.ts` with:
+Replace the contents of `next.config.mjs` with:
 ```ts
 import createNextIntlPlugin from 'next-intl/plugin'
 
@@ -123,7 +123,7 @@ Expected: build succeeds (no pages use translations yet, so nothing should break
 - [ ] **Step 7: Commit**
 
 ```bash
-git add package.json package-lock.json next.config.ts src/i18n messages
+git add package.json package-lock.json next.config.mjs src/i18n messages
 git commit -m "feat: scaffold next-intl configuration"
 ```
 
