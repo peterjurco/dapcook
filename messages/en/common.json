@@ -1,1 +1,14 @@
-{}
+{
+  "actions": {
+    "cancel": "Cancel",
+    "remove": "Remove"
+  },
+  "birthday": {
+    "heading": "Happy Birthday!",
+    "subtitle": "You are awesome! 🎉"
+  },
+  "app": {
+    "title": "dapcook",
+    "description": "Your shared cookbook & meal planner"
+  }
+}

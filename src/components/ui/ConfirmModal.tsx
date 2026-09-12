@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface ConfirmModalProps {
   message: string
@@ -13,12 +14,15 @@ interface ConfirmModalProps {
 
 export function ConfirmModal({
   message,
-  confirmLabel = 'Remove',
+  confirmLabel: confirmLabelProp,
   onConfirm,
   onCancel,
   pending = false,
   error = null,
 }: ConfirmModalProps) {
+  const t = useTranslations('common')
+  const confirmLabel = confirmLabelProp ?? t('actions.remove')
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onCancel()
@@ -42,7 +46,7 @@ export function ConfirmModal({
             disabled={pending}
             className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            Cancel
+            {t('actions.cancel')}
           </button>
           <button
             type="button"
