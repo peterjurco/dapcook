@@ -60,6 +60,39 @@ describe('AppShell', () => {
     expect(screen.getAllByRole('link', { name: /shopping/i }).length).toBeGreaterThan(0)
   })
 
+  it('renders Settings nav link', () => {
+    render(
+      <AppShell user={mockUser} profile={mockProfile}>
+        <div>content</div>
+      </AppShell>
+    )
+    expect(screen.getAllByRole('link', { name: /settings/i }).length).toBeGreaterThan(0)
+  })
+
+  it('renders Sign out button', () => {
+    render(
+      <AppShell user={mockUser} profile={mockProfile}>
+        <div>content</div>
+      </AppShell>
+    )
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
+  })
+
+  it('falls back to translated alt text on the avatar image when display_name is missing', () => {
+    const profileWithAvatarNoName = {
+      ...mockProfile,
+      display_name: null,
+      avatar_url: 'https://example.com/avatar.png',
+    } as Profile
+
+    render(
+      <AppShell user={mockUser} profile={profileWithAvatarNoName}>
+        <div>content</div>
+      </AppShell>
+    )
+    expect(screen.getByRole('img', { name: /user/i })).toBeInTheDocument()
+  })
+
   it('renders children', () => {
     render(
       <AppShell user={mockUser} profile={mockProfile}>
