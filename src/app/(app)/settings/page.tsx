@@ -7,12 +7,15 @@ import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategori
 import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
 import { TranslationSettings } from '@/components/settings/TranslationSettings'
+import { InterfaceLanguageSelector } from '@/components/settings/InterfaceLanguageSelector'
 import { signOut } from '@/lib/auth/actions'
 import type { TagData } from '@/app/api/tags/route'
 import { buildTagMeta } from '@/lib/tags/taxonomy'
+import { getTranslations } from 'next-intl/server'
 
 export default async function SettingsPage() {
   const supabase = createClient()
+  const t = await getTranslations('settings.account')
 
   const {
     data: { user },
@@ -69,6 +72,16 @@ export default async function SettingsPage() {
       <h1 className="text-xl font-semibold text-gray-900 font-fraunces">
         <span className="text-emerald-700">S</span>ettings
       </h1>
+
+      {/* Your account */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('heading')}</h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+          <p className="text-xs text-gray-500 mb-1">{t('interfaceLanguage')}</p>
+          <p className="text-xs text-gray-400 mb-2">{t('interfaceLanguageHelp')}</p>
+          <InterfaceLanguageSelector initialValue={profile?.ui_language === 'sk' ? 'sk' : 'en'} />
+        </div>
+      </section>
 
       {/* Household */}
       <section className="space-y-4">

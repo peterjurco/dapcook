@@ -1,1 +1,7 @@
-{}
+{
+  "account": {
+    "heading": "Your account",
+    "interfaceLanguage": "Interface language",
+    "interfaceLanguageHelp": "Applies only to you — everyone else in your household keeps their own setting."
+  }
+}

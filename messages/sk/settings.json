@@ -1,1 +1,7 @@
-{}
+{
+  "account": {
+    "heading": "Váš účet",
+    "interfaceLanguage": "Jazyk rozhrania",
+    "interfaceLanguageHelp": "Platí iba pre vás — ostatní členovia domácnosti majú vlastné nastavenie."
+  }
+}
