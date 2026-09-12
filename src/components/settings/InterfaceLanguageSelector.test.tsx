@@ -42,6 +42,26 @@ describe('InterfaceLanguageSelector', () => {
     await waitFor(() => expect(refreshMock).toHaveBeenCalled())
   })
 
+  it('reverts the value and shows an error when the response is not ok', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
+    render(<InterfaceLanguageSelector initialValue="en" />)
+    const select = screen.getByRole('combobox') as HTMLSelectElement
+    fireEvent.change(select, { target: { value: 'sk' } })
+    await waitFor(() => expect(select.value).toBe('en'))
+    expect(screen.getByText('Could not save. Try again.')).toBeDefined()
+    expect(refreshMock).not.toHaveBeenCalled()
+  })
+
+  it('reverts the value and shows an error when fetch rejects', async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error('network error'))
+    render(<InterfaceLanguageSelector initialValue="en" />)
+    const select = screen.getByRole('combobox') as HTMLSelectElement
+    fireEvent.change(select, { target: { value: 'sk' } })
+    await waitFor(() => expect(select.value).toBe('en'))
+    expect(screen.getByText('Could not save. Try again.')).toBeDefined()
+    expect(refreshMock).not.toHaveBeenCalled()
+  })
+
   it('disables the select while saving', async () => {
     let resolveFetch: (value: Response) => void = () => {}
     vi.mocked(fetch).mockReturnValue(

@@ -12,6 +12,7 @@ import { signOut } from '@/lib/auth/actions'
 import type { TagData } from '@/app/api/tags/route'
 import { buildTagMeta } from '@/lib/tags/taxonomy'
 import { getTranslations } from 'next-intl/server'
+import { isLocale, defaultLocale } from '@/i18n/config'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -56,9 +57,9 @@ export default async function SettingsPage() {
       count,
     }))
     .sort((a, b) => b.count - a.count)
-  for (const t of tagsMeta ?? []) {
-    if (!tagCounts.has(t.name)) {
-      allTags.push({ name: t.name, color: t.color, groupId: t.group_id, count: 0 })
+  for (const tag of tagsMeta ?? []) {
+    if (!tagCounts.has(tag.name)) {
+      allTags.push({ name: tag.name, color: tag.color, groupId: tag.group_id, count: 0 })
     }
   }
 
@@ -79,7 +80,7 @@ export default async function SettingsPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
           <p className="text-xs text-gray-500 mb-1">{t('interfaceLanguage')}</p>
           <p className="text-xs text-gray-400 mb-2">{t('interfaceLanguageHelp')}</p>
-          <InterfaceLanguageSelector initialValue={profile?.ui_language === 'sk' ? 'sk' : 'en'} />
+          <InterfaceLanguageSelector initialValue={isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale} />
         </div>
       </section>
 
