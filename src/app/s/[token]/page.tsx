@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { unstable_noStore as noStore } from 'next/cache'
 import { notFound } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
 import { RecipeView } from '@/components/recipe/RecipeView'
 import { buildRecipeJsonLd } from '@/lib/recipes/recipe-json-ld'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -21,6 +22,7 @@ interface Props {
 export default async function SharedRecipePage({ params }: Props) {
   noStore()
 
+  const locale = await getLocale()
   const supabase = createAdminClient()
   const { data: recipe, error } = await supabase
     .from('recipes')
@@ -47,7 +49,7 @@ export default async function SharedRecipePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <RecipeView recipe={typedRecipe} mode="public" taxonomy={taxonomy} />
+      <RecipeView recipe={typedRecipe} mode="public" taxonomy={taxonomy} locale={locale} />
     </main>
   )
 }

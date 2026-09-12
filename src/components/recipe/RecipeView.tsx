@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { getLocale } from 'next-intl/server'
 import { Clock, ExternalLink, Users } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { cn } from '@/lib/utils/cn'
@@ -14,6 +13,7 @@ interface RecipeViewProps {
   toolbar?: ReactNode
   mode?: 'authenticated' | 'public'
   taxonomy?: Taxonomy
+  locale: Locale
 }
 
 function formatTime(min: number | null, label: string, locale: Locale) {
@@ -21,8 +21,7 @@ function formatTime(min: number | null, label: string, locale: Locale) {
   return { label, time: formatDuration(min, locale) }
 }
 
-export async function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonomy = EMPTY_TAXONOMY }: RecipeViewProps) {
-  const locale = await getLocale()
+export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonomy = EMPTY_TAXONOMY, locale }: RecipeViewProps) {
   const ingredients = (r.ingredients ?? []) as unknown as Ingredient[]
   const steps = (r.steps ?? []) as unknown as Step[]
   const totalTime = (r.prep_time_min ?? 0) + (r.cook_time_min ?? 0)

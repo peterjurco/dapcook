@@ -80,7 +80,7 @@ export function RecipeCard({ recipe, taxonomy }: RecipeCardProps) {
             {totalTime > 0 && (
               <span className="flex items-center gap-1">
                 <Clock size={12} />
-                {totalTime > 0 ? formatDuration(totalTime, locale) : null}
+                {formatDuration(totalTime, locale)}
               </span>
             )}
             {recipe.servings && (

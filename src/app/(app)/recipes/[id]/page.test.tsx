@@ -32,6 +32,8 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
+vi.mock('next-intl/server', () => ({ getLocale: async () => 'en' }))
+
 vi.mock('next/link', () => ({
   default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
     <a href={href} className={className}>
@@ -65,14 +67,6 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('@/components/recipe/DeleteRecipeButton', () => ({
   DeleteRecipeButton: () => <button type="button">Delete</button>,
-}))
-
-// RecipeView is now an async Server Component (it calls next-intl/server's getLocale),
-// which React's client renderer can't mount directly in a jsdom/RTL test. This page's
-// own test only exercises the toolbar (Add to plan / Share / Delete), so stub RecipeView
-// down to just rendering that — RecipeView has its own dedicated test file.
-vi.mock('@/components/recipe/RecipeView', () => ({
-  RecipeView: ({ toolbar }: { toolbar?: React.ReactNode }) => <>{toolbar}</>,
 }))
 
 describe('RecipeDetailPage', () => {

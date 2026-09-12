@@ -1,7 +1,6 @@
 import { getLocale } from 'next-intl/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { formatRelativeTime as formatRelativeTimeShared } from '@/lib/utils/format'
-import type { Locale } from '@/i18n/config'
+import { formatRelativeTime } from '@/lib/utils/format'
 
 interface HouseholdRow {
   id: string
@@ -23,12 +22,6 @@ function formatTokens(n: number): string {
 function formatCost(inputTokens: number, outputTokens: number): string {
   const cost = (inputTokens / 1_000_000) * 3 + (outputTokens / 1_000_000) * 15
   return `$${cost.toFixed(4)}`
-}
-
-function formatRelativeTime(dateStr: string | null, locale: Locale): string {
-  if (!dateStr) return formatRelativeTimeShared(null, locale)
-  const minutesAgo = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60_000)
-  return formatRelativeTimeShared(minutesAgo, locale)
 }
 
 export default async function AdminPage() {
@@ -107,7 +100,12 @@ export default async function AdminPage() {
                   className="px-4 py-3 text-gray-600"
                   title={row.last_sign_in_at ?? undefined}
                 >
-                  {formatRelativeTime(row.last_sign_in_at, locale)}
+                  {formatRelativeTime(
+                    row.last_sign_in_at
+                      ? Math.floor((Date.now() - new Date(row.last_sign_in_at).getTime()) / 60_000)
+                      : null,
+                    locale
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right text-gray-600 font-mono text-xs">
                   {formatTokens(row.total_input_tokens)} in / {formatTokens(row.total_output_tokens)} out
