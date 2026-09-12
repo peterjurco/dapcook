@@ -5,10 +5,6 @@
   },
   "birthday": {
     "heading": "Všetko najlepšie!",
-    "subtitle": "Si super! 🎉"
-  },
-  "app": {
-    "title": "dapcook",
-    "description": "Vaša spoločná kuchárka a plánovač jedál"
+    "dismissLabel": "Si super! 🎉"
   }
 }

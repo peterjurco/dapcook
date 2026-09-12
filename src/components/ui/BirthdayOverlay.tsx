@@ -49,7 +49,7 @@ export function BirthdayOverlay({ birthdayDate, birthdayMessage }: Props) {
           onClick={dismiss}
           className="w-full sm:w-auto px-8 py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
         >
-          {t('birthday.subtitle')}
+          {t('birthday.dismissLabel')}
         </button>
       </div>
     </div>

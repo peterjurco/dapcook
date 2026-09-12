@@ -1,4 +1,4 @@
-import common from '../../messages/en/common.json'
+/// <reference types="vite/client" />
 
 /**
  * Real English message catalogs, keyed by next-intl namespace. Used to mock
@@ -6,11 +6,19 @@ import common from '../../messages/en/common.json'
  * instead of translation keys, and so a typo'd key fails the test (lookup
  * returns `undefined`) instead of silently rendering as a literal key path.
  *
- * Extend this map as later tasks migrate more namespaces.
+ * Built automatically from every `messages/en/*.json` file, so adding a new
+ * namespace file is enough to make it available here — no manual registration.
  */
-const messagesByNamespace: Record<string, Record<string, unknown>> = {
-  common,
-}
+const messageModules = import.meta.glob<{ default: Record<string, unknown> }>('../../messages/en/*.json', {
+  eager: true,
+})
+
+const messagesByNamespace: Record<string, Record<string, unknown>> = Object.fromEntries(
+  Object.entries(messageModules).map(([path, mod]) => {
+    const namespace = path.match(/([^/]+)\.json$/)![1]
+    return [namespace, mod.default]
+  })
+)
 
 function getByPath(obj: unknown, path: string): unknown {
   return path.split('.').reduce<unknown>((acc, key) => {

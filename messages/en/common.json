@@ -5,10 +5,6 @@
   },
   "birthday": {
     "heading": "Happy Birthday!",
-    "subtitle": "You are awesome! 🎉"
-  },
-  "app": {
-    "title": "dapcook",
-    "description": "Your shared cookbook & meal planner"
+    "dismissLabel": "You are awesome! 🎉"
   }
 }
