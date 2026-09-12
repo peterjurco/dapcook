@@ -64,6 +64,7 @@ function SortableRow({ item, ...rowProps }: SortableRowProps) {
 
 export function ShoppingClient({ initialList, initialItems, initialCategories, initialRecipeNames }: Props) {
   const t = useTranslations('shopping')
+  const tCommon = useTranslations('common')
   const [list] = useState<ShoppingList | null>(initialList)
   const [items, setItems] = useState<ShoppingItem[]>(() => {
     const catOrder = new Map(initialCategories.map((c, i) => [c.name, i]))
@@ -292,8 +293,9 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
 
   const visibleItems = items.filter((item) => !item.is_checked)
   const colorMap = new Map(categories.map((c) => [c.name, c.color]))
+  const otherCategory = t('client.otherCategory')
 
-  const distinctCats = new Set(visibleItems.map((i) => i.category ?? t('client.otherCategory')))
+  const distinctCats = new Set(visibleItems.map((i) => i.category ?? otherCategory))
   const showHeaders = distinctCats.size >= 1
 
   function getListLines() {
@@ -389,8 +391,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
               <div className="px-3 pb-1">
                 {visibleItems.map((item, index) => {
                   const prevItem = index > 0 ? visibleItems[index - 1] : null
-                  const currentCat = item.category ?? t('client.otherCategory')
-                  const prevCat = prevItem ? (prevItem.category ?? t('client.otherCategory')) : null
+                  const currentCat = item.category ?? otherCategory
+                  const prevCat = prevItem ? (prevItem.category ?? otherCategory) : null
                   const showHeader = showHeaders && currentCat !== prevCat
                   return (
                     <div key={item.id}>
@@ -441,7 +443,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
                 onClick={() => setShowClearConfirm(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                {t('client.cancel')}
+                {tCommon('actions.cancel')}
               </button>
               <button
                 type="button"
