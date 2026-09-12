@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react'
 import type { WeekPlanRule } from '@/types/database'
 import { RULE_TYPES } from '@/types/planner'
@@ -14,6 +15,7 @@ interface WeekRulesPanelProps {
 }
 
 export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }: WeekRulesPanelProps) {
+  const t = useTranslations('planner')
   const [open, setOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [label, setLabel] = useState('')
@@ -61,10 +63,10 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm"
       >
         <span className="font-medium text-gray-700">
-          Planning rules
+          {t('rules.heading')}
           {rules.length > 0 && (
             <span className="ml-2 text-xs font-normal text-gray-400">
-              {activeCount} active
+              {t('rules.activeCount', { count: activeCount })}
             </span>
           )}
         </span>
@@ -74,11 +76,11 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
       {open && (
         <div className="p-4 space-y-3">
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
-            These rules are saved but not yet enforced — AI-assisted planning is a upcoming feature.
+            {t('rules.notEnforcedWarning')}
           </p>
 
           {rules.length === 0 && !adding && (
-            <p className="text-sm text-gray-400">No rules for this week yet.</p>
+            <p className="text-sm text-gray-400">{t('rules.noneYet')}</p>
           )}
 
           {/* Rule list */}
@@ -92,7 +94,7 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
                     ? 'bg-gray-900 border-gray-900'
                     : 'bg-white border-gray-300'
                 }`}
-                title={rule.is_active ? 'Disable rule' : 'Enable rule'}
+                title={rule.is_active ? t('rules.disableTitle') : t('rules.enableTitle')}
               >
                 {rule.is_active && (
                   <svg viewBox="0 0 16 16" fill="none" className="w-full h-full p-0.5">
@@ -134,7 +136,7 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                  placeholder="e.g. No fish two days in a row"
+                  placeholder={t('rules.placeholder')}
                   autoFocus
                   className="flex-1 text-sm border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:ring-2 focus:ring-gray-300"
                 />
@@ -144,14 +146,14 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
                   disabled={saving || !label.trim()}
                   className="px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md disabled:opacity-50"
                 >
-                  Add
+                  {t('rules.add')}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setAdding(false); setLabel('') }}
                   className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
                 >
-                  Cancel
+                  {t('rules.cancel')}
                 </button>
               </div>
             </div>
@@ -162,7 +164,7 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
               className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
             >
               <Plus size={14} />
-              Add rule for this week
+              {t('rules.addRuleFor')}
             </button>
           )}
         </div>

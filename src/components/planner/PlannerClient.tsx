@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { ArrowRight, CalendarDays, ChefHat, Pencil, ShoppingCart, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
@@ -22,6 +23,7 @@ interface PlannerClientProps {
 }
 
 export function PlannerClient({ weekStart }: PlannerClientProps) {
+  const t = useTranslations('planner')
   const posthog = usePostHog()
   const router = useRouter()
   const weekStartStr = toDateString(weekStart)
@@ -160,9 +162,9 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       <div className="mb-3">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 font-fraunces">
-            <span className="text-emerald-700">W</span>eekly Planner
+            <span className="text-emerald-700">{t('client.headingW')}</span>{t('client.headingRest')}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Plan your meals for the week</p>
+          <p className="text-sm text-gray-500 mt-1">{t('client.subtitle')}</p>
         </div>
       </div>
 
@@ -170,6 +172,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
       {!loading && !isWeekEmpty && (
         <PlannerActions
+          t={t}
           hasRecipeSlots={hasRecipeSlots}
           isMobileEditMode={isMobileEditMode}
           onToggleMobileEdit={() => setIsMobileEditMode((v) => !v)}
@@ -206,7 +209,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           </div>
         </div>
       ) : isWeekEmpty ? (
-        <PlannerEmptyState onBrowseRecipes={() => router.push('/recipes')} />
+        <PlannerEmptyState t={t} onBrowseRecipes={() => router.push('/recipes')} />
       ) : (
         <>
           {/* Desktop — always-editable lane calendar (independent of mobile edit toggle) */}
@@ -271,14 +274,14 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
       )}
 
       {hasRecipeSlots && (
-        <section aria-label="Shopping list actions" className="hidden md:flex mt-6 pt-6 border-t border-gray-100 justify-end">
+        <section aria-label={t('client.shoppingActionsAria')} className="hidden md:flex mt-6 pt-6 border-t border-gray-100 justify-end">
           <button
             type="button"
             onClick={() => router.push(`/shopping/generate?week=${weekStartStr}`)}
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
           >
             <ShoppingCart size={14} />
-            Generate shopping list
+            {t('client.generateShoppingList')}
           </button>
         </section>
       )}
@@ -288,11 +291,13 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 }
 
 function PlannerActions({
+  t,
   hasRecipeSlots,
   isMobileEditMode,
   onToggleMobileEdit,
   onGenerateShoppingList,
 }: {
+  t: ReturnType<typeof useTranslations>
   hasRecipeSlots: boolean
   isMobileEditMode: boolean
   onToggleMobileEdit: () => void
@@ -301,7 +306,7 @@ function PlannerActions({
   if (isMobileEditMode) {
     return (
       <section
-        aria-label="Planner actions"
+        aria-label={t('client.actionsAria')}
         className="-mt-3 mb-6 flex flex-row items-stretch gap-2 md:hidden"
       >
         <button
@@ -310,7 +315,7 @@ function PlannerActions({
           className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
         >
           <X size={15} />
-          Done
+          {t('client.done')}
         </button>
       </section>
     )
@@ -318,7 +323,7 @@ function PlannerActions({
 
   return (
     <section
-      aria-label="Planner actions"
+      aria-label={t('client.actionsAria')}
       className="-mt-3 mb-6 flex flex-row items-stretch gap-2 md:hidden"
     >
       <button
@@ -327,7 +332,7 @@ function PlannerActions({
         className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
       >
         <Pencil size={15} />
-        Edit
+        {t('client.edit')}
       </button>
 
       {hasRecipeSlots && (
@@ -337,14 +342,14 @@ function PlannerActions({
           className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
         >
           <ShoppingCart size={14} />
-          Generate shopping list
+          {t('client.generateShoppingList')}
         </button>
       )}
     </section>
   )
 }
 
-function PlannerEmptyState({ onBrowseRecipes }: { onBrowseRecipes: () => void }) {
+function PlannerEmptyState({ t, onBrowseRecipes }: { t: ReturnType<typeof useTranslations>; onBrowseRecipes: () => void }) {
   return (
     <section className="min-h-[360px] flex flex-col items-center justify-center text-center px-4 py-14">
       <div className="relative mb-7 h-32 w-36" aria-hidden="true">
@@ -363,16 +368,16 @@ function PlannerEmptyState({ onBrowseRecipes }: { onBrowseRecipes: () => void })
         </div>
       </div>
 
-      <h2 className="text-2xl font-semibold text-gray-950">Nothing planned for this week</h2>
+      <h2 className="text-2xl font-semibold text-gray-950">{t('client.emptyHeading')}</h2>
       <p className="mt-3 max-w-md text-sm leading-6 text-gray-500">
-        Pick a recipe you like and add it to the plan from your cookbook.
+        {t('client.emptyBody')}
       </p>
       <button
         type="button"
         onClick={onBrowseRecipes}
         className="mt-7 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
       >
-        Browse recipes
+        {t('client.browseRecipes')}
         <ArrowRight size={15} />
       </button>
     </section>

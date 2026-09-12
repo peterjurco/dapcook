@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
+import { useTranslations } from 'next-intl'
 import { GripVertical, X, GripHorizontal } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { MealSlotWithRecipe } from '@/types/planner'
@@ -32,6 +33,7 @@ export function SlotCard({
   lane,
   span,
 }: SlotCardProps) {
+  const t = useTranslations('planner')
   const [confirming, setConfirming] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [savedPortions, setSavedPortions] = useState<number | null>(null)
@@ -162,9 +164,9 @@ export function SlotCard({
             href={`/recipes/${slot.recipe_id}`}
             className="text-base font-medium text-gray-900 line-clamp-2 leading-snug hover:text-blue-600 transition-colors"
           >
-            {slot.recipe?.title ?? 'Recipe'}
+            {slot.recipe?.title ?? t('slotCard.recipeFallback')}
             {savedPortions != null && (
-              <span className="text-gray-400 text-xs font-normal ml-1">({savedPortions} portions)</span>
+              <span className="text-gray-400 text-xs font-normal ml-1">{t('slotCard.portions', { count: savedPortions })}</span>
             )}
           </Link>
         </div>
@@ -174,7 +176,7 @@ export function SlotCard({
           {...attributes}
           {...listeners}
           className="hidden md:block absolute top-1.5 left-1.5 p-0.5 rounded bg-white/80 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-          aria-label="Drag to move"
+          aria-label={t('slotCard.dragAria')}
         >
           <GripVertical size={12} />
         </button>
@@ -184,7 +186,7 @@ export function SlotCard({
           type="button"
           onClick={() => setConfirming(true)}
           className="hidden md:block absolute top-1.5 right-1.5 p-0.5 rounded bg-white/80 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-          aria-label="Remove from plan"
+          aria-label={t('slotCard.removeAria')}
         >
           <X size={12} />
         </button>
@@ -196,8 +198,8 @@ export function SlotCard({
             className={`hidden md:flex absolute top-0 bottom-0 right-[-10px] w-7 flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
               isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}
-            title="Drag to extend or shrink across days"
-            aria-label="Drag to extend or shrink across days"
+            title={t('slotCard.extendTitle')}
+            aria-label={t('slotCard.extendTitle')}
           >
             <GripHorizontal size={12} className="text-gray-400" />
           </div>
@@ -207,8 +209,8 @@ export function SlotCard({
 
       {confirming && (
         <ConfirmModal
-          message={`Remove "${slot.recipe?.title ?? 'this recipe'}" from the plan?`}
-          confirmLabel="Remove"
+          message={t('slotCard.removeConfirm', { title: slot.recipe?.title ?? t('slotCard.removeConfirmFallback') })}
+          confirmLabel={t('slotCard.removeConfirmLabel')}
           onConfirm={() => { setConfirming(false); onDelete() }}
           onCancel={() => setConfirming(false)}
         />

@@ -1,1 +1,77 @@
-{}
+{
+  "labels": {
+    "removeConfirm": "Odstrániť „{label}“ z plánu?",
+    "removeConfirmLabel": "Odstrániť",
+    "removeAria": "Odstrániť",
+    "dragAria": "Presunúť ťahaním",
+    "custom": "Vlastné"
+  },
+  "editList": {
+    "oneDay": "{weekday} {day} · 1 deň",
+    "multiDay": "{startWeekday} {startDay} → {endWeekday} {endDay} · {days, plural, one {# deň} few {# dni} other {# dní}}",
+    "recipeFallback": "Jedlo",
+    "dragMoveAria": "Presunúť ťahaním na iný deň",
+    "shrinkAria": "Skrátiť o jeden deň",
+    "extendAria": "Predĺžiť o jeden deň",
+    "removeAria": "Odstrániť z plánu",
+    "addMealAria": "Pridať jedlo na {weekday} {day}",
+    "addMeal": "Pridať jedlo"
+  },
+  "client": {
+    "headingW": "T",
+    "headingRest": "ýždenný plánovač",
+    "subtitle": "Naplánujte si jedlá na tento týždeň",
+    "shoppingActionsAria": "Akcie nákupného zoznamu",
+    "generateShoppingList": "Vytvoriť nákupný zoznam",
+    "done": "Hotovo",
+    "edit": "Upraviť",
+    "actionsAria": "Akcie plánovača",
+    "emptyHeading": "Na tento týždeň nie je nič naplánované",
+    "emptyBody": "Vyberte si obľúbený recept a pridajte ho do plánu zo svojej kuchárky.",
+    "browseRecipes": "Prehliadať recepty"
+  },
+  "desktopGrid": {
+    "addMealAria": "Pridať jedlo na {weekday}"
+  },
+  "mobileAgenda": {
+    "nothingPlanned": "Nič naplánované",
+    "dayBadge": "deň {index}/{span}",
+    "recipeFallback": "Recept",
+    "customFallback": "Vlastné"
+  },
+  "search": {
+    "placeholder": "Hľadať recepty…",
+    "quickLabels": "Rýchle štítky",
+    "searching": "Vyhľadávam…",
+    "noResults": "Nenašli sa žiadne recepty",
+    "useAsCustom": "Použiť „{query}“ ako vlastné jedlo"
+  },
+  "slotCard": {
+    "recipeFallback": "Recept",
+    "portions": "({count} porcií)",
+    "dragAria": "Presunúť ťahaním",
+    "removeAria": "Odstrániť z plánu",
+    "extendTitle": "Ťahaním predĺžite alebo skrátite naprieč dňami",
+    "removeConfirm": "Odstrániť „{title}“ z plánu?",
+    "removeConfirmFallback": "tento recept",
+    "removeConfirmLabel": "Odstrániť"
+  },
+  "weekNav": {
+    "prevAria": "Predchádzajúci týždeň",
+    "nextAria": "Nasledujúci týždeň",
+    "thisWeek": "Tento týždeň",
+    "nextWeek": "Budúci týždeň"
+  },
+  "rules": {
+    "heading": "Pravidlá plánovania",
+    "activeCount": "{count} aktívnych",
+    "notEnforcedWarning": "Tieto pravidlá sú uložené, ale zatiaľ sa nevynucujú — plánovanie s AI je pripravovaná funkcia.",
+    "noneYet": "Na tento týždeň zatiaľ nie sú žiadne pravidlá.",
+    "disableTitle": "Vypnúť pravidlo",
+    "enableTitle": "Zapnúť pravidlo",
+    "placeholder": "napr. Žiadne ryby dva dni po sebe",
+    "add": "Pridať",
+    "cancel": "Zrušiť",
+    "addRuleFor": "Pridať pravidlo pre tento týždeň"
+  }
+}

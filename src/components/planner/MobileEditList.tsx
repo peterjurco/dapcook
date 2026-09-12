@@ -13,7 +13,7 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { GripVertical, Trash2, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { RecipeSearch } from './RecipeSearch'
 import { maxSpanForStart, type EditDay } from '@/lib/planner/layout'
@@ -33,23 +33,36 @@ interface MobileEditListProps {
 }
 
 /** "Tue 9" for a single day, "Tue 9 → Fri 12 · 4 days" for a span. */
-function rangeLabel(slot: MealSlotWithRecipe, weekDays: Date[], locale: Locale): string {
+function rangeLabel(
+  slot: MealSlotWithRecipe,
+  weekDays: Date[],
+  locale: Locale,
+  t: ReturnType<typeof useTranslations>,
+): string {
   const start = formatDayLabel(weekDays[slot.day_of_week - 1], locale)
-  if (slot.span_days <= 1) return `${start.weekday} ${start.day} · 1 day`
+  if (slot.span_days <= 1) return t('editList.oneDay', { weekday: start.weekday, day: start.day })
   const end = formatDayLabel(weekDays[slot.day_of_week + slot.span_days - 2], locale)
-  return `${start.weekday} ${start.day} → ${end.weekday} ${end.day} · ${slot.span_days} days`
+  return t('editList.multiDay', {
+    startWeekday: start.weekday,
+    startDay: start.day,
+    endWeekday: end.weekday,
+    endDay: end.day,
+    days: slot.span_days,
+  })
 }
 
 function MealRow({
   slot,
   weekDays,
   locale,
+  t,
   onDelete,
   onSpanChange,
 }: {
   slot: MealSlotWithRecipe
   weekDays: Date[]
   locale: Locale
+  t: ReturnType<typeof useTranslations>
   onDelete: () => void
   onSpanChange: (newSpan: number) => void
 }) {
@@ -62,7 +75,7 @@ function MealRow({
     zIndex: isDragging ? 10 : undefined,
     opacity: isDragging ? 0.7 : 1,
   }
-  const title = slot.recipe?.title ?? slot.custom_label ?? 'Meal'
+  const title = slot.recipe?.title ?? slot.custom_label ?? t('editList.recipeFallback')
   const maxSpan = maxSpanForStart(slot.day_of_week)
 
   return (
@@ -78,7 +91,7 @@ function MealRow({
         {...attributes}
         {...listeners}
         className="touch-none pl-3 text-gray-300 cursor-grab active:cursor-grabbing flex-shrink-0 self-center"
-        aria-label="Drag to move to another day"
+        aria-label={t('editList.dragMoveAria')}
       >
         <GripVertical size={22} />
       </button>
@@ -95,13 +108,13 @@ function MealRow({
 
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs font-semibold text-gray-500 leading-none">{rangeLabel(slot, weekDays, locale)}</p>
+            <p className="text-xs font-semibold text-gray-500 leading-none">{rangeLabel(slot, weekDays, locale, t)}</p>
             <button
               type="button"
               onClick={() => onSpanChange(slot.span_days - 1)}
               disabled={slot.span_days <= 1}
               className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-              aria-label="Shrink by one day"
+              aria-label={t('editList.shrinkAria')}
             >
               <ChevronLeft size={12} />
             </button>
@@ -110,7 +123,7 @@ function MealRow({
               onClick={() => onSpanChange(slot.span_days + 1)}
               disabled={slot.span_days >= maxSpan}
               className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-              aria-label="Extend by one day"
+              aria-label={t('editList.extendAria')}
             >
               <ChevronRight size={12} />
             </button>
@@ -123,7 +136,7 @@ function MealRow({
         type="button"
         onClick={onDelete}
         className="pr-3 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 self-center"
-        aria-label="Remove from plan"
+        aria-label={t('editList.removeAria')}
       >
         <Trash2 size={20} />
       </button>
@@ -135,6 +148,7 @@ function DaySection({
   editDay,
   weekDays,
   locale,
+  t,
   isSearchOpen,
   isLoading,
   onOpenSearch,
@@ -147,6 +161,7 @@ function DaySection({
   editDay: EditDay
   weekDays: Date[]
   locale: Locale
+  t: ReturnType<typeof useTranslations>
   isSearchOpen: boolean
   isLoading: boolean
   onOpenSearch: () => void
@@ -178,6 +193,7 @@ function DaySection({
             slot={slot}
             weekDays={weekDays}
             locale={locale}
+            t={t}
             onDelete={() => onDelete(slot.id)}
             onSpanChange={(newSpan) => onSpanChange(slot.id, newSpan)}
           />
@@ -206,10 +222,10 @@ function DaySection({
             type="button"
             onClick={onOpenSearch}
             className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-            aria-label={`Add meal to ${weekday} ${day}`}
+            aria-label={t('editList.addMealAria', { weekday, day })}
           >
             <Plus size={16} />
-            Add meal
+            {t('editList.addMeal')}
           </button>
         )}
       </div>
@@ -227,6 +243,7 @@ export function MobileEditList({
   onAddCustom,
 }: MobileEditListProps) {
   const locale = useLocale() as Locale
+  const t = useTranslations('planner')
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
   const [loadingDay, setLoadingDay] = useState<number | null>(null)
 
@@ -263,6 +280,7 @@ export function MobileEditList({
             editDay={editDay}
             weekDays={weekDays}
             locale={locale}
+            t={t}
             isSearchOpen={openSearchDay === editDay.dayOfWeek}
             isLoading={loadingDay === editDay.dayOfWeek}
             onOpenSearch={() => setOpenSearchDay(editDay.dayOfWeek)}

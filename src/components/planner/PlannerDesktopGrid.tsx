@@ -1,7 +1,7 @@
 'use client'
 
 import { useDroppable } from '@dnd-kit/core'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Plus } from 'lucide-react'
 import { DayHeader } from './DayHeader'
 import { SlotCard } from './SlotCard'
@@ -54,6 +54,7 @@ export function PlannerDesktopGrid({
   onSpanCommit,
 }: PlannerDesktopGridProps) {
   const locale = useLocale()
+  const t = useTranslations('planner')
   const lanes = packLanes(slots)
   const todayStr = toDateString(today)
 
@@ -165,7 +166,7 @@ export function PlannerDesktopGrid({
                     <button
                       type="button"
                       onClick={() => onOpenSearch(day)}
-                      aria-label={`Add meal to ${weekday}`}
+                      aria-label={t('desktopGrid.addMealAria', { weekday })}
                       className="w-full h-full min-h-[11rem] flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-gray-300 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-400"
                     >
                       <Plus size={16} />
@@ -182,7 +183,7 @@ export function PlannerDesktopGrid({
                     <button
                       type="button"
                       onClick={() => onOpenSearch(day)}
-                      aria-label={`Add meal to ${weekday}`}
+                      aria-label={t('desktopGrid.addMealAria', { weekday })}
                       className="flex items-center justify-center w-9 h-9 rounded-lg border-2 border-dashed border-gray-200 text-gray-300 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-400"
                     >
                       <Plus size={16} />

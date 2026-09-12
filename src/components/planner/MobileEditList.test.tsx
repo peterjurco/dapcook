@@ -4,9 +4,15 @@ import { describe, it, expect, vi } from 'vitest'
 import { MobileEditList } from './MobileEditList'
 import { buildEditDays } from '@/lib/planner/layout'
 import { getWeekDays } from '@/lib/utils/week'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
-vi.mock('next-intl', () => ({ useLocale: () => 'en' }))
+vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
+    mockTranslate(namespace, key, values),
+}))
 
 function recipeSlot(p: { id: string; day_of_week: number; span_days: number; title: string }): MealSlotWithRecipe {
   return {
@@ -51,6 +57,16 @@ describe('MobileEditList', () => {
     ])
     expect(screen.getByText('Meal A')).toBeInTheDocument()
     expect(screen.getByText('Meal B')).toBeInTheDocument()
+  })
+
+  it('renders the range label for a single day and a pluralized multi-day span', () => {
+    setup([
+      recipeSlot({ id: 'a', day_of_week: 2, span_days: 1, title: 'Meal A' }),
+      recipeSlot({ id: 'b', day_of_week: 2, span_days: 2, title: 'Meal B' }),
+    ])
+    // weekDays[0] = Mon 8 Jun 2026 → day_of_week 2 = Tue 9
+    expect(screen.getByText('Tue 9 · 1 day')).toBeInTheDocument()
+    expect(screen.getByText('Tue 9 → Wed 10 · 2 days')).toBeInTheDocument()
   })
 
   it('shows an "Add meal" affordance under every day', () => {

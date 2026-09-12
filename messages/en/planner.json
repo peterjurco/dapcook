@@ -1,1 +1,77 @@
-{}
+{
+  "labels": {
+    "removeConfirm": "Remove \"{label}\" from the plan?",
+    "removeConfirmLabel": "Remove",
+    "removeAria": "Remove",
+    "dragAria": "Drag to reorder",
+    "custom": "Custom"
+  },
+  "editList": {
+    "oneDay": "{weekday} {day} · 1 day",
+    "multiDay": "{startWeekday} {startDay} → {endWeekday} {endDay} · {days, plural, one {# day} other {# days}}",
+    "recipeFallback": "Meal",
+    "dragMoveAria": "Drag to move to another day",
+    "shrinkAria": "Shrink by one day",
+    "extendAria": "Extend by one day",
+    "removeAria": "Remove from plan",
+    "addMealAria": "Add meal to {weekday} {day}",
+    "addMeal": "Add meal"
+  },
+  "client": {
+    "headingW": "W",
+    "headingRest": "eekly Planner",
+    "subtitle": "Plan your meals for the week",
+    "shoppingActionsAria": "Shopping list actions",
+    "generateShoppingList": "Generate shopping list",
+    "done": "Done",
+    "edit": "Edit",
+    "actionsAria": "Planner actions",
+    "emptyHeading": "Nothing planned for this week",
+    "emptyBody": "Pick a recipe you like and add it to the plan from your cookbook.",
+    "browseRecipes": "Browse recipes"
+  },
+  "desktopGrid": {
+    "addMealAria": "Add meal to {weekday}"
+  },
+  "mobileAgenda": {
+    "nothingPlanned": "Nothing planned",
+    "dayBadge": "day {index}/{span}",
+    "recipeFallback": "Recipe",
+    "customFallback": "Custom"
+  },
+  "search": {
+    "placeholder": "Search recipes…",
+    "quickLabels": "Quick labels",
+    "searching": "Searching…",
+    "noResults": "No recipes found",
+    "useAsCustom": "Use “{query}” as a custom meal"
+  },
+  "slotCard": {
+    "recipeFallback": "Recipe",
+    "portions": "({count} portions)",
+    "dragAria": "Drag to move",
+    "removeAria": "Remove from plan",
+    "extendTitle": "Drag to extend or shrink across days",
+    "removeConfirm": "Remove \"{title}\" from the plan?",
+    "removeConfirmFallback": "this recipe",
+    "removeConfirmLabel": "Remove"
+  },
+  "weekNav": {
+    "prevAria": "Previous week",
+    "nextAria": "Next week",
+    "thisWeek": "This week",
+    "nextWeek": "Next week"
+  },
+  "rules": {
+    "heading": "Planning rules",
+    "activeCount": "{count} active",
+    "notEnforcedWarning": "These rules are saved but not yet enforced — AI-assisted planning is an upcoming feature.",
+    "noneYet": "No rules for this week yet.",
+    "disableTitle": "Disable rule",
+    "enableTitle": "Enable rule",
+    "placeholder": "e.g. No fish two days in a row",
+    "add": "Add",
+    "cancel": "Cancel",
+    "addRuleFor": "Add rule for this week"
+  }
+}

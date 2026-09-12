@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, X, Plus } from 'lucide-react'
 import type { Recipe } from '@/types/database'
 import { CUSTOM_LABELS } from '@/types/planner'
@@ -12,6 +13,7 @@ interface RecipeSearchProps {
 }
 
 export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: RecipeSearchProps) {
+  const t = useTranslations('planner')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(false)
@@ -66,7 +68,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search recipes…"
+          placeholder={t('search.placeholder')}
           className="flex-1 text-sm text-gray-900 outline-none placeholder:text-gray-400"
         />
         <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -77,7 +79,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
       {/* Custom labels */}
       {!query && (
         <div className="p-2 border-b border-gray-100">
-          <p className="text-xs font-medium text-gray-400 px-2 mb-1">Quick labels</p>
+          <p className="text-xs font-medium text-gray-400 px-2 mb-1">{t('search.quickLabels')}</p>
           <div className="flex flex-wrap gap-1.5 px-1">
             {CUSTOM_LABELS.map((label) => (
               <button
@@ -96,10 +98,10 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
       {/* Results */}
       <div className="max-h-56 overflow-y-auto">
         {loading && (
-          <p className="text-xs text-gray-400 px-4 py-3">Searching…</p>
+          <p className="text-xs text-gray-400 px-4 py-3">{t('search.searching')}</p>
         )}
         {!loading && query && results.length === 0 && (
-          <p className="text-xs text-gray-400 px-4 py-3">No recipes found</p>
+          <p className="text-xs text-gray-400 px-4 py-3">{t('search.noResults')}</p>
         )}
         {results.map((recipe) => (
           <button
@@ -129,7 +131,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
           >
             <Plus size={14} className="text-gray-400 flex-shrink-0" />
             <span className="text-sm text-gray-600 line-clamp-1">
-              Use “{query.trim()}” as a custom meal
+              {t('search.useAsCustom', { query: query.trim() })}
             </span>
           </button>
         )}

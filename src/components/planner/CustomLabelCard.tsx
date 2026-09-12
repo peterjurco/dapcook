@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
+import { useTranslations } from 'next-intl'
 import { GripVertical, X, UtensilsCrossed, ShoppingBag, Soup } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { MealSlotWithRecipe } from '@/types/planner'
@@ -48,8 +49,9 @@ interface CustomLabelCardProps {
 }
 
 export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: CustomLabelCardProps) {
+  const t = useTranslations('planner')
   const [confirming, setConfirming] = useState(false)
-  const label = slot.custom_label ?? 'Custom'
+  const label = slot.custom_label ?? t('labels.custom')
   const style = getStyle(label)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -85,7 +87,7 @@ export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: Custom
           {...attributes}
           {...listeners}
           className="absolute top-1.5 left-1.5 p-0.5 rounded bg-white/70 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-          aria-label="Drag to reorder"
+          aria-label={t('labels.dragAria')}
         >
           <GripVertical size={12} />
         </button>
@@ -95,7 +97,7 @@ export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: Custom
           type="button"
           onClick={() => setConfirming(true)}
           className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/70 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Remove"
+          aria-label={t('labels.removeAria')}
         >
           <X size={12} />
         </button>
@@ -103,8 +105,8 @@ export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: Custom
 
       {confirming && (
         <ConfirmModal
-          message={`Remove "${label}" from the plan?`}
-          confirmLabel="Remove"
+          message={t('labels.removeConfirm', { label })}
+          confirmLabel={t('labels.removeConfirmLabel')}
           onConfirm={() => { setConfirming(false); onDelete() }}
           onCancel={() => setConfirming(false)}
         />

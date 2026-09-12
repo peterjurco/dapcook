@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import { formatWeekLabel, nextWeekStart, prevWeekStart, toDateString, isCurrentWeek, isNextWeek } from '@/lib/utils/week'
 
@@ -12,6 +12,7 @@ interface WeekNavProps {
 export function WeekNav({ weekStart }: WeekNavProps) {
   const router = useRouter()
   const locale = useLocale()
+  const t = useTranslations('planner')
 
   function navigate(date: Date) {
     router.push(`/planner?week=${toDateString(date)}`)
@@ -25,7 +26,7 @@ export function WeekNav({ weekStart }: WeekNavProps) {
         type="button"
         onClick={() => navigate(prevWeekStart(weekStart))}
         className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-        aria-label="Previous week"
+        aria-label={t('weekNav.prevAria')}
       >
         <ChevronLeft size={18} />
       </button>
@@ -38,12 +39,12 @@ export function WeekNav({ weekStart }: WeekNavProps) {
         </h2>
         {isCurrentWeek(weekStart) && (
           <span className="whitespace-nowrap text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
-            This week
+            {t('weekNav.thisWeek')}
           </span>
         )}
         {isNext && (
           <span className="whitespace-nowrap text-xs font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
-            Next week
+            {t('weekNav.nextWeek')}
           </span>
         )}
       </div>
@@ -52,7 +53,7 @@ export function WeekNav({ weekStart }: WeekNavProps) {
         type="button"
         onClick={() => navigate(nextWeekStart(weekStart))}
         className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-        aria-label="Next week"
+        aria-label={t('weekNav.nextAria')}
       >
         <ChevronRight size={18} />
       </button>
