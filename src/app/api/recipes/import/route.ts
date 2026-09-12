@@ -7,7 +7,8 @@ import { transformRecipe } from '@/lib/ai/transform-recipe'
 import { categorizeTranslationError } from '@/lib/ai/translation-error'
 import { categorizeScrapeError } from '@/lib/scraper/scrape-error'
 import { LANGUAGE_NAMES } from '@/lib/constants/languages'
-import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
+import { defaultLocale } from '@/i18n/config'
+import { getUserTranslations } from '@/i18n/server-utils'
 import type { RecipeDraft } from '@/types/recipe'
 
 export type ImportEvent =
@@ -30,9 +31,8 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await supabase
     .from('profiles').select('household_id, ui_language').eq('id', user.id).single()
 
-  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
-  const t = await getTranslations({ locale, namespace: 'errors' })
-  const tRecipes = await getTranslations({ locale, namespace: 'recipes' })
+  const t = await getUserTranslations(profile, 'errors')
+  const tRecipes = await getUserTranslations(profile, 'recipes')
 
   const body = await request.json() as { url?: string }
   const url = body.url?.trim()

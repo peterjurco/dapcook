@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
-import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
+import { defaultLocale } from '@/i18n/config'
+import { getUserTranslations } from '@/i18n/server-utils'
 import type { Ingredient, Step } from '@/types/recipe'
 
 export async function GET(
@@ -21,8 +22,7 @@ export async function GET(
     .eq('id', user.id)
     .single()
 
-  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
-  const t = await getTranslations({ locale, namespace: 'errors' })
+  const t = await getUserTranslations(profile, 'errors')
 
   const { data, error } = await supabase
     .from('recipes')
@@ -52,8 +52,7 @@ export async function PUT(
     .eq('id', user.id)
     .single()
 
-  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
-  const t = await getTranslations({ locale, namespace: 'errors' })
+  const t = await getUserTranslations(profile, 'errors')
 
   const body = await request.json() as {
     title?: string

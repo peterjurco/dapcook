@@ -2,10 +2,9 @@
 
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateInviteToken } from '@/lib/utils/invite'
-import { defaultLocale, isLocale, type Locale } from '@/i18n/config'
+import { getUserTranslations } from '@/i18n/server-utils'
 import { getOrigin } from './getOrigin'
 
 export async function signInWithGoogle(redirectTo?: string) {
@@ -75,8 +74,7 @@ export async function createHousehold(name: string) {
 
   const { data: profile } = await supabase
     .from('profiles').select('ui_language').eq('id', user.id).single()
-  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
-  const t = await getTranslations({ locale, namespace: 'errors' })
+  const t = await getUserTranslations(profile, 'errors')
 
   const inviteToken = generateInviteToken()
   const householdId = crypto.randomUUID()
@@ -116,8 +114,7 @@ export async function joinHousehold(inviteToken: string) {
 
   const { data: profile } = await supabase
     .from('profiles').select('ui_language').eq('id', user.id).single()
-  const locale: Locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
-  const t = await getTranslations({ locale, namespace: 'errors' })
+  const t = await getUserTranslations(profile, 'errors')
 
   const { data: householdRows, error: lookupError } = await supabase
     .rpc('get_household_by_invite_token', { token: inviteToken })
