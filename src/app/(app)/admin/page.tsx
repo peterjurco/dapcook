@@ -109,7 +109,7 @@ export default async function AdminPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-right text-gray-600 font-mono text-xs">
-                  {formatTokens(row.total_input_tokens)} in / {formatTokens(row.total_output_tokens)} out
+                  {formatTokens(row.total_input_tokens)} {t('table.tokensIn')} / {formatTokens(row.total_output_tokens)} {t('table.tokensOut')}
                 </td>
                 <td className="px-4 py-3 text-right text-gray-700">
                   {formatCost(row.total_input_tokens, row.total_output_tokens)}

@@ -6,6 +6,8 @@
     "recipes": "Recepty",
     "lastSignIn": "Posledné prihlásenie",
     "aiTokens": "AI tokeny",
+    "tokensIn": "vstup",
+    "tokensOut": "výstup",
     "estCost": "Odhad. náklady"
   },
   "empty": "Zatiaľ žiadne domácnosti."
