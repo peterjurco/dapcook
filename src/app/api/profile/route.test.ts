@@ -87,4 +87,33 @@ describe('PATCH /api/profile', () => {
     const res = await PATCH(req({}))
     expect(res.status).toBe(400)
   })
+
+  it('stores a valid ui_language for the current user only', async () => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ ui_language: 'sk' }))
+    expect(res.status).toBe(200)
+
+    const qb = supabase.from.mock.results[0].value
+    expect(qb.update).toHaveBeenCalledWith({ ui_language: 'sk' })
+    expect(qb.eq).toHaveBeenCalledWith('id', 'user-1')
+  })
+
+  it('returns 400 when ui_language is not a recognized locale', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    const res = await PATCH(req({ ui_language: 'fr' }))
+    expect(res.status).toBe(400)
+  })
+
+  it('updates both fields when both are provided', async () => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ default_recipe_filter: ['main'], ui_language: 'en' }))
+    expect(res.status).toBe(200)
+
+    const qb = supabase.from.mock.results[0].value
+    expect(qb.update).toHaveBeenCalledWith({ default_recipe_filter: ['main'], ui_language: 'en' })
+  })
 })
