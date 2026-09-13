@@ -13,8 +13,6 @@ describe('formatQtyUnit', () => {
       [1, 'lb', '1lb'],
       [2, 'tsp', '2tsp'],
       [1, 'tbsp', '1tbsp'],
-      [2, 'PL', '2PL'],
-      [1, 'ČL', '1ČL'],
     ])('%s %s → %s', (qty, unit, expected) => {
       expect(formatQtyUnit(qty, unit)).toBe(expected)
     })
@@ -31,6 +29,16 @@ describe('formatQtyUnit', () => {
       [1, 'clove', '1 clove'],
       [2, 'slices', '2 slices'],
       [1, 'bunch', '1 bunch'],
+    ])('%s %s → %s', (qty, unit, expected) => {
+      expect(formatQtyUnit(qty, unit)).toBe(expected)
+    })
+  })
+
+  describe('spoon short forms — space despite being abbreviations', () => {
+    it.each([
+      [2, 'PL', '2 PL'],
+      [1, 'ČL', '1 ČL'],
+      [1.5, 'čl', '1.5 čl'],
     ])('%s %s → %s', (qty, unit, expected) => {
       expect(formatQtyUnit(qty, unit)).toBe(expected)
     })

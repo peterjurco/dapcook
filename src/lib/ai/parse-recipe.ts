@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { Ingredient, Step } from '@/types/recipe'
 import { createClient } from '@/lib/supabase/server'
 import { logAiUsage } from './log-usage'
+import { normalizeUnit } from '@/lib/units/normalize-unit'
 
 const client = new Anthropic()
 
@@ -71,6 +72,7 @@ Return a JSON object with EXACTLY this structure, no other text:
 Rules:
 - quantity: number (null if none — e.g. "salt to taste" → null)
 - unit: string, empty string if no unit (e.g. "2 eggs" → quantity: 2, unit: "")
+- units: use short forms only — never spell them out (e.g. "čajová lyžička" → "ČL", "polievková lyžica" → "PL", "teaspoon" → "tsp", "tablespoon" → "tbsp")
 - name: the ingredient without quantity/unit/prep notes
 - notes: preparation notes like "finely chopped", "to serve", "optional" (empty string if none)
 - steps: clean up whitespace but preserve the full instruction text
@@ -105,7 +107,7 @@ Rules:
       ingredients: parsed.ingredients.map((ing) => ({
         id: crypto.randomUUID(),
         quantity: ing.quantity ?? null,
-        unit: ing.unit ?? '',
+        unit: normalizeUnit(ing.unit),
         name: ing.name ?? '',
         notes: ing.notes ?? '',
       })),

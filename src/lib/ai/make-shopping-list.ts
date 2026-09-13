@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { ShoppingItem, ShoppingCategory } from '@/types/database'
 import { createClient } from '@/lib/supabase/server'
 import { logAiUsage } from './log-usage'
+import { normalizeUnit } from '@/lib/units/normalize-unit'
 
 const client = new Anthropic()
 
@@ -35,7 +36,7 @@ export async function makeShoppingListSmart(
     id: item.id,
     name: item.name,
     quantity: item.quantity,
-    unit: item.unit ?? '',
+    unit: normalizeUnit(item.unit),
     source_recipe_ids: item.source_recipe_ids,
   }))
 
@@ -109,5 +110,7 @@ ${JSON.stringify(inputItems, null, 2)}`
     }))
   }
 
-  return { items: parsed.items, newCategories }
+  const items = parsed.items.map((item) => ({ ...item, unit: normalizeUnit(item.unit) }))
+
+  return { items, newCategories }
 }

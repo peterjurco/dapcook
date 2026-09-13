@@ -3,6 +3,7 @@ import type { Ingredient, Step } from '@/types/recipe'
 import { createClient } from '@/lib/supabase/server'
 import { logAiUsage } from './log-usage'
 import { LANGUAGE_NAMES } from '@/lib/constants/languages'
+import { normalizeUnit } from '@/lib/units/normalize-unit'
 
 export interface RecipeContent {
   title: string
@@ -39,13 +40,13 @@ export async function transformRecipe(
   const instructions: string[] = []
   if (needsTranslation) {
     const langName = LANGUAGE_NAMES[targetLanguage] ?? targetLanguage
-    instructions.push(`Translate all text fields to ${langName}. Use natural, colloquial culinary language as a native ${langName} cook would say it — prefer commonly used loanwords and established culinary terms over literal translations, and never calque English compound nouns word-for-word. Also translate measurement unit abbreviations to their conventional equivalents in the target language (e.g. in Slovak: tsp→ČL, tbsp→PL, cup→šálka).`)
+    instructions.push(`Translate all text fields to ${langName}. Use natural, colloquial culinary language as a native ${langName} cook would say it — prefer commonly used loanwords and established culinary terms over literal translations, and never calque English compound nouns word-for-word. Also translate measurement unit abbreviations to their conventional equivalents in the target language, always as short forms and never spelled out (e.g. in Slovak: tsp→ČL, tbsp→PL, cup→šálka).`)
   }
   if (needsUnitConversion) {
     instructions.push(
       `Convert all quantities to ${targetUnits} units (e.g. ${
         targetUnits === 'imperial' ? 'oz, lb, fl oz, cups, pints' : 'g, kg, ml, l'
-      }). Do not convert teaspoon/tablespoon measurements to volume units like ml — keep them as teaspoon/tablespoon (or their translated equivalent, e.g. čl/PL in Slovak).`
+      }). Do not convert teaspoon/tablespoon measurements to volume units like ml — keep them as spoon measures, written as the short form of the target language (in Slovak: ČL for teaspoon, PL for tablespoon).`
     )
   }
 
@@ -92,6 +93,7 @@ Return ONLY valid JSON matching the exact same structure. No other text.`
     ingredients: (parsed.ingredients ?? content.ingredients).map((ing, i) => ({
       ...ing,
       id: content.ingredients[i]?.id ?? ing.id ?? crypto.randomUUID(),
+      unit: normalizeUnit(ing.unit, targetLanguage),
     })),
     steps: (parsed.steps ?? content.steps).map((step, i) => ({
       ...step,

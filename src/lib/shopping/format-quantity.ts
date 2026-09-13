@@ -3,7 +3,11 @@ export function formatQty(qty: number): string {
   return String(parseFloat(qty.toPrecision(3)))
 }
 
+// Short forms that read as typos when glued to the number ("2ČL"), unlike "200g"
+const SPACED_ABBREVIATIONS = new Set(['čl', 'pl'])
+
 function isAbbreviation(unit: string): boolean {
+  if (SPACED_ABBREVIATIONS.has(unit.toLowerCase())) return false
   return unit.length < 3 || !/[aeiouáéíóúäöüàèìòùâêîôûåæøœ]/i.test(unit)
 }
 

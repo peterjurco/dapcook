@@ -94,7 +94,7 @@ describe('transformRecipe', () => {
 
     const prompt = (getCreateMock().mock.calls[0][0] as { messages: Array<{ content: string }> }).messages[0].content
     expect(prompt).toContain('Do not convert teaspoon/tablespoon measurements to volume units like ml')
-    expect(prompt).toContain('čl/PL in Slovak')
+    expect(prompt).toContain('ČL for teaspoon, PL for tablespoon')
   })
 
   it('calls Anthropic when targetUnits is imperial', async () => {
@@ -167,5 +167,51 @@ describe('transformRecipe', () => {
 
     const result = await transformRecipe(mockContent, { targetLanguage: 'sk' }, 'hh-1')
     expect(result).toEqual(mockContent)
+  })
+  describe('unit normalization', () => {
+    function respondWithUnits(units: string[]) {
+      mockAnthropicResponse({
+        ...mockContent,
+        ingredients: units.map((unit, i) => ({
+          id: `i${i + 1}`,
+          quantity: 1,
+          unit,
+          name: `ingredient ${i + 1}`,
+          notes: '',
+        })),
+      })
+    }
+
+    it('shortens spelled-out Slovak spoon units to ČL/PL', async () => {
+      respondWithUnits(['čajová lyžička', 'polievková lyžica'])
+
+      const result = await transformRecipe(mockContent, { targetLanguage: 'sk' }, 'hh-1')
+
+      expect(result.ingredients.map((i) => i.unit)).toEqual(['ČL', 'PL'])
+    })
+
+    it('folds English spoon units into ČL/PL when translating to Slovak', async () => {
+      respondWithUnits(['tsp', 'tbsp'])
+
+      const result = await transformRecipe(mockContent, { targetLanguage: 'sk' }, 'hh-1')
+
+      expect(result.ingredients.map((i) => i.unit)).toEqual(['ČL', 'PL'])
+    })
+
+    it('keeps English spoon units when translating to English', async () => {
+      respondWithUnits(['tsp', 'tbsp'])
+
+      const result = await transformRecipe(mockContent, { targetLanguage: 'en' }, 'hh-1')
+
+      expect(result.ingredients.map((i) => i.unit)).toEqual(['tsp', 'tbsp'])
+    })
+
+    it('leaves other units untouched', async () => {
+      respondWithUnits(['g', 'ml', 'šálka'])
+
+      const result = await transformRecipe(mockContent, { targetLanguage: 'sk' }, 'hh-1')
+
+      expect(result.ingredients.map((i) => i.unit)).toEqual(['g', 'ml', 'šálka'])
+    })
   })
 })
