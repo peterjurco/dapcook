@@ -7,6 +7,7 @@ import { AddToPlanButton } from './AddToPlanButton'
 import { orderTagsForCard, tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
 import { formatDuration } from '@/lib/utils/format'
 import type { Recipe } from '@/types/database'
+import Image from 'next/image'
 
 interface RecipeCardProps {
   recipe: Recipe
@@ -24,11 +25,12 @@ export function RecipeCard({ recipe, taxonomy }: RecipeCardProps) {
         {/* Image */}
         <div className="aspect-[4/3] bg-gray-100 overflow-hidden relative">
           {recipe.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={recipe.image_url}
               alt={recipe.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300">

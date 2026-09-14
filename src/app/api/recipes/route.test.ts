@@ -5,6 +5,8 @@ import { GET, POST } from './route'
 import { mockTranslate } from '@/test/mockMessages'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+const storeCoverImage = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/recipes/cover-image', () => ({ storeCoverImage }))
 vi.mock('next-intl/server', () => ({
   getTranslations: async ({ namespace }: { namespace: string }) => (key: string) => mockTranslate(namespace, key),
 }))
@@ -180,5 +182,55 @@ describe('POST /api/recipes', () => {
     const insertCall = recipeQB.insert.mock.calls[0][0] as Record<string, unknown>
     expect(insertCall.title).toBe('Test')
     expect(insertCall.ingredients).toEqual([{ id: 'i1', quantity: 200, unit: 'g', name: 'flour', notes: '' }])
+  })
+})
+
+/**
+ * `from()` hands back a fresh query builder per call, so reach for the one the
+ * handler actually used rather than building another.
+ */
+function lastInsertInto(supabase: ReturnType<typeof makeSupabase>, table: string) {
+  const from = supabase.from as ReturnType<typeof vi.fn>
+  const builders = from.mock.calls
+    .map((call, i) => (call[0] === table ? from.mock.results[i].value : null))
+    .filter(Boolean) as Record<string, ReturnType<typeof vi.fn>>[]
+  const insert = builders.at(-1)?.insert
+  return insert?.mock.calls.at(-1)?.[0]
+}
+
+describe('POST /api/recipes cover images', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    storeCoverImage.mockImplementation(async (url: string) => url)
+  })
+
+  function post(body: Record<string, unknown>) {
+    return req('/api/recipes', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Ratatouille', ...body }),
+    })
+  }
+
+  it('saves the mirrored cover instead of the third-party URL', async () => {
+    const supabase = makeSupabase({ insertResult: { data: { id: 'r-1' }, error: null } })
+    vi.mocked(createClient).mockReturnValue(supabase as never)
+    storeCoverImage.mockResolvedValue('https://project.supabase.co/storage/v1/object/public/recipe-images/abc.jpg')
+
+    await POST(post({ image_url: 'https://static01.nyt.com/cover.jpg' }))
+
+    expect(storeCoverImage).toHaveBeenCalledWith('https://static01.nyt.com/cover.jpg', expect.anything())
+    expect(lastInsertInto(supabase, 'recipes')).toMatchObject({
+      image_url: 'https://project.supabase.co/storage/v1/object/public/recipe-images/abc.jpg',
+    })
+  })
+
+  it('does not try to mirror a recipe saved without a cover', async () => {
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase({ insertResult: { data: { id: 'r-1' }, error: null } }) as never
+    )
+
+    await POST(post({}))
+
+    expect(storeCoverImage).not.toHaveBeenCalled()
   })
 })

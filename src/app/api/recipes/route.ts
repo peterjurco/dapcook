@@ -5,6 +5,7 @@ import { defaultLocale } from '@/i18n/config'
 import { getUserTranslations } from '@/i18n/server-utils'
 import type { Ingredient, Step } from '@/types/recipe'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { storeCoverImage } from '@/lib/recipes/cover-image'
 
 export async function GET(request: NextRequest) {
   const supabase = createClient()
@@ -77,6 +78,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('titleRequired') }, { status: 400 })
   }
 
+  // Covers are mirrored into our own bucket so every recipe image is served
+  // from one origin that next/image is allowed to optimise.
+  const sourceCover = body.image_url?.trim() || null
+  const imageUrl = sourceCover ? await storeCoverImage(sourceCover, { supabase }) : null
+
   const { data, error } = await supabase
     .from('recipes')
     .insert({
@@ -85,7 +91,7 @@ export async function POST(request: NextRequest) {
       title: body.title.trim(),
       description: body.description?.trim() || null,
       source_url: body.source_url?.trim() || null,
-      image_url: body.image_url?.trim() || null,
+      image_url: imageUrl,
       prep_time_min: body.prep_time_min ?? null,
       cook_time_min: body.cook_time_min ?? null,
       servings: body.servings ?? null,

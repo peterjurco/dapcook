@@ -6,6 +6,7 @@ import { Search, X, Plus } from 'lucide-react'
 import type { Recipe } from '@/types/database'
 import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import { CUSTOM_LABELS } from '@/types/planner'
+import Image from 'next/image'
 
 interface RecipeSearchProps {
   onSelectRecipe: (recipe: Recipe) => void
@@ -113,8 +114,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
           >
             <div className="w-8 h-8 rounded-md bg-gray-100 flex-shrink-0 overflow-hidden">
               {recipe.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" />
+                <Image src={recipe.image_url} alt={recipe.title} width={32} height={32} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gray-200" />
               )}

@@ -7,6 +7,7 @@ import { formatDuration } from '@/lib/utils/format'
 import type { Locale } from '@/i18n/config'
 import type { Recipe } from '@/types/database'
 import type { Ingredient, Step } from '@/types/recipe'
+import Image from 'next/image'
 
 interface RecipeViewProps {
   recipe: Recipe
@@ -36,9 +37,15 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
     <div className="min-h-full">
       {/* Hero image */}
       {r.image_url && (
-        <div className="h-72 lg:h-96 overflow-hidden bg-gray-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={r.image_url} alt={r.title} className="w-full h-full object-cover" />
+        <div className="relative h-72 lg:h-96 overflow-hidden bg-gray-100">
+          <Image
+            src={r.image_url}
+            alt={r.title}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
         </div>
       )}
 

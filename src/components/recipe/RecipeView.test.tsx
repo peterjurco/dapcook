@@ -43,10 +43,10 @@ describe('RecipeView', () => {
   it('presents the complete recipe without application actions', () => {
     render(<RecipeView recipe={recipe} locale="en" t={t} />)
 
-    expect(screen.getByRole('img', { name: 'Tomato Pasta' })).toHaveAttribute(
-      'src',
-      'https://images.test/pasta.jpg'
-    )
+    // next/image serves the cover through the optimiser, so the source URL
+    // arrives encoded in the `url` parameter rather than as a bare src.
+    const hero = screen.getByRole('img', { name: 'Tomato Pasta' })
+    expect(hero.getAttribute('src')).toContain(encodeURIComponent('https://images.test/pasta.jpg'))
     expect(screen.getByRole('heading', { level: 1, name: 'Tomato Pasta' })).toBeInTheDocument()
     expect(screen.getByText('Fast pasta')).toBeInTheDocument()
     expect(screen.getByText('quick')).toBeInTheDocument()

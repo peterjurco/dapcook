@@ -10,6 +10,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { ResizeHandle } from './ResizeHandle'
 import { useSpanResize } from './useSpanResize'
 import type { MealSlotWithRecipe } from '@/types/planner'
+import Image from 'next/image'
 
 interface SlotCardProps {
   slot: MealSlotWithRecipe
@@ -84,13 +85,14 @@ export function SlotCard({
         }`}
       >
         {/* Thumbnail — links to recipe. Fixed height so it stays compact even when spanning multiple columns */}
-        <Link href={`/recipes/${slot.recipe_id}`} className="block h-32 bg-gray-100 overflow-hidden rounded-t-lg">
+        <Link href={`/recipes/${slot.recipe_id}`} className="relative block h-32 bg-gray-100 overflow-hidden rounded-t-lg">
           {slot.recipe?.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={slot.recipe.image_url}
               alt={slot.recipe.title}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+              fill
+              sizes="(max-width: 1024px) 50vw, 220px"
+              className="object-cover hover:scale-105 transition-transform duration-200"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">

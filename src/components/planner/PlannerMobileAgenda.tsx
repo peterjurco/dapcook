@@ -6,6 +6,7 @@ import { buildMobileAgenda } from '@/lib/planner/layout'
 import { formatDayLabel, toDateString } from '@/lib/utils/week'
 import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import type { MealSlotWithRecipe } from '@/types/planner'
+import Image from 'next/image'
 
 interface PlannerMobileAgendaProps {
   weekDays: Date[]
@@ -81,8 +82,7 @@ function AgendaCardRow({
       >
         <div className="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
           {slot.recipe?.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={slot.recipe.image_url} alt={slot.recipe.title} className="w-full h-full object-cover" />
+            <Image src={slot.recipe.image_url} alt={slot.recipe.title} width={56} height={56} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-xl">🍽️</div>
           )}

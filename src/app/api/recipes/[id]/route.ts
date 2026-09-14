@@ -5,6 +5,7 @@ import { defaultLocale } from '@/i18n/config'
 import { getUserTranslations } from '@/i18n/server-utils'
 import type { Ingredient, Step } from '@/types/recipe'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { storeCoverImage } from '@/lib/recipes/cover-image'
 
 export async function GET(
   _request: NextRequest,
@@ -69,13 +70,17 @@ export async function PUT(
     notes?: string
   }
 
+  // A cover swapped in on edit gets mirrored into our bucket, same as on create.
+  const sourceCover = body.image_url?.trim() || null
+  const nextCover = sourceCover ? await storeCoverImage(sourceCover, { supabase }) : null
+
   const { data, error } = await supabase
     .from('recipes')
     .update({
       ...(body.title !== undefined && { title: body.title.trim() }),
       ...(body.description !== undefined && { description: body.description?.trim() || null }),
       ...(body.source_url !== undefined && { source_url: body.source_url?.trim() || null }),
-      ...(body.image_url !== undefined && { image_url: body.image_url?.trim() || null }),
+      ...(body.image_url !== undefined && { image_url: nextCover }),
       ...(body.prep_time_min !== undefined && { prep_time_min: body.prep_time_min }),
       ...(body.cook_time_min !== undefined && { cook_time_min: body.cook_time_min }),
       ...(body.servings !== undefined && { servings: body.servings }),

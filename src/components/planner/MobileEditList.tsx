@@ -22,6 +22,7 @@ import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import type { Locale } from '@/i18n/config'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import type { Recipe } from '@/types/database'
+import Image from 'next/image'
 
 interface MobileEditListProps {
   editDays: EditDay[]
@@ -100,8 +101,7 @@ function MealRow({
 
       <div className="flex-1 min-w-0 py-3 flex items-center gap-3">
         {slot.recipe?.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={slot.recipe.image_url} alt={title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+          <Image src={slot.recipe.image_url} alt={title} width={48} height={48} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
         ) : (
           <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
             <span className="text-lg">🍽️</span>
