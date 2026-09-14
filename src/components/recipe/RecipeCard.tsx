@@ -29,7 +29,7 @@ export function RecipeCard({ recipe, taxonomy }: RecipeCardProps) {
               src={recipe.image_url}
               alt={recipe.title}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (

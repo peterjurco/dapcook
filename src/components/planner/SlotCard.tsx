@@ -91,7 +91,7 @@ export function SlotCard({
               src={slot.recipe.image_url}
               alt={slot.recipe.title}
               fill
-              sizes="(max-width: 1024px) 50vw, 220px"
+              sizes="(max-width: 1024px) 50vw, 320px"
               className="object-cover hover:scale-105 transition-transform duration-200"
             />
           ) : (
