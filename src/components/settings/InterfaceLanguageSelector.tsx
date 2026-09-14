@@ -46,7 +46,7 @@ export function InterfaceLanguageSelector({ initialValue }: { initialValue: Loca
         value={value}
         disabled={saving}
         onChange={(e) => handleChange(e.target.value as Locale)}
-        className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+        className="text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-2 bg-white"
       >
         {locales.map((code) => (
           <option key={code} value={code}>

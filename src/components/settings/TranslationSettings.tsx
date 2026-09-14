@@ -96,7 +96,7 @@ export function TranslationSettings({ initialEnabled, initialLanguage, currentPr
           <select
             value={language}
             onChange={(e) => void handleLanguageChange(e.target.value)}
-            className="text-sm border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="text-sm border border-gray-200 rounded-md pl-2 pr-7 py-1.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
             {SUPPORTED_LANGUAGES.map((lang) => (
               <option key={lang.code} value={lang.code}>
