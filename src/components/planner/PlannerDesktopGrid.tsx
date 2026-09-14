@@ -121,7 +121,10 @@ export function PlannerDesktopGrid({
                 startDay={slot.day_of_week}
                 lane={lane}
                 span={span}
+                maxSpanDays={maxSpanForStart(slot.day_of_week)}
                 onDelete={() => onDelete(slot.id)}
+                onSpanPreview={(newSpan) => onSpanPreview(slot.id, newSpan)}
+                onSpanCommit={(newSpan) => onSpanCommit(slot.id, newSpan)}
               />
             )
           })}

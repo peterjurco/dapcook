@@ -247,7 +247,13 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                       maxSpanDays={1}
                     />
                   ) : (
-                    <CustomLabelCard slot={activeSlot} onDelete={() => {}} />
+                    <CustomLabelCard
+                      slot={activeSlot}
+                      onDelete={() => {}}
+                      onSpanPreview={() => {}}
+                      onSpanCommit={() => {}}
+                      maxSpanDays={1}
+                    />
                   )
                 )}
               </DragOverlay>

@@ -6,6 +6,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { useTranslations } from 'next-intl'
 import { GripVertical, X, UtensilsCrossed, ShoppingBag, Soup } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { ResizeHandle } from './ResizeHandle'
+import { useSpanResize } from './useSpanResize'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
 const LABEL_STYLES: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
@@ -42,13 +44,27 @@ function getStyle(label: string) {
 interface CustomLabelCardProps {
   slot: MealSlotWithRecipe
   onDelete: () => void
+  /** Called on every column boundary crossed during drag — updates state only, no API */
+  onSpanPreview: (newSpan: number) => void
+  /** Called once on mouseup — persists the final span to the API */
+  onSpanCommit: (newSpan: number) => void
+  maxSpanDays: number
   /** Desktop lane-grid placement. When omitted, the card does not self-place. */
   startDay?: number
   lane?: number
   span?: number
 }
 
-export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: CustomLabelCardProps) {
+export function CustomLabelCard({
+  slot,
+  onDelete,
+  onSpanPreview,
+  onSpanCommit,
+  maxSpanDays,
+  startDay,
+  lane,
+  span,
+}: CustomLabelCardProps) {
   const t = useTranslations('planner')
   const [confirming, setConfirming] = useState(false)
   const label = slot.custom_label ?? t('labels.custom')
@@ -57,6 +73,13 @@ export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: Custom
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
     data: { slot },
+  })
+
+  const { isResizing, showResizeHandle, handleResizeMouseDown } = useSpanResize({
+    spanDays: slot.span_days,
+    maxSpanDays,
+    onSpanPreview,
+    onSpanCommit,
   })
 
   const placement: React.CSSProperties =
@@ -73,8 +96,8 @@ export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: Custom
       <div
         ref={setNodeRef}
         style={css}
-        className={`relative h-full min-h-[11rem] rounded-lg border overflow-hidden group ${style.bg} ${
-          isDragging ? 'shadow-lg ring-2 ring-gray-300' : ''
+        className={`relative h-full min-h-[11rem] rounded-lg border group ${style.bg} ${
+          isDragging ? 'shadow-lg ring-2 ring-gray-300' : isResizing ? 'border-gray-400 shadow-md' : ''
         }`}
       >
         <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-4 h-full">
@@ -101,6 +124,14 @@ export function CustomLabelCard({ slot, onDelete, startDay, lane, span }: Custom
         >
           <X size={12} />
         </button>
+
+        {/* Resize handle — desktop only, drag right to extend / left to shrink */}
+        <ResizeHandle
+          show={showResizeHandle}
+          isResizing={isResizing}
+          title={t('slotCard.extendTitle')}
+          onMouseDown={handleResizeMouseDown}
+        />
       </div>
 
       {confirming && (

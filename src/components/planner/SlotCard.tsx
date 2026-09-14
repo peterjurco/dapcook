@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useTranslations } from 'next-intl'
-import { GripVertical, X, GripHorizontal } from 'lucide-react'
+import { GripVertical, X } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { ResizeHandle } from './ResizeHandle'
+import { useSpanResize } from './useSpanResize'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
 interface SlotCardProps {
@@ -35,7 +37,6 @@ export function SlotCard({
 }: SlotCardProps) {
   const t = useTranslations('planner')
   const [confirming, setConfirming] = useState(false)
-  const [isResizing, setIsResizing] = useState(false)
   const [savedPortions, setSavedPortions] = useState<number | null>(null)
 
   useEffect(() => {
@@ -66,72 +67,12 @@ export function SlotCard({
     ? { ...placement, transform: CSS.Translate.toString(transform), zIndex: 50, opacity: 0.9 }
     : placement
 
-  const canExpand = slot.span_days < maxSpanDays && slot.span_days < 7
-  const showResizeHandle = canExpand || slot.span_days > 1
-
-  function handleResizeMouseDown(e: React.MouseEvent<HTMLDivElement>) {
-    e.preventDefault()
-    e.stopPropagation() // prevent dnd-kit from treating this as a move drag
-
-    const cardEl = e.currentTarget.parentElement as HTMLElement
-    const cardRect = cardEl.getBoundingClientRect()
-    const GAP = 12 // gap-3
-    const singleColWidth = (cardRect.width - (slot.span_days - 1) * GAP) / slot.span_days
-    const columnWidth = singleColWidth + GAP
-
-    const startX = e.clientX
-    const startWidth = cardRect.width
-    const startSpan = slot.span_days
-    let liveSpan = startSpan
-
-    // Lock to pixel width and lift above adjacent slots so overflow is visible
-    cardEl.style.width = `${startWidth}px`
-    cardEl.style.zIndex = '20'
-
-    setIsResizing(true)
-    document.body.style.cursor = 'ew-resize'
-    document.body.style.userSelect = 'none'
-
-    function onMouseMove(ev: MouseEvent) {
-      const dx = ev.clientX - startX
-      // Stretch/shrink the card DOM element directly — no React re-render during drag
-      const maxWidth = maxSpanDays * singleColWidth + (maxSpanDays - 1) * GAP
-      const newWidth = Math.max(singleColWidth * 0.5, Math.min(maxWidth, startWidth + dx))
-      cardEl.style.width = `${newWidth}px`
-
-      // Track discrete snap so we know what to commit on mouseup
-      const daysToAdd = Math.round(dx / columnWidth)
-      liveSpan = Math.max(1, Math.min(maxSpanDays, startSpan + daysToAdd))
-    }
-
-    function onMouseUp() {
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-
-      if (liveSpan !== startSpan) {
-        // Snap the card to the exact snapped width so the transition to the new
-        // grid cell is invisible (card is already at that pixel width when React commits)
-        const snappedWidth = liveSpan * singleColWidth + (liveSpan - 1) * GAP
-        cardEl.style.width = `${snappedWidth}px`
-        onSpanPreview(liveSpan)
-        onSpanCommit(liveSpan)
-      }
-
-      // After React commits the new grid column span, clear the explicit width
-      // rAF fires after microtasks (where React flushes state), so the grid
-      // has already updated by the time we clear — no flash
-      requestAnimationFrame(() => {
-        cardEl.style.width = ''
-        cardEl.style.zIndex = ''
-        setIsResizing(false)
-      })
-    }
-
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
-  }
+  const { isResizing, showResizeHandle, handleResizeMouseDown } = useSpanResize({
+    spanDays: slot.span_days,
+    maxSpanDays,
+    onSpanPreview,
+    onSpanCommit,
+  })
 
   return (
     <>
@@ -192,18 +133,12 @@ export function SlotCard({
         </button>
 
         {/* Resize handle — desktop only, drag right to extend / left to shrink */}
-        {showResizeHandle && (
-          <div
-            onMouseDown={handleResizeMouseDown}
-            className={`hidden md:flex absolute top-0 bottom-0 right-[-10px] w-7 flex-col items-center justify-center cursor-ew-resize rounded-r-lg z-10 transition-opacity ${
-              isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-            }`}
-            title={t('slotCard.extendTitle')}
-            aria-label={t('slotCard.extendTitle')}
-          >
-            <GripHorizontal size={12} className="text-gray-400" />
-          </div>
-        )}
+        <ResizeHandle
+          show={showResizeHandle}
+          isResizing={isResizing}
+          title={t('slotCard.extendTitle')}
+          onMouseDown={handleResizeMouseDown}
+        />
 
       </div>
 
