@@ -82,8 +82,8 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
         {(times.length > 0 || r.servings) && (
           <div className="flex flex-wrap gap-6 mt-6 py-4 border-y border-gray-100">
             {times.map(({ label, time }) => (
-              <div key={label} className="flex items-start gap-1.5">
-                <Clock size={15} className="text-gray-400 mt-px" />
+              <div key={label} className="flex items-start gap-1 sm:gap-1.5">
+                <Clock size={15} className="text-gray-400 mt-px h-[13px] w-[13px] sm:h-[15px] sm:w-[15px]" />
                 <div>
                   <p className="text-xs text-gray-400">{label}</p>
                   <p className="text-sm font-semibold text-gray-800">{time}</p>
@@ -91,8 +91,8 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
               </div>
             ))}
             {r.servings && (
-              <div className="flex items-start gap-1.5">
-                <Users size={15} className="text-gray-400 mt-px" />
+              <div className="flex items-start gap-1 sm:gap-1.5">
+                <Users size={15} className="text-gray-400 mt-px h-[13px] w-[13px] sm:h-[15px] sm:w-[15px]" />
                 <div>
                   <p className="text-xs text-gray-400">{t('view.servings')}</p>
                   <p className="text-sm font-semibold text-gray-800">{r.servings}</p>
