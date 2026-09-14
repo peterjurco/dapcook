@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { ImagePlus, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { prepareImageForUpload } from '@/lib/recipes/downscale-image'
 
 interface ImageUploadProps {
   value: string
@@ -28,13 +29,13 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
     setUploading(true)
     setError(null)
 
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `${crypto.randomUUID()}.${ext}`
+    const { body, contentType, extension } = await prepareImageForUpload(file)
+    const path = `${crypto.randomUUID()}.${extension}`
     const supabase = createClient()
 
     const { error: uploadError } = await supabase.storage
       .from('recipe-images')
-      .upload(path, file, { upsert: false })
+      .upload(path, body, { contentType, upsert: false })
 
     if (uploadError) {
       setError(t('imageUpload.uploadFailedPrefix') + uploadError.message)
