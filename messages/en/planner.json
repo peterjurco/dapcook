@@ -73,5 +73,11 @@
     "add": "Add",
     "cancel": "Cancel",
     "addRuleFor": "Add rule for this week"
+  },
+  "customLabels": {
+    "leftovers": "Leftovers",
+    "eatingOut": "Eating out",
+    "takeaway": "Takeaway",
+    "fasting": "Fasting"
   }
 }

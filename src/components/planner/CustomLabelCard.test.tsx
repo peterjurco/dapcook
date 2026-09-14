@@ -68,3 +68,34 @@ describe('CustomLabelCard resize', () => {
     expect(onSpanCommit).toHaveBeenCalledWith(2)
   })
 })
+
+describe('CustomLabelCard label translation', () => {
+  // The stored value stays English (card styling and shopping-list filtering
+  // key off it), so presets must go through the message catalog when rendered
+  function renderLabel(label: string) {
+    render(
+      <DndContext>
+        <CustomLabelCard
+          slot={customSlot({ id: 's1', day_of_week: 1, span_days: 1, label })}
+          onDelete={vi.fn()}
+          onSpanPreview={vi.fn()}
+          onSpanCommit={vi.fn()}
+          maxSpanDays={7}
+          startDay={1}
+          lane={0}
+          span={1}
+        />
+      </DndContext>
+    )
+  }
+
+  it('renders a preset label from the message catalog', () => {
+    renderLabel('Eating out')
+    expect(screen.getByText(mockTranslate('planner', 'customLabels.eatingOut'))).toBeInTheDocument()
+  })
+
+  it('renders a user-typed label verbatim', () => {
+    renderLabel('Babkine halušky')
+    expect(screen.getByText('Babkine halušky')).toBeInTheDocument()
+  })
+})

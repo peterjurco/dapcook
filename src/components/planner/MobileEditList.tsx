@@ -18,6 +18,7 @@ import { GripVertical, Trash2, ChevronLeft, ChevronRight, Plus } from 'lucide-re
 import { RecipeSearch } from './RecipeSearch'
 import { maxSpanForStart, type EditDay } from '@/lib/planner/layout'
 import { formatDayLabel } from '@/lib/utils/week'
+import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import type { Locale } from '@/i18n/config'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import type { Recipe } from '@/types/database'
@@ -75,7 +76,8 @@ function MealRow({
     zIndex: isDragging ? 10 : undefined,
     opacity: isDragging ? 0.7 : 1,
   }
-  const title = slot.recipe?.title ?? slot.custom_label ?? t('editList.recipeFallback')
+  const customLabel = slot.custom_label ? translateCustomLabel(slot.custom_label, t) : null
+  const title = slot.recipe?.title ?? customLabel ?? t('editList.recipeFallback')
   const maxSpan = maxSpanForStart(slot.day_of_week)
 
   return (

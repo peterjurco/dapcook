@@ -73,5 +73,11 @@
     "add": "Pridať",
     "cancel": "Zrušiť",
     "addRuleFor": "Pridať pravidlo pre tento týždeň"
+  },
+  "customLabels": {
+    "leftovers": "Zvyšky",
+    "eatingOut": "Jedlo vonku",
+    "takeaway": "Donáška",
+    "fasting": "Pôst"
   }
 }

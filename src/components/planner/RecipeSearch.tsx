@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Search, X, Plus } from 'lucide-react'
 import type { Recipe } from '@/types/database'
+import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import { CUSTOM_LABELS } from '@/types/planner'
 
 interface RecipeSearchProps {
@@ -88,7 +89,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
                 onClick={() => onSelectCustom(label)}
                 className="text-xs px-3 py-1 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors"
               >
-                {label}
+                {translateCustomLabel(label, t)}
               </button>
             ))}
           </div>

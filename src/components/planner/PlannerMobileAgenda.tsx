@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { buildMobileAgenda } from '@/lib/planner/layout'
 import { formatDayLabel, toDateString } from '@/lib/utils/week'
+import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
 interface PlannerMobileAgendaProps {
@@ -96,7 +97,7 @@ function AgendaCardRow({
     )
   }
 
-  const label = slot.custom_label ?? t('mobileAgenda.customFallback')
+  const label = translateCustomLabel(slot.custom_label ?? t('mobileAgenda.customFallback'), t)
   return (
     <div className={`flex items-center rounded-xl border border-gray-200 p-3 ${continuationClass}`}>
       <span className={`text-base font-medium ${isContinuation ? 'text-gray-500' : 'text-gray-900'}`}>{label}</span>

@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useTranslations } from 'next-intl'
 import { GripVertical, X, UtensilsCrossed, ShoppingBag, Soup } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import { ResizeHandle } from './ResizeHandle'
 import { useSpanResize } from './useSpanResize'
 import type { MealSlotWithRecipe } from '@/types/planner'
@@ -69,6 +70,7 @@ export function CustomLabelCard({
   const [confirming, setConfirming] = useState(false)
   const label = slot.custom_label ?? t('labels.custom')
   const style = getStyle(label)
+  const displayLabel = translateCustomLabel(label, t)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,
@@ -102,7 +104,7 @@ export function CustomLabelCard({
       >
         <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-4 h-full">
           {style.icon}
-          <p className={`text-xs font-semibold text-center leading-tight ${style.text}`}>{label}</p>
+          <p className={`text-xs font-semibold text-center leading-tight ${style.text}`}>{displayLabel}</p>
         </div>
 
         {/* Drag handle */}
@@ -136,7 +138,7 @@ export function CustomLabelCard({
 
       {confirming && (
         <ConfirmModal
-          message={t('labels.removeConfirm', { label })}
+          message={t('labels.removeConfirm', { label: displayLabel })}
           confirmLabel={t('labels.removeConfirmLabel')}
           onConfirm={() => { setConfirming(false); onDelete() }}
           onCancel={() => setConfirming(false)}
