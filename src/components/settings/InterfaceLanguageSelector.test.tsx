@@ -1,11 +1,16 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { InterfaceLanguageSelector } from './InterfaceLanguageSelector'
+import { mockTranslate } from '@/test/mockMessages'
 
 const refreshMock = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: refreshMock }),
+}))
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) => mockTranslate(namespace, key),
 }))
 
 global.fetch = vi.fn()

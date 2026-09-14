@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { locales, type Locale } from '@/i18n/config'
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -10,6 +11,7 @@ const LOCALE_LABELS: Record<Locale, string> = {
 }
 
 export function InterfaceLanguageSelector({ initialValue }: { initialValue: Locale }) {
+  const t = useTranslations('settings')
   const router = useRouter()
   const [value, setValue] = useState<Locale>(initialValue)
   const [saving, setSaving] = useState(false)
@@ -28,13 +30,13 @@ export function InterfaceLanguageSelector({ initialValue }: { initialValue: Loca
       })
       if (!res.ok) {
         setValue(previous)
-        setError('Could not save. Try again.')
+        setError(t('account.saveError'))
         return
       }
       router.refresh()
     } catch {
       setValue(previous)
-      setError('Could not save. Try again.')
+      setError(t('account.saveError'))
     } finally {
       setSaving(false)
     }

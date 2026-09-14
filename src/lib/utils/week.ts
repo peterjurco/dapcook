@@ -60,6 +60,21 @@ export function formatDayLabel(date: Date, locale: Locale): { weekday: string; d
   }
 }
 
+/**
+ * Spelled-out label for a day: "Tuesday 15 Sept", or "utorok 15.9." in Slovak,
+ * where dates are conventionally written day-first with trailing dots.
+ */
+export function formatDayLabelLong(date: Date, locale: Locale): { weekday: string; day: string } {
+  const intlLocale = toIntlLocale(locale)
+  return {
+    weekday: date.toLocaleDateString(intlLocale, { weekday: 'long' }),
+    day:
+      locale === 'sk'
+        ? `${date.getDate()}.${date.getMonth() + 1}.`
+        : date.toLocaleDateString(intlLocale, { day: 'numeric', month: 'short' }),
+  }
+}
+
 /** Formats a Date as YYYY-MM-DD */
 export function toDateString(date: Date): string {
   const y = date.getFullYear()

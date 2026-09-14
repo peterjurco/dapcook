@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile, getCurrentUser } from '@/lib/auth/current-user'
 import { isLocale, defaultLocale } from '@/i18n/config'
 
 export default async function FlowLayout({
@@ -9,12 +9,10 @@ export default async function FlowLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('ui_language').eq('id', user.id).single()
+  const profile = await getCurrentProfile()
 
   const locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
   setRequestLocale(locale)

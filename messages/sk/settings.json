@@ -2,7 +2,8 @@
   "account": {
     "heading": "Váš účet",
     "interfaceLanguage": "Jazyk rozhrania",
-    "interfaceLanguageHelp": "Platí iba pre vás — ostatní členovia domácnosti majú vlastné nastavenie."
+    "interfaceLanguageHelp": "Platí iba pre vás — ostatní členovia domácnosti majú vlastné nastavenie.",
+    "saveError": "Nepodarilo sa uložiť. Skúste to znova."
   },
   "bulkTransform": {
     "translateAndConvert": "Prekladám a prevádzam",

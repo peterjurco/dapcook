@@ -1,27 +1,16 @@
 import { redirect } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile, getCurrentUser } from '@/lib/auth/current-user'
 import { AppShell } from '@/components/layout/AppShell'
 import { PostHogIdentifier } from '@/components/providers/PostHogIdentifier'
 import { isLocale, defaultLocale } from '@/i18n/config'
-import type { Profile } from '@/types/database'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single() as { data: Profile | null; error: unknown }
-
+  const profile = await getCurrentProfile()
   if (!profile?.household_id) redirect('/onboarding')
 
   const isAdmin = user.email === process.env.ADMIN_EMAIL

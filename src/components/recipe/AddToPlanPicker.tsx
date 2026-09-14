@@ -11,6 +11,7 @@ import {
   getWeekDays,
   formatWeekLabel,
   formatDayLabel,
+  formatDayLabelLong,
   toDateString,
   isCurrentWeek,
   isNextWeek,
@@ -140,7 +141,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
     )
   }
 
-  const selectedLabel = formatDayLabel(weekDays[selectedDay - 1], locale)
+  const selectedLabel = formatDayLabelLong(weekDays[selectedDay - 1], locale)
 
   return (
     <div className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
