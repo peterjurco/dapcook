@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { ChevronDown } from 'lucide-react'
 import { BulkTransformModal } from './BulkTransformModal'
 import { ConfirmTransformModal } from './ConfirmTransformModal'
 import { SUPPORTED_LANGUAGES } from '@/lib/constants/languages'
@@ -93,17 +94,23 @@ export function TranslationSettings({ initialEnabled, initialLanguage, currentPr
         </label>
 
         {enabled && (
-          <select
-            value={language}
-            onChange={(e) => void handleLanguageChange(e.target.value)}
-            className="text-sm border border-gray-200 rounded-md pl-2 pr-7 py-1.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400"
-          >
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <option key={lang.code} value={lang.code}>
-                {lang.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative inline-block">
+            <select
+              value={language}
+              onChange={(e) => void handleLanguageChange(e.target.value)}
+              className="text-sm border border-gray-200 rounded-md pl-2 pr-8 py-1.5 bg-white text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-gray-400"
+            >
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={15}
+              className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+          </div>
         )}
       </div>
 
