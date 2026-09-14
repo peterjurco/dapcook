@@ -10,6 +10,7 @@ import { LANGUAGE_NAMES } from '@/lib/constants/languages'
 import { defaultLocale } from '@/i18n/config'
 import { getUserTranslations } from '@/i18n/server-utils'
 import type { RecipeDraft } from '@/types/recipe'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export type ImportEvent =
   | { type: 'step'; key: string; message: string }
@@ -22,7 +23,7 @@ function encode(data: ImportEvent): Uint8Array {
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) {
     const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
     return NextResponse.json({ error: t('unauthorized') }, { status: 401 })

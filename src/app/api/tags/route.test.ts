@@ -4,6 +4,7 @@ import { GET } from './route'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 import { createClient } from '@/lib/supabase/server'
+import { authMock } from '@/test/authMock'
 
 const mockUser = { id: 'user-1' }
 
@@ -27,7 +28,7 @@ function makeSupabase({
   tagsResult = { data: [] as unknown[], error: null } as MockResult,
 } = {}) {
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
+    auth: authMock(mockUser),
     from: vi.fn((table: string) => {
       if (table === 'profiles') return makeQB({ data: { household_id: 'hh-1' }, error: null })
       if (table === 'recipes') return makeQB(recipesResult)

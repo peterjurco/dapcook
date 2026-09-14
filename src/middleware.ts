@@ -47,10 +47,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: always use getUser() — never getSession()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // IMPORTANT: never use getSession() — it trusts the cookie without checking
+  // the signature. getClaims() verifies it, and because this project signs
+  // tokens with an asymmetric key it does so locally against a process-cached
+  // JWKS, instead of the auth-server round trip getUser() costs on every
+  // request (and this runs on every request).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims?.sub ? { id: data.claims.sub } : null
 
   // Redirect root to /recipes (or /login if unauthed — handled below)
   if (pathname === '/') {

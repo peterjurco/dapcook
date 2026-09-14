@@ -2,12 +2,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { locales, isLocale } from '@/i18n/config'
 import type { Database } from '@/types/database'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 
 export async function PATCH(request: NextRequest) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json() as {

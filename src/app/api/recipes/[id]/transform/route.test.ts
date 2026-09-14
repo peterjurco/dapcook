@@ -9,6 +9,7 @@ vi.mock('@/lib/ai/transform-recipe', () => ({ transformRecipe: vi.fn() }))
 import { createClient } from '@/lib/supabase/server'
 import { transformRecipe } from '@/lib/ai/transform-recipe'
 import type { RecipeContent } from '@/lib/ai/transform-recipe'
+import { authMock } from '@/test/authMock'
 
 const mockUser = { id: 'user-1' }
 const mockRecipe = {
@@ -35,7 +36,7 @@ function makeSupabase({
   recipe = mockRecipe as unknown,
 } = {}) {
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+    auth: authMock(user),
     from: vi.fn((table: string) => {
       if (table === 'recipes') return makeQB({ data: recipe, error: null })
       throw new Error(`Unexpected table: ${table}`)
@@ -112,7 +113,7 @@ describe('POST /api/recipes/[id]/transform', () => {
     // query builder object, so a counter inside would reset on every call.
     let callCount = 0
     const supabase = {
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
+      auth: authMock(mockUser),
       from: vi.fn((table: string) => {
         if (table === 'recipes') {
           return {

@@ -2,10 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { useLocale } from 'next-intl'
 import FlowLayout from './layout'
+import { authMock } from '@/test/authMock'
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
-    auth: { getUser: async () => ({ data: { user: { id: 'user-1' } } }) },
+    auth: authMock({ id: 'user-1' }),
     from: () => ({
       select: () => ({
         eq: () => ({

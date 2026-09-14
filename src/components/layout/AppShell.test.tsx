@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import type { User } from '@supabase/supabase-js'
+import type { CurrentUser } from '@/lib/auth/current-user'
 import type { Profile } from '@/types/database'
 import { AppShell } from './AppShell'
 import { mockTranslate } from '@/test/mockMessages'
@@ -22,7 +22,7 @@ vi.mock('next/link', () => ({
   ),
 }))
 
-const mockUser = { id: 'user-1', email: 'peter@example.com' } as User
+const mockUser: CurrentUser = { id: 'user-1', email: 'peter@example.com' }
 const mockProfile = {
   id: 'user-1',
   display_name: 'Peter',

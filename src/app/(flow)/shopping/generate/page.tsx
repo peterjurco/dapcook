@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
 import { GenerateShoppingPage } from '@/components/shopping/GenerateShoppingPage'
 import type { MealSlotWithRecipe } from '@/types/planner'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 interface Props {
   searchParams: { week?: string }
@@ -10,7 +11,7 @@ interface Props {
 
 export default async function ShoppingGeneratePage({ searchParams }: Props) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

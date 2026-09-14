@@ -13,14 +13,13 @@ import type { TagData } from '@/app/api/tags/route'
 import { buildTagMeta } from '@/lib/tags/taxonomy'
 import { getTranslations } from 'next-intl/server'
 import { isLocale, defaultLocale } from '@/i18n/config'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export default async function SettingsPage() {
   const supabase = createClient()
   const t = await getTranslations('settings')
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) redirect('/login')
 

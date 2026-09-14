@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 function splitIngredients(text: string): string[] {
   return text.split('\n').map((s) => s.trim()).filter(Boolean)
@@ -23,7 +24,7 @@ function splitSteps(text: string): string[] {
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase

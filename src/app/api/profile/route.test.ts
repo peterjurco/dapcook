@@ -5,6 +5,7 @@ import { PATCH } from './route'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 import { createClient } from '@/lib/supabase/server'
+import { authMock } from '@/test/authMock'
 
 const mockUser = { id: 'user-1' }
 
@@ -29,7 +30,7 @@ function makeSupabase({
   profileResult = { data: null, error: null } as MockResult,
 } = {}) {
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+    auth: authMock(user),
     from: vi.fn((table: string) => {
       if (table === 'profiles') return makeQB(profileResult)
       throw new Error(`Unexpected table: ${table}`)

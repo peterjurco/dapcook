@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { generateInviteToken } from '@/lib/utils/invite'
 import { getUserTranslations } from '@/i18n/server-utils'
 import { getOrigin } from './getOrigin'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export async function signInWithGoogle(redirectTo?: string) {
   const supabase = createClient()
@@ -66,9 +67,7 @@ export async function signOut() {
 export async function createHousehold(name: string) {
   const supabase = createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) redirect('/login')
 
@@ -106,9 +105,7 @@ export async function createHousehold(name: string) {
 export async function joinHousehold(inviteToken: string) {
   const supabase = createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) redirect(`/join/${inviteToken}`)
 

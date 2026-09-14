@@ -8,6 +8,7 @@ vi.mock('@/lib/recipes/share-token', () => ({ createShareToken: vi.fn() }))
 
 import { createShareToken } from '@/lib/recipes/share-token'
 import { createClient } from '@/lib/supabase/server'
+import { authMock } from '@/test/authMock'
 
 const mockUser = { id: 'user-1' }
 const params = { params: { id: 'r-1' } }
@@ -34,7 +35,7 @@ function makeSupabase(
   const builders = results.map(makeQB)
 
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+    auth: authMock(user),
     from: vi.fn((table: string) => {
       if (table !== 'recipes') throw new Error(`Unexpected table: ${table}`)
       const builder = builders.shift()

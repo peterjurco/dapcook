@@ -4,6 +4,7 @@ import { makeShoppingListSmart } from '@/lib/ai/make-shopping-list'
 import { scaleIngredients } from '@/lib/shopping/scale-ingredients'
 import type { Ingredient } from '@/types/recipe'
 import type { ShoppingItem } from '@/types/database'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 interface RecipeInput {
   recipe_id: string
@@ -24,7 +25,7 @@ interface PreviewItem {
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase

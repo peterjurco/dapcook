@@ -7,7 +7,7 @@ import { BookOpen, Calendar, ShoppingCart, Settings, LogOut, Shield } from 'luci
 import { usePostHog } from 'posthog-js/react'
 import { cn } from '@/lib/utils/cn'
 import { signOut } from '@/lib/auth/actions'
-import type { User } from '@supabase/supabase-js'
+import type { CurrentUser } from '@/lib/auth/current-user'
 import type { Profile } from '@/types/database'
 import { BirthdayOverlay } from '@/components/ui/BirthdayOverlay'
 import { Logo } from '@/components/ui/Logo'
@@ -19,7 +19,7 @@ interface NavItem {
 }
 
 interface AppShellProps {
-  user: User
+  user: CurrentUser
   profile: Profile
   isAdmin?: boolean
   birthdayConfig?: { date: string; message: string }

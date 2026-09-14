@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export default async function JoinCompletePage({
   params,
@@ -9,9 +10,7 @@ export default async function JoinCompletePage({
   const { token } = await params
   const supabase = createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) redirect(`/join/${token}`)
 

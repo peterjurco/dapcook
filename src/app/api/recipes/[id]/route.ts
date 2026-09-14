@@ -4,13 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import { defaultLocale } from '@/i18n/config'
 import { getUserTranslations } from '@/i18n/server-utils'
 import type { Ingredient, Step } from '@/types/recipe'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) {
     const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
     return NextResponse.json({ error: t('unauthorized') }, { status: 401 })
@@ -40,7 +41,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) {
     const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
     return NextResponse.json({ error: t('unauthorized') }, { status: 401 })
@@ -98,7 +99,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) {
     const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
     return NextResponse.json({ error: t('unauthorized') }, { status: 401 })

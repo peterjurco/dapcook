@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
 import { PlannerClient } from '@/components/planner/PlannerClient'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 interface PlannerPageProps {
   searchParams: { week?: string }
@@ -27,7 +28,7 @@ async function getDefaultWeek(): Promise<Date> {
   const currentWeekStr = toDateString(currentWeekStart)
 
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return currentWeekStart
 
   const { data: profile } = await supabase

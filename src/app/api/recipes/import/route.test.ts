@@ -19,6 +19,7 @@ import { createClient } from '@/lib/supabase/server'
 import { scrapeRecipe } from '@/lib/scraper'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
 import { transformRecipe } from '@/lib/ai/transform-recipe'
+import { authMock } from '@/test/authMock'
 
 const mockUser = { id: 'user-1' }
 
@@ -54,7 +55,7 @@ function makeSupabase(
     households: makeSingleChain(household),
   }
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+    auth: authMock(user),
     from: vi.fn((table: string) => fromMap[table] ?? makeSingleChain(null)),
   }
 }

@@ -6,10 +6,11 @@ import { categorizeTranslationError } from '@/lib/ai/translation-error'
 import { defaultLocale } from '@/i18n/config'
 import { getUserTranslations } from '@/i18n/server-utils'
 import type { RecipeContent } from '@/lib/ai/transform-recipe'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) {
     const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
     return NextResponse.json({ error: t('unauthorized') }, { status: 401 })

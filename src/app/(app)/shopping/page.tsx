@@ -2,10 +2,11 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ShoppingClient } from '@/components/shopping/ShoppingClient'
 import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export default async function ShoppingPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase

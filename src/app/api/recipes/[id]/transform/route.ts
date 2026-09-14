@@ -4,13 +4,14 @@ import { transformRecipe } from '@/lib/ai/transform-recipe'
 import type { Ingredient, Step } from '@/types/recipe'
 import type { Json } from '@/types/database'
 import { VALID_LANGUAGE_CODES } from '@/lib/constants/languages'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json() as { targetLanguage?: string; targetUnits?: 'metric' | 'imperial' }

@@ -6,6 +6,7 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 
 import { createClient } from '@/lib/supabase/server'
 import { DELETE } from './route'
+import { authMock } from '@/test/authMock'
 
 function makeSupabase(
   user: { id: string } | null = { id: 'user-1' },
@@ -27,7 +28,7 @@ function makeSupabase(
     },
   }
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+    auth: authMock(user),
     from: vi.fn((table: string) => fromMap[table]),
   }
 }

@@ -9,6 +9,7 @@ vi.mock('next-intl/server', () => ({
   getTranslations: async ({ namespace }: { namespace: string }) => (key: string) => mockTranslate(namespace, key),
 }))
 import { createClient } from '@/lib/supabase/server'
+import { authMock } from '@/test/authMock'
 
 const mockUser = { id: 'user-1' }
 const mockRecipe = { id: 'r-1', title: 'Pasta', is_archived: false }
@@ -30,7 +31,7 @@ function makeQB(result: { data: unknown; error: null | { message: string } }) {
 
 function makeSupabase(user: typeof mockUser | null = mockUser, fromFn?: (table: string) => unknown) {
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+    auth: authMock(user),
     from: vi.fn(fromFn ?? ((table: string) => {
       if (table === 'recipes') return makeQB({ data: mockRecipe, error: null })
       if (table === 'profiles') return makeQB(mockProfile)

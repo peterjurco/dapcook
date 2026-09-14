@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createShareToken } from '@/lib/recipes/share-token'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
 const MAX_TOKEN_ATTEMPTS = 3
 
@@ -16,7 +17,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: recipe, error: readError } = await supabase
@@ -64,7 +65,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data, error } = await supabase
