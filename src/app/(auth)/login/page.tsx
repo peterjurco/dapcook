@@ -3,6 +3,7 @@
 import { signInWithGoogle } from '@/lib/auth/actions'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { Logo } from '@/components/ui/Logo'
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
@@ -13,7 +14,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-sm w-full space-y-8 p-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">{t('login.heading')}</h1>
+          <h1>
+            <Logo className="text-4xl font-semibold" />
+          </h1>
           <p className="mt-2 text-sm text-gray-600">{t('login.subtitle')}</p>
         </div>
 
