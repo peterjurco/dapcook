@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { ImagePlus, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { prepareImageForUpload } from '@/lib/recipes/downscale-image'
+import { storedCoverPath, RECIPE_IMAGE_BUCKET } from '@/lib/recipes/cover-image'
 
 interface ImageUploadProps {
   value: string
@@ -27,6 +28,12 @@ const MAX_UPLOAD_MB = 5
 export function ImageUpload({ value, onChange }: ImageUploadProps) {
   const t = useTranslations('recipes')
   const inputRef = useRef<HTMLInputElement>(null)
+  /**
+   * Covers uploaded since this form opened. They belong to no recipe until it
+   * is saved, so discarding one here can delete it outright — unlike the cover
+   * the recipe already had, which only the save is allowed to replace.
+   */
+  const sessionUploads = useRef<Set<string>>(new Set())
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,7 +58,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
     const supabase = createClient()
 
     const { error: uploadError } = await supabase.storage
-      .from('recipe-images')
+      .from(RECIPE_IMAGE_BUCKET)
       .upload(path, body, { contentType, upsert: false })
 
     if (uploadError) {
@@ -60,9 +67,23 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       return
     }
 
-    const { data } = supabase.storage.from('recipe-images').getPublicUrl(path)
+    const { data } = supabase.storage.from(RECIPE_IMAGE_BUCKET).getPublicUrl(path)
+    sessionUploads.current.add(data.publicUrl)
     onChange(data.publicUrl)
     setUploading(false)
+  }
+
+  /** Deletes a cover this form uploaded but never saved onto a recipe. */
+  async function discardUnsaved(url: string) {
+    if (!sessionUploads.current.delete(url)) return
+    const path = storedCoverPath(url)
+    if (!path) return
+
+    try {
+      await createClient().storage.from(RECIPE_IMAGE_BUCKET).remove([path])
+    } catch {
+      // An object nothing points at costs storage but breaks nothing.
+    }
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -77,8 +98,10 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
   }
 
   function clear() {
+    const discarded = value
     onChange('')
     if (inputRef.current) inputRef.current.value = ''
+    void discardUnsaved(discarded)
   }
 
   return (

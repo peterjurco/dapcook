@@ -4,6 +4,7 @@ import {
   storeCoverImage,
   coverToRemove,
   removeStoredCover,
+  storedCoverPath,
   RECIPE_IMAGE_BUCKET,
 } from './cover-image'
 
@@ -186,5 +187,24 @@ describe('removeStoredCover', () => {
     const supabase = { storage: { from: vi.fn(() => ({ remove })) } } as never
 
     await expect(removeStoredCover('abc.jpg', { supabase })).resolves.toBeUndefined()
+  })
+})
+
+describe('storedCoverPath', () => {
+  it('returns the object path of a cover in our bucket', () => {
+    expect(storedCoverPath(`${STORED_PREFIX}/abc.jpg`)).toBe('abc.jpg')
+  })
+
+  it('returns null for a cover hosted somewhere else', () => {
+    expect(storedCoverPath('https://static01.nyt.com/cover.jpg')).toBeNull()
+  })
+
+  it('returns null for no cover at all', () => {
+    expect(storedCoverPath(null)).toBeNull()
+    expect(storedCoverPath('')).toBeNull()
+  })
+
+  it('returns null when the URL is the bucket root with no object', () => {
+    expect(storedCoverPath(`${STORED_PREFIX}/`)).toBeNull()
   })
 })
