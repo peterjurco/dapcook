@@ -7,6 +7,7 @@ import { generateInviteToken } from '@/lib/utils/invite'
 import { getUserTranslations } from '@/i18n/server-utils'
 import { getOrigin } from './getOrigin'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { forgetHouseholdId } from './household'
 
 export async function signInWithGoogle(redirectTo?: string) {
   const supabase = createClient()
@@ -95,6 +96,8 @@ export async function createHousehold(name: string) {
     return { error: t('linkHouseholdFailed') }
   }
 
+  forgetHouseholdId(user.id)
+
   await supabase
     .from('shopping_lists')
     .insert({ household_id: householdId, name: 'Shopping list' })
@@ -129,6 +132,8 @@ export async function joinHousehold(inviteToken: string) {
   if (profileError) {
     return { error: t('joinHouseholdFailed') }
   }
+
+  forgetHouseholdId(user.id)
 
   redirect('/recipes?ob=1')
 }

@@ -5,6 +5,7 @@ import { scaleIngredients } from '@/lib/shopping/scale-ingredients'
 import type { Ingredient } from '@/types/recipe'
 import type { ShoppingItem } from '@/types/database'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 interface RecipeInput {
   recipe_id: string
@@ -28,10 +29,8 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
-  if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
-  const householdId = profile.household_id
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const body = await request.json() as { recipes?: RecipeInput[]; customItems?: CustomInput[] }
   const recipes = body.recipes ?? []

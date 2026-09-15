@@ -3,8 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { GET } from './route'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('@/lib/auth/household', async () => ({
+  getCurrentHouseholdId: (await import('@/test/householdMock')).householdIdMock,
+}))
 import { createClient } from '@/lib/supabase/server'
 import { authMock } from '@/test/authMock'
+import { householdIdMock } from '@/test/householdMock'
 
 const mockUser = { id: 'user-1' }
 
@@ -40,6 +44,7 @@ function makeSupabase({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  householdIdMock.mockResolvedValue('hh-1')
 })
 
 describe('GET /api/tags', () => {

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
 import { PlannerClient } from '@/components/planner/PlannerClient'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 interface PlannerPageProps {
   searchParams: { week?: string }
@@ -31,18 +32,14 @@ async function getDefaultWeek(): Promise<Date> {
   const user = await getCurrentUser()
   if (!user) return currentWeekStart
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('household_id')
-    .eq('id', user.id)
-    .single()
-  if (!profile?.household_id) return currentWeekStart
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) return currentWeekStart
 
   // Fetch upcoming week_plans (including current week) with their slots
   const { data: weekPlans } = await supabase
     .from('week_plans')
     .select('week_start, meal_slots(id)')
-    .eq('household_id', profile.household_id)
+    .eq('household_id', householdId)
     .gte('week_start', currentWeekStr)
     .order('week_start', { ascending: false })
     .limit(10)

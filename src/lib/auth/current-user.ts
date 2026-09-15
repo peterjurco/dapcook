@@ -1,5 +1,5 @@
-import * as React from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { perRequest } from './per-request'
 import type { Profile } from '@/types/database'
 
 /** The parts of the signed-in user the app actually reads. */
@@ -7,13 +7,6 @@ export interface CurrentUser {
   id: string
   email: string | null
 }
-
-/**
- * `React.cache` only exists in the react-server build Next uses on the server;
- * outside it (unit tests) fall back to calling through uncached.
- */
-const perRequest: <T extends () => Promise<unknown>>(fn: T) => T =
-  (React as { cache?: <T extends () => Promise<unknown>>(fn: T) => T }).cache ?? ((fn) => fn)
 
 /**
  * Request-scoped accessors for the signed-in user and their profile.

@@ -11,14 +11,13 @@ const nextConfig = {
     instrumentationHook: true,
   },
   images: {
-    // New and edited recipes mirror their cover into our own bucket, so over
-    // time every cover is served from the Supabase host below. Recipes saved
-    // before that are still pointing at the site they were imported from —
-    // keep the wildcard until the backfill has moved them all across, then
-    // drop it so this deployment stops being a general-purpose image proxy.
+    // Every recipe cover lives in our own bucket: new and edited recipes mirror
+    // theirs on save, and scripts/backfill-recipe-covers.ts moved the rest
+    // across. Only that host is listed, so this deployment cannot be used as a
+    // general-purpose image proxy. Avatars stay on plain <img> tags rather than
+    // widening this list for them.
     remotePatterns: [
       { protocol: 'https', hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://localhost').hostname },
-      { protocol: 'https', hostname: '**' },
     ],
     formats: ['image/avif', 'image/webp'],
     // Stored covers are written under a fresh UUID and never overwritten, so a

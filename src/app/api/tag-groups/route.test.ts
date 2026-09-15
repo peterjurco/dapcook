@@ -4,8 +4,12 @@ import { NextRequest } from 'next/server'
 import { GET, POST } from './route'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('@/lib/auth/household', async () => ({
+  getCurrentHouseholdId: (await import('@/test/householdMock')).householdIdMock,
+}))
 import { createClient } from '@/lib/supabase/server'
 import { authMock } from '@/test/authMock'
+import { householdIdMock } from '@/test/householdMock'
 
 const mockUser = { id: 'user-1' }
 
@@ -48,8 +52,26 @@ function req(url: string, opts?: Record<string, unknown>) {
   return new NextRequest(`http://localhost${url}`, opts as any)
 }
 
+/**
+ * The nth query builder handed out for `table`. Index by name rather than by
+ * call order: the household lookup no longer goes through this client, so
+ * positional offsets would silently point at the wrong query.
+ */
+function builderFor(
+  supabase: { from: { mock: { calls: unknown[][]; results: { value: unknown }[] } } },
+  table: string,
+  nth = 0
+) {
+  const matches = supabase.from.mock.calls
+    .map((call, i) => (call[0] === table ? supabase.from.mock.results[i].value : null))
+    .filter(Boolean)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return matches[nth] as any
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  householdIdMock.mockResolvedValue('hh-1')
 })
 
 describe('GET /api/tag-groups', () => {
@@ -60,9 +82,8 @@ describe('GET /api/tag-groups', () => {
   })
 
   it('returns 403 when the user has no household', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ profileResult: { data: { household_id: null }, error: null } }) as unknown as ReturnType<typeof createClient>
-    )
+    householdIdMock.mockResolvedValue(null)
+    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
     const res = await GET()
     expect(res.status).toBe(403)
   })
@@ -76,7 +97,7 @@ describe('GET /api/tag-groups', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(groups)
 
-    const qb = supabase.from.mock.results[1].value
+    const qb = builderFor(supabase, 'tag_groups')
     expect(qb.order).toHaveBeenCalledWith('position')
   })
 })
@@ -110,10 +131,10 @@ describe('POST /api/tag-groups', () => {
 
     // New groups are always visible, so they're prepended (lowest position first),
     // not appended.
-    const positionQB = supabase.from.mock.results[1].value
+    const positionQB = builderFor(supabase, 'tag_groups', 0)
     expect(positionQB.order).toHaveBeenCalledWith('position', { ascending: true })
 
-    const insertQB = supabase.from.mock.results[2].value
+    const insertQB = builderFor(supabase, 'tag_groups', 1)
     const inserted = insertQB.insert.mock.calls[0][0] as Record<string, unknown>
     expect(inserted.name).toBe('Cuisine')
     expect(inserted.household_id).toBe('hh-1')

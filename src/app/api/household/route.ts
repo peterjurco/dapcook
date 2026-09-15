@@ -2,15 +2,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { VALID_LANGUAGE_CODES } from '@/lib/constants/languages'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 export async function PATCH(request: NextRequest) {
   const supabase = createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
-  if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const body = await request.json() as { preferred_units?: 'metric' | 'imperial'; preferred_language?: string; translation_enabled?: boolean }
 
@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest) {
   const { data, error } = await supabase
     .from('households')
     .update(updates)
-    .eq('id', profile.household_id)
+    .eq('id', householdId)
     .select()
     .single()
 

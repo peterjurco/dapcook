@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 function splitIngredients(text: string): string[] {
   return text.split('\n').map((s) => s.trim()).filter(Boolean)
@@ -23,12 +23,10 @@ function splitSteps(text: string): string[] {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
+  const householdId = await getCurrentHouseholdId()
 
   const body = await request.json() as { ingredients_text?: string; steps_text?: string }
 
@@ -39,6 +37,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ingredients: [], steps: [] })
   }
 
-  const result = await parseRecipeData(rawIngredients, rawSteps, profile?.household_id ?? undefined)
+  const result = await parseRecipeData(rawIngredients, rawSteps, householdId ?? undefined)
   return NextResponse.json(result)
 }
