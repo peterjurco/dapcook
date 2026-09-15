@@ -21,8 +21,6 @@ jobs:
     permissions:
       contents: write
       issues: write
-    outputs:
-      merged: ${{ steps.merge.outputs.merged }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,9 +97,11 @@ jobs:
               })
             }
 
+  # Always runs, even when the sync pushed nothing: applying migrations is
+  # idempotent, and gating it on the merge would make a failed migration
+  # impossible to retry once staging already carries main.
   migrate:
     needs: sync
-    if: needs.sync.outputs.merged == 'true'
     uses: ./.github/workflows/migrate-staging.yml
     secrets:
       STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
