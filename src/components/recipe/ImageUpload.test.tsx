@@ -40,15 +40,49 @@ function pickedFile() {
 }
 
 describe('ImageUpload', () => {
-  it('shows the max size in MB when a file exceeds the limit', async () => {
+  it('rejects a file too large to be worth decoding at all', async () => {
     render(<ImageUpload value="" onChange={vi.fn()} />)
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
-    const tooBigFile = new File([new Uint8Array(6 * 1024 * 1024)], 'big.jpg', { type: 'image/jpeg' })
+    const huge = new File([new Uint8Array(26 * 1024 * 1024)], 'huge.jpg', { type: 'image/jpeg' })
 
-    await userEvent.upload(input, tooBigFile)
+    await userEvent.upload(input, huge)
 
-    expect(await screen.findByText('Image must be under 5MB')).toBeInTheDocument()
+    expect(await screen.findByText('Image must be under 25MB')).toBeInTheDocument()
+    expect(upload).not.toHaveBeenCalled()
+  })
+
+  it('accepts a photo over the upload ceiling and uploads the downscaled version', async () => {
+    // A 12MP phone photo is routinely over 5MB and compresses to a few hundred
+    // KB — rejecting it before resizing defeats the point of resizing.
+    const downscaled = new Blob([new Uint8Array(700_000)], { type: 'image/webp' })
+    prepareImageForUpload.mockResolvedValue({
+      body: downscaled,
+      contentType: 'image/webp',
+      extension: 'webp',
+    })
+    render(<ImageUpload value="" onChange={vi.fn()} />)
+
+    const big = new File([new Uint8Array(8 * 1024 * 1024)], 'IMG_0042.jpeg', { type: 'image/jpeg' })
+    await userEvent.upload(document.querySelector('input[type="file"]') as HTMLInputElement, big)
+
+    await waitFor(() => expect(upload).toHaveBeenCalled())
+    expect(upload.mock.calls[0][1]).toBe(downscaled)
+  })
+
+  it('reports when the image is still too big after resizing', async () => {
+    // The browser could not re-encode, so the original comes back unchanged.
+    const original = new File([new Uint8Array(8 * 1024 * 1024)], 'huge.jpg', { type: 'image/jpeg' })
+    prepareImageForUpload.mockResolvedValue({
+      body: original,
+      contentType: 'image/jpeg',
+      extension: 'jpg',
+    })
+    render(<ImageUpload value="" onChange={vi.fn()} />)
+
+    await userEvent.upload(document.querySelector('input[type="file"]') as HTMLInputElement, original)
+
+    expect(await screen.findByText('Image is still over 5MB after resizing')).toBeInTheDocument()
     expect(upload).not.toHaveBeenCalled()
   })
 

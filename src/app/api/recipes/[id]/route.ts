@@ -5,7 +5,7 @@ import { defaultLocale } from '@/i18n/config'
 import { getUserTranslations } from '@/i18n/server-utils'
 import type { Ingredient, Step } from '@/types/recipe'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { storeCoverImage } from '@/lib/recipes/cover-image'
+import { storeCoverImage, coverToRemove, removeStoredCover } from '@/lib/recipes/cover-image'
 
 export async function GET(
   _request: NextRequest,
@@ -74,6 +74,18 @@ export async function PUT(
   const sourceCover = body.image_url?.trim() || null
   const nextCover = sourceCover ? await storeCoverImage(sourceCover, { supabase }) : null
 
+  // Read the cover being replaced before it is overwritten, so the object it
+  // points at can be cleaned up once the new one is safely saved.
+  let previousCover: string | null = null
+  if (body.image_url !== undefined) {
+    const { data: current } = await supabase
+      .from('recipes')
+      .select('image_url')
+      .eq('id', params.id)
+      .single()
+    previousCover = current?.image_url ?? null
+  }
+
   const { data, error } = await supabase
     .from('recipes')
     .update({
@@ -95,6 +107,20 @@ export async function PUT(
     .single()
 
   if (error || !data) return NextResponse.json({ error: error?.message ?? t('notFound') }, { status: 404 })
+
+  // Only now that the new cover is saved: drop the old object, unless another
+  // recipe still points at it. Importing from a dapcook share link reuses the
+  // stored URL rather than copying it, so covers can genuinely be shared.
+  const stale = coverToRemove(previousCover, nextCover)
+  if (stale) {
+    const { data: stillUsed } = await supabase
+      .from('recipes')
+      .select('id')
+      .eq('image_url', previousCover as string)
+      .limit(1)
+
+    if (!stillUsed?.length) await removeStoredCover(stale, { supabase })
+  }
 
   return NextResponse.json(data)
 }

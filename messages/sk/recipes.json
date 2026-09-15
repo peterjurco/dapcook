@@ -94,6 +94,7 @@
   },
   "imageUpload": {
     "tooLarge": "Obrázok musí mať menej ako {maxSizeMb} MB",
+    "stillTooLarge": "Obrázok má aj po zmenšení viac ako {maxSizeMb} MB",
     "uploadFailedPrefix": "Nahrávanie zlyhalo — ",
     "removeAria": "Odstrániť obrázok",
     "uploading": "Nahrávanie...",
