@@ -53,6 +53,10 @@ function psql(databaseUrl: string, args: string[]): string {
   return execFileSync('psql', [databaseUrl, '-v', 'ON_ERROR_STOP=1', ...args], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
+    // Without this an unreachable host hangs until the CI job times out hours
+    // later. Supabase's direct connection is IPv6-only and GitHub runners have
+    // no IPv6, so that mistake has to fail fast and say so.
+    env: { ...process.env, PGCONNECT_TIMEOUT: '15' },
   })
 }
 
@@ -76,7 +80,17 @@ function main() {
   const migrationsDir = repoPath('supabase/migrations')
   const baselineFile = repoPath('supabase/baseline.txt')
 
-  const ledgerExists = scalar(databaseUrl, "select to_regclass('public.schema_migrations') is not null")
+  let ledgerExists: string
+  try {
+    ledgerExists = scalar(databaseUrl, "select to_regclass('public.schema_migrations') is not null")
+  } catch {
+    console.error(
+      '\nCould not connect to the database.\n' +
+        "If the host is db.<project-ref>.supabase.co it is IPv6-only and CI cannot reach it —\n" +
+        'use the Session pooler string instead (aws-0-<region>.pooler.supabase.com, port 5432).'
+    )
+    process.exit(1)
+  }
 
   if (ledgerExists !== 't') {
     psql(databaseUrl, [
