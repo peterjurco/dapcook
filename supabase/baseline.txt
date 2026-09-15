@@ -1,0 +1,23 @@
+# Migrations applied by hand before CI existed.
+# The first run of scripts/apply-migrations.ts against a database that already
+# has a schema records these as applied instead of re-running them.
+# Never edit: new migrations are applied and recorded automatically.
+001_initial_schema.sql
+002_rls_policies.sql
+003_seed_data.sql
+004_invite_details.sql
+005_storage.sql
+006_planner.sql
+007_unaccent_search.sql
+008_tags.sql
+009_shopping_categories.sql
+010_household_units.sql
+011_meal_slot_created_at.sql
+011_shopping_rules.sql
+012_admin_features.sql
+013_preferred_language.sql
+014_translation_toggle.sql
+015_recipe_sharing.sql
+016_archived_recipe_share_invariant.sql
+017_tag_groups.sql
+018_ui_language.sql

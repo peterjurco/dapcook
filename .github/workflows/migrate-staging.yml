@@ -1,0 +1,42 @@
+# Applies pending supabase/migrations to the staging database.
+#
+# Exposed as workflow_call because a push made by another workflow's
+# GITHUB_TOKEN does not trigger `on: push` — sync-staging.yml calls this job
+# directly after it pushes, and the push trigger below covers merges made by a
+# human straight into staging.
+name: Migrate staging
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/baseline.txt'
+      - 'scripts/apply-migrations.ts'
+  workflow_call:
+    secrets:
+      STAGING_DATABASE_URL:
+        required: true
+  workflow_dispatch:
+
+concurrency:
+  group: migrate-staging
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: staging
+
+      # 22+ runs the TypeScript script directly, no build step.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Apply pending migrations
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: node scripts/apply-migrations.ts

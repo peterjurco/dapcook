@@ -50,4 +50,32 @@ Database schema and migrations live in `supabase/migrations`.
 
 ## Deployment
 
-Vercel is the testing ground for this project — after finishing an implementation, push to git so the Vercel deployment picks it up. See [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) for details.
+| Branch | URL | Supabase project |
+| --- | --- | --- |
+| `main` | https://dapcook.vercel.app | `dapcook` |
+| `staging` | https://dapcook-staging.vercel.app | `dapcook-staging` |
+
+`staging` is a permanent, downstream-only integration branch: it carries `main`
+plus whatever is still being tested, and it never merges back into `main`.
+
+- **Small change** — land it on `main`. It deploys to production, and
+  `.github/workflows/sync-staging.yml` merges it into `staging` automatically.
+- **Big feature** — branch off `main`, merge that branch into `staging` to test
+  it on the staging URL, then merge the *same branch* into `main` once approved.
+
+If `staging` ever tangles it can be thrown away, because it holds no unique
+history:
+
+```bash
+git checkout staging && git reset --hard origin/main && git push --force origin staging
+```
+
+### Migrations
+
+`scripts/apply-migrations.ts` applies pending `supabase/migrations/*.sql` to
+staging automatically, tracking what it has run in a `schema_migrations` table.
+Databases that predate that table are recognised by their existing schema and
+seeded from `supabase/baseline.txt` rather than re-migrated. **Production
+migrations are applied by hand.**
+
+See [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) for details.
