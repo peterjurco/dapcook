@@ -3,16 +3,15 @@ import { createClient } from '@/lib/supabase/server'
 import { ShoppingClient } from '@/components/shopping/ShoppingClient'
 import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 export default async function ShoppingPage() {
   const supabase = createClient()
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
-  if (!profile?.household_id) redirect('/onboarding')
-  const householdId = profile.household_id
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) redirect('/onboarding')
 
   const [{ data: list }, { data: categories }] = await Promise.all([
     supabase

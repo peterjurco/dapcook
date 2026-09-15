@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { forgetHouseholdId } from '@/lib/auth/household'
 
 export default async function JoinCompletePage({
   params,
@@ -28,6 +29,8 @@ export default async function JoinCompletePage({
     .eq('id', user.id)
 
   if (profileError) redirect('/join-invalid')
+
+  forgetHouseholdId(user.id)
 
   redirect('/recipes')
 }

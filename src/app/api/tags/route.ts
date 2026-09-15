@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildTagMeta } from '@/lib/tags/taxonomy'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 export interface TagData {
   name: string
@@ -15,13 +16,12 @@ export async function GET() {
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
-  if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const [{ data: recipes }, { data: tagsMeta }] = await Promise.all([
-    supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
-    supabase.from('tags').select('name, color, group_id').eq('household_id', profile.household_id),
+    supabase.from('recipes').select('tags').eq('household_id', householdId).eq('is_archived', false),
+    supabase.from('tags').select('name, color, group_id').eq('household_id', householdId),
   ])
 
   // Count usage per tag
@@ -58,16 +58,15 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
-  if (!profile?.household_id) return NextResponse.json({ error: 'No household' }, { status: 403 })
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const body = await request.json() as { name: string; color?: string | null }
   if (!body.name?.trim()) return NextResponse.json({ error: 'name is required' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('tags')
-    .upsert({ household_id: profile.household_id, name: body.name.trim(), color: body.color ?? null },
+    .upsert({ household_id: householdId, name: body.name.trim(), color: body.color ?? null },
       { onConflict: 'household_id,name' })
     .select()
     .single()

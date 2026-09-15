@@ -3,10 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('@/lib/auth/household', async () => ({
+  getCurrentHouseholdId: (await import('@/test/householdMock')).householdIdMock,
+}))
 
 import { createClient } from '@/lib/supabase/server'
 import { POST } from './route'
 import { authMock } from '@/test/authMock'
+import { householdIdMock } from '@/test/householdMock'
 
 const itemId = '11111111-1111-4111-8111-111111111111'
 
@@ -67,6 +71,7 @@ function request(body: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  householdIdMock.mockResolvedValue('hh-1')
 })
 
 describe('POST /api/shopping/items', () => {

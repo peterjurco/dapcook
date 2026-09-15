@@ -4,8 +4,12 @@ import { NextRequest } from 'next/server'
 import { PATCH, DELETE } from './route'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('@/lib/auth/household', async () => ({
+  getCurrentHouseholdId: (await import('@/test/householdMock')).householdIdMock,
+}))
 import { createClient } from '@/lib/supabase/server'
 import { authMock } from '@/test/authMock'
+import { householdIdMock } from '@/test/householdMock'
 
 const mockUser = { id: 'user-1' }
 
@@ -51,8 +55,26 @@ function req(body?: unknown) {
 
 const params = { params: { id: 'g1' } }
 
+/**
+ * The nth query builder handed out for `table`. Index by name rather than by
+ * call order: the household lookup no longer goes through this client, so
+ * positional offsets would silently point at the wrong query.
+ */
+function builderFor(
+  supabase: { from: { mock: { calls: unknown[][]; results: { value: unknown }[] } } },
+  table: string,
+  nth = 0
+) {
+  const matches = supabase.from.mock.calls
+    .map((call, i) => (call[0] === table ? supabase.from.mock.results[i].value : null))
+    .filter(Boolean)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return matches[nth] as any
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  householdIdMock.mockResolvedValue('hh-1')
 })
 
 describe('PATCH /api/tag-groups/[id]', () => {
@@ -75,7 +97,7 @@ describe('PATCH /api/tag-groups/[id]', () => {
     const res = await PATCH(req({ name: '  Course  ' }), params)
     expect(res.status).toBe(200)
 
-    const qb = supabase.from.mock.results[1].value
+    const qb = builderFor(supabase, 'tag_groups')
     expect(qb.update).toHaveBeenCalledWith({ name: 'Course' })
     expect(qb.eq).toHaveBeenCalledWith('id', 'g1')
     expect(qb.eq).toHaveBeenCalledWith('household_id', 'hh-1')
@@ -87,7 +109,7 @@ describe('PATCH /api/tag-groups/[id]', () => {
 
     await PATCH(req({ name: 'Course', position: 2 }), params)
 
-    const qb = supabase.from.mock.results[1].value
+    const qb = builderFor(supabase, 'tag_groups')
     expect(qb.update).toHaveBeenCalledWith({ name: 'Course', position: 2 })
   })
 
@@ -103,7 +125,7 @@ describe('PATCH /api/tag-groups/[id]', () => {
 
     await PATCH(req({ position: 0 }), params)
 
-    const qb = supabase.from.mock.results[1].value
+    const qb = builderFor(supabase, 'tag_groups')
     expect(qb.update).toHaveBeenCalledWith({ position: 0 })
   })
 
@@ -130,11 +152,12 @@ describe('DELETE /api/tag-groups/[id]', () => {
     expect(res.status).toBe(204)
 
     const touched = supabase.from.mock.calls.map((c) => c[0])
-    expect(touched).toEqual(['profiles', 'tag_groups'])
+    // The household comes from the cache now, so no profiles lookup here.
+    expect(touched).toEqual(['tag_groups'])
     expect(touched).not.toContain('recipes')
     expect(touched).not.toContain('tags')
 
-    const qb = supabase.from.mock.results[1].value
+    const qb = builderFor(supabase, 'tag_groups')
     expect(qb.delete).toHaveBeenCalled()
     expect(qb.eq).toHaveBeenCalledWith('id', 'g1')
     expect(qb.eq).toHaveBeenCalledWith('household_id', 'hh-1')

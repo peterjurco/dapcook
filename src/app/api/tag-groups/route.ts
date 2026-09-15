@@ -1,18 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/auth/current-user'
-
-async function getHouseholdId(supabase: ReturnType<typeof createClient>, userId: string) {
-  const { data } = await supabase.from('profiles').select('household_id').eq('id', userId).single()
-  return data?.household_id ?? null
-}
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 export async function GET() {
   const supabase = createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const householdId = await getHouseholdId(supabase, user.id)
+  const householdId = await getCurrentHouseholdId()
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const { data, error } = await supabase
@@ -31,7 +27,7 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const householdId = await getHouseholdId(supabase, user.id)
+  const householdId = await getCurrentHouseholdId()
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const body = await request.json() as { name?: string }

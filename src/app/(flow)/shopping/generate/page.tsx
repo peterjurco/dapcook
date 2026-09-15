@@ -4,6 +4,7 @@ import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
 import { GenerateShoppingPage } from '@/components/shopping/GenerateShoppingPage'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 interface Props {
   searchParams: { week?: string }
@@ -14,9 +15,8 @@ export default async function ShoppingGeneratePage({ searchParams }: Props) {
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('household_id').eq('id', user.id).single()
-  if (!profile?.household_id) redirect('/planner')
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) redirect('/planner')
 
   const weekStart = searchParams.week ? parseWeekParam(searchParams.week) : getWeekStart()
   const weekStartStr = toDateString(weekStart)
@@ -24,7 +24,7 @@ export default async function ShoppingGeneratePage({ searchParams }: Props) {
   const { data: weekPlan } = await supabase
     .from('week_plans')
     .select('id')
-    .eq('household_id', profile.household_id)
+    .eq('household_id', householdId)
     .eq('week_start', weekStartStr)
     .maybeSingle()
 
