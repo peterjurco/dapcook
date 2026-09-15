@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { isStoredCover, storeCoverImage, RECIPE_IMAGE_BUCKET } from './cover-image'
+import {
+  isStoredCover,
+  storeCoverImage,
+  coverToRemove,
+  removeStoredCover,
+  RECIPE_IMAGE_BUCKET,
+} from './cover-image'
 
 const SUPABASE_URL = 'https://project.supabase.co'
 const STORED_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/${RECIPE_IMAGE_BUCKET}`
@@ -132,5 +138,53 @@ describe('storeCoverImage', () => {
     await expect(
       storeCoverImage('https://example.test/cover.jpg', { supabase: fakeSupabase(), fetchImpl })
     ).resolves.toBe('https://example.test/cover.jpg')
+  })
+})
+
+describe('coverToRemove', () => {
+  it('returns the stored object path when a cover is removed', () => {
+    expect(coverToRemove(`${STORED_PREFIX}/abc.jpg`, null)).toBe('abc.jpg')
+  })
+
+  it('returns the old object path when a cover is replaced', () => {
+    expect(coverToRemove(`${STORED_PREFIX}/old.jpg`, `${STORED_PREFIX}/new.webp`)).toBe('old.jpg')
+  })
+
+  it('keeps the object when the cover did not change', () => {
+    const url = `${STORED_PREFIX}/same.jpg`
+    expect(coverToRemove(url, url)).toBeNull()
+  })
+
+  it('never touches a cover that was never ours', () => {
+    expect(coverToRemove('https://static01.nyt.com/cover.jpg', null)).toBeNull()
+  })
+
+  it('does nothing when there was no cover to begin with', () => {
+    expect(coverToRemove(null, `${STORED_PREFIX}/new.jpg`)).toBeNull()
+    expect(coverToRemove('', null)).toBeNull()
+  })
+
+  it('handles a nested object path', () => {
+    expect(coverToRemove(`${STORED_PREFIX}/2026/abc.jpg`, null)).toBe('2026/abc.jpg')
+  })
+})
+
+describe('removeStoredCover', () => {
+  it('removes the object from our bucket', async () => {
+    const remove = vi.fn().mockResolvedValue({ error: null })
+    const supabase = {
+      storage: { from: vi.fn(() => ({ remove })) },
+    } as never
+
+    await removeStoredCover('abc.jpg', { supabase })
+
+    expect(remove).toHaveBeenCalledWith(['abc.jpg'])
+  })
+
+  it('swallows a failed delete so cleanup never breaks the request', async () => {
+    const remove = vi.fn().mockRejectedValue(new Error('storage down'))
+    const supabase = { storage: { from: vi.fn(() => ({ remove })) } } as never
+
+    await expect(removeStoredCover('abc.jpg', { supabase })).resolves.toBeUndefined()
   })
 })

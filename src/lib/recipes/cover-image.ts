@@ -25,6 +25,7 @@ interface StorageClient {
         options?: { contentType?: string; upsert?: boolean }
       ): Promise<{ error: unknown }>
       getPublicUrl(path: string): { data: { publicUrl: string } }
+      remove(paths: string[]): Promise<{ error: unknown }>
     }
   }
 }
@@ -37,6 +38,43 @@ function storagePrefix(): string {
 export function isStoredCover(url: string | null | undefined): boolean {
   if (!url) return false
   return url.startsWith(storagePrefix())
+}
+
+/**
+ * The object to delete from our bucket when a recipe's cover changes from
+ * `previous` to `next`, or null when nothing should be deleted.
+ *
+ * Only covers we host are ever returned: a URL still pointing at the site a
+ * recipe was imported from is not ours to delete, and an unchanged cover
+ * obviously stays.
+ */
+export function coverToRemove(
+  previous: string | null | undefined,
+  next: string | null | undefined
+): string | null {
+  const before = previous ?? ''
+  if (!before || !isStoredCover(before)) return null
+  if (before === (next ?? '')) return null
+
+  const path = before.slice(`${storagePrefix()}/`.length)
+  return path || null
+}
+
+/**
+ * Deletes one object from our bucket.
+ *
+ * A cover that outlives its recipe costs storage but breaks nothing, so this
+ * never throws: failing to tidy up must not fail the request that triggered it.
+ */
+export async function removeStoredCover(
+  path: string,
+  { supabase }: { supabase: StorageClient }
+): Promise<void> {
+  try {
+    await supabase.storage.from(RECIPE_IMAGE_BUCKET).remove([path])
+  } catch {
+    // Nothing to do — the object stays and the recipe is already saved.
+  }
 }
 
 /**

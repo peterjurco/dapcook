@@ -94,6 +94,7 @@
   },
   "imageUpload": {
     "tooLarge": "Image must be under {maxSizeMb}MB",
+    "stillTooLarge": "Image is still over {maxSizeMb}MB after resizing",
     "uploadFailedPrefix": "Upload failed — ",
     "removeAria": "Remove image",
     "uploading": "Uploading...",

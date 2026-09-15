@@ -12,7 +12,17 @@ interface ImageUploadProps {
 }
 
 const ACCEPTED = 'image/jpeg,image/png,image/webp,image/gif'
-const MAX_SIZE_MB = 5
+
+/** Anything past this is not worth handing to the decoder. */
+const MAX_SOURCE_MB = 25
+
+/**
+ * Ceiling on what actually reaches the bucket. Checked after resizing, not
+ * before: a 12MP phone photo is routinely over this and compresses to a few
+ * hundred KB, so rejecting it up front would refuse exactly the photos the
+ * resizing exists for.
+ */
+const MAX_UPLOAD_MB = 5
 
 export function ImageUpload({ value, onChange }: ImageUploadProps) {
   const t = useTranslations('recipes')
@@ -21,8 +31,8 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
   const [error, setError] = useState<string | null>(null)
 
   async function handleFile(file: File) {
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(t('imageUpload.tooLarge', { maxSizeMb: MAX_SIZE_MB }))
+    if (file.size > MAX_SOURCE_MB * 1024 * 1024) {
+      setError(t('imageUpload.tooLarge', { maxSizeMb: MAX_SOURCE_MB }))
       return
     }
 
@@ -30,6 +40,13 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
     setError(null)
 
     const { body, contentType, extension } = await prepareImageForUpload(file)
+
+    if (body.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      setError(t('imageUpload.stillTooLarge', { maxSizeMb: MAX_UPLOAD_MB }))
+      setUploading(false)
+      return
+    }
+
     const path = `${crypto.randomUUID()}.${extension}`
     const supabase = createClient()
 
