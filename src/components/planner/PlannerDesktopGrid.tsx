@@ -10,7 +10,7 @@ import { RecipeSearch } from './RecipeSearch'
 import { packLanes, maxSpanForStart } from '@/lib/planner/layout'
 import { formatDayLabel, toDateString } from '@/lib/utils/week'
 import type { MealSlotWithRecipe } from '@/types/planner'
-import type { Recipe } from '@/types/database'
+import type { RecipeListItem } from '@/lib/recipes/list-columns'
 
 interface PlannerDesktopGridProps {
   weekDays: Date[]
@@ -20,7 +20,7 @@ interface PlannerDesktopGridProps {
   addingToDay: number | null
   onOpenSearch: (day: number) => void
   onCloseSearch: () => void
-  onAddRecipe: (day: number, recipe: Recipe) => void
+  onAddRecipe: (day: number, recipe: RecipeListItem) => void
   onAddCustom: (day: number, label: string) => void
   onDelete: (slotId: string) => void
   onSpanPreview: (slotId: string, newSpan: number) => void

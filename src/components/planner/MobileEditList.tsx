@@ -21,8 +21,8 @@ import { formatDayLabel } from '@/lib/utils/week'
 import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import type { Locale } from '@/i18n/config'
 import type { MealSlotWithRecipe } from '@/types/planner'
-import type { Recipe } from '@/types/database'
 import Image from 'next/image'
+import type { RecipeListItem } from '@/lib/recipes/list-columns'
 
 interface MobileEditListProps {
   editDays: EditDay[]
@@ -30,7 +30,7 @@ interface MobileEditListProps {
   onMove: (slotId: string, newDay: number) => void
   onDelete: (slotId: string) => void
   onSpanChange: (slotId: string, newSpan: number) => void
-  onAddRecipe: (dayOfWeek: number, recipe: Recipe) => Promise<void>
+  onAddRecipe: (dayOfWeek: number, recipe: RecipeListItem) => Promise<void>
   onAddCustom: (dayOfWeek: number, label: string) => Promise<void>
 }
 
@@ -168,7 +168,7 @@ function DaySection({
   isLoading: boolean
   onOpenSearch: () => void
   onCloseSearch: () => void
-  onAddRecipe: (recipe: Recipe) => void
+  onAddRecipe: (recipe: RecipeListItem) => void
   onAddCustom: (label: string) => void
   onDelete: (slotId: string) => void
   onSpanChange: (slotId: string, newSpan: number) => void
@@ -261,7 +261,7 @@ export function MobileEditList({
     if (targetDay) onMove(String(active.id), targetDay)
   }
 
-  async function handleAddRecipe(dayOfWeek: number, recipe: Recipe) {
+  async function handleAddRecipe(dayOfWeek: number, recipe: RecipeListItem) {
     setLoadingDay(dayOfWeek)
     await onAddRecipe(dayOfWeek, recipe)
     setLoadingDay(null)

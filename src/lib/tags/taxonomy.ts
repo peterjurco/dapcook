@@ -1,4 +1,7 @@
-import type { Recipe, TagGroup } from '@/types/database'
+import type { TagGroup } from '@/types/database'
+
+/** Anything with tags: the helpers below read nothing else off a recipe. */
+type Taggable = { tags: string[] | null }
 
 export type TagGroupView = Pick<TagGroup, 'id' | 'name' | 'position'>
 
@@ -40,7 +43,7 @@ export function sortedGroups(taxonomy: Taxonomy): TagGroupView[] {
 }
 
 /** Tag names used by at least one of the given recipes, most-used first. */
-export function tagsByUsage(recipes: Recipe[]): string[] {
+export function tagsByUsage(recipes: readonly Taggable[]): string[] {
   const counts = new Map<string, number>()
   for (const recipe of recipes) {
     for (const tag of recipe.tags ?? []) {
@@ -87,7 +90,7 @@ export interface FilterSections {
   ungrouped: string[]
 }
 
-export function buildFilterSections(recipes: Recipe[], taxonomy: Taxonomy): FilterSections {
+export function buildFilterSections(recipes: readonly Taggable[], taxonomy: Taxonomy): FilterSections {
   const inUse = tagsByUsage(recipes)
   const allGroups = sortedGroups(taxonomy)
 
@@ -107,12 +110,12 @@ export function buildFilterSections(recipes: Recipe[], taxonomy: Taxonomy): Filt
  * Faceted filtering: OR within a group, AND across groups.
  * Ungrouped tags AND with each other and with every group.
  */
-export function filterRecipesByTags(
-  recipes: Recipe[],
+export function filterRecipesByTags<T extends Taggable>(
+  recipes: readonly T[],
   selection: string[],
   taxonomy: Taxonomy
-): Recipe[] {
-  if (selection.length === 0) return recipes
+): T[] {
+  if (selection.length === 0) return [...recipes]
 
   const byGroup = new Map<string, string[]>()
   const ungrouped: string[] = []

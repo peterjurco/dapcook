@@ -12,6 +12,7 @@ vi.mock('next-intl/server', () => ({
 }))
 import { createClient } from '@/lib/supabase/server'
 import { authMock } from '@/test/authMock'
+import { RECIPE_LIST_COLUMNS } from '@/lib/recipes/list-columns'
 
 const mockUser = { id: 'user-1' }
 
@@ -232,5 +233,29 @@ describe('POST /api/recipes cover images', () => {
     await POST(post({}))
 
     expect(storeCoverImage).not.toHaveBeenCalled()
+  })
+})
+
+describe('GET /api/recipes payload', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('asks only for the columns a list renders, not the whole row', async () => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as never)
+
+    await GET(req('/api/recipes'))
+
+    const from = supabase.from as ReturnType<typeof vi.fn>
+    const builder = from.mock.calls
+      .map((call, i) => (call[0] === 'recipes' ? from.mock.results[i].value : null))
+      .filter(Boolean)
+      .at(-1) as Record<string, ReturnType<typeof vi.fn>>
+
+    const selected = builder.select.mock.calls.at(-1)?.[0]
+    expect(selected).toBe(RECIPE_LIST_COLUMNS)
+    expect(selected).not.toContain('ingredients')
+    expect(selected).not.toContain('steps')
   })
 })
