@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   fitWithinLongestEdge,
-  isWorthReplacing,
+  isUsableEncoding,
   uploadExtension,
+  ENCODE_FORMATS,
   MAX_IMAGE_EDGE,
 } from './downscale-image'
 
@@ -49,21 +50,41 @@ describe('fitWithinLongestEdge', () => {
   })
 })
 
-describe('isWorthReplacing', () => {
-  it('replaces the original when the re-encode is smaller', () => {
-    expect(isWorthReplacing(4_300_000, 280_000)).toBe(true)
+describe('ENCODE_FORMATS', () => {
+  it('prefers WebP but keeps JPEG as a fallback every browser can encode', () => {
+    expect(ENCODE_FORMATS).toEqual(['image/webp', 'image/jpeg'])
+  })
+})
+
+describe('isUsableEncoding', () => {
+  it('accepts a re-encode of the requested type that saves bytes', () => {
+    expect(isUsableEncoding('image/webp', { type: 'image/webp', size: 280_000 }, 4_300_000)).toBe(true)
   })
 
-  it('keeps the original when the re-encode came out bigger', () => {
-    expect(isWorthReplacing(20_000, 25_000)).toBe(false)
+  it('rejects a format the browser substituted for the one we asked for', () => {
+    // Safari has historically answered toBlob('image/webp') with a PNG, which
+    // for a photo is far bigger than the JPEG we started from.
+    expect(isUsableEncoding('image/webp', { type: 'image/png', size: 900_000 }, 4_300_000)).toBe(false)
   })
 
-  it('keeps the original when the re-encode is the same size', () => {
-    expect(isWorthReplacing(20_000, 20_000)).toBe(false)
+  it('rejects a browser that could not encode at all', () => {
+    expect(isUsableEncoding('image/webp', null, 4_300_000)).toBe(false)
   })
 
-  it('keeps the original when the re-encode is empty', () => {
-    expect(isWorthReplacing(4_300_000, 0)).toBe(false)
+  it('rejects a re-encode that came out bigger than the original', () => {
+    expect(isUsableEncoding('image/jpeg', { type: 'image/jpeg', size: 25_000 }, 20_000)).toBe(false)
+  })
+
+  it('rejects a re-encode of exactly the same size', () => {
+    expect(isUsableEncoding('image/jpeg', { type: 'image/jpeg', size: 20_000 }, 20_000)).toBe(false)
+  })
+
+  it('rejects an empty re-encode', () => {
+    expect(isUsableEncoding('image/webp', { type: 'image/webp', size: 0 }, 4_300_000)).toBe(false)
+  })
+
+  it('ignores a codec parameter on the returned type', () => {
+    expect(isUsableEncoding('image/jpeg', { type: 'image/jpeg;charset=utf-8', size: 100 }, 4_000)).toBe(true)
   })
 })
 
