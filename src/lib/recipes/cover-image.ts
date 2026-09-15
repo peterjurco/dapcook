@@ -40,6 +40,12 @@ export function isStoredCover(url: string | null | undefined): boolean {
   return url.startsWith(storagePrefix())
 }
 
+/** The object path of a cover we host, or null when the URL is not ours. */
+export function storedCoverPath(url: string | null | undefined): string | null {
+  if (!url || !isStoredCover(url)) return null
+  return url.slice(`${storagePrefix()}/`.length) || null
+}
+
 /**
  * The object to delete from our bucket when a recipe's cover changes from
  * `previous` to `next`, or null when nothing should be deleted.
@@ -53,11 +59,8 @@ export function coverToRemove(
   next: string | null | undefined
 ): string | null {
   const before = previous ?? ''
-  if (!before || !isStoredCover(before)) return null
   if (before === (next ?? '')) return null
-
-  const path = before.slice(`${storagePrefix()}/`.length)
-  return path || null
+  return storedCoverPath(before)
 }
 
 /**
