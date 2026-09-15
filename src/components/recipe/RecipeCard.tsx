@@ -6,11 +6,11 @@ import { Clock, Users } from 'lucide-react'
 import { AddToPlanButton } from './AddToPlanButton'
 import { orderTagsForCard, tagColor, type Taxonomy } from '@/lib/tags/taxonomy'
 import { formatDuration } from '@/lib/utils/format'
-import type { Recipe } from '@/types/database'
+import type { RecipeListItem } from '@/lib/recipes/list-columns'
 import Image from 'next/image'
 
 interface RecipeCardProps {
-  recipe: Recipe
+  recipe: RecipeListItem
   taxonomy: Taxonomy
 }
 

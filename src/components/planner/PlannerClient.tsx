@@ -16,7 +16,8 @@ import { getWeekDays, toDateString } from '@/lib/utils/week'
 import { buildEditDays, maxSpanForStart } from '@/lib/planner/layout'
 import { getCachedWeekData, setCachedWeekData, updateCachedWeekSlots } from './plannerWeekCache'
 import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
-import type { Recipe, WeekPlan } from '@/types/database'
+import type { WeekPlan } from '@/types/database'
+import type { RecipeListItem } from '@/lib/recipes/list-columns'
 
 interface PlannerClientProps {
   weekStart: Date
@@ -71,7 +72,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     loadWeek()
   }, [loadWeek])
 
-  async function handleAddRecipe(dayOfWeek: number, recipe: Recipe) {
+  async function handleAddRecipe(dayOfWeek: number, recipe: RecipeListItem) {
     setAddingToDay(dayOfWeek)
     const res = await fetch('/api/planner/slots', {
       method: 'POST',

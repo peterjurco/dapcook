@@ -6,6 +6,7 @@ import { getUserTranslations } from '@/i18n/server-utils'
 import type { Ingredient, Step } from '@/types/recipe'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { storeCoverImage } from '@/lib/recipes/cover-image'
+import { RECIPE_LIST_COLUMNS } from '@/lib/recipes/list-columns'
 
 export async function GET(request: NextRequest) {
   const supabase = createClient()
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('recipes')
-    .select('*')
+    .select(RECIPE_LIST_COLUMNS)
     .eq('is_archived', false)
     .order('created_at', { ascending: false })
 

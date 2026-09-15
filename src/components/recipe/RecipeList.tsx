@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Search, Import, Plus, SlidersHorizontal } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
+import { RECIPE_GRID_CLASSES } from './gridClasses'
 import { RecipeFiltersModal } from './RecipeFiltersModal'
 import { RecipeTagStrip } from './RecipeTagStrip'
 import {
@@ -15,10 +16,10 @@ import {
   tagsByUsage,
   type Taxonomy,
 } from '@/lib/tags/taxonomy'
-import type { Recipe } from '@/types/database'
+import type { RecipeListItem } from '@/lib/recipes/list-columns'
 
 interface RecipeListProps {
-  recipes: Recipe[]
+  recipes: RecipeListItem[]
   taxonomy: Taxonomy
   defaultFilter: string[]
 }
@@ -243,7 +244,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
 
       {/* Grid */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className={RECIPE_GRID_CLASSES}>
           {filtered.map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} taxonomy={taxonomy} />
           ))}

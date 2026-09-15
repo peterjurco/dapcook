@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Search, X, Plus } from 'lucide-react'
-import type { Recipe } from '@/types/database'
+import type { RecipeListItem } from '@/lib/recipes/list-columns'
 import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import { CUSTOM_LABELS } from '@/types/planner'
 import Image from 'next/image'
 
 interface RecipeSearchProps {
-  onSelectRecipe: (recipe: Recipe) => void
+  onSelectRecipe: (recipe: RecipeListItem) => void
   onSelectCustom: (label: string) => void
   onClose: () => void
 }
@@ -17,7 +17,7 @@ interface RecipeSearchProps {
 export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: RecipeSearchProps) {
   const t = useTranslations('planner')
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<Recipe[]>([])
+  const [results, setResults] = useState<RecipeListItem[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
