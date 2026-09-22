@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseBaseline, pendingMigrations } from './apply-migrations.ts'
+import { LEDGER_STATEMENTS, parseBaseline, pendingMigrations } from './apply-migrations.ts'
 
 describe('parseBaseline', () => {
   it('reads one migration filename per line', () => {
@@ -58,5 +58,24 @@ describe('pendingMigrations', () => {
 
   it('ignores an applied migration whose file has since been removed', () => {
     expect(pendingMigrations(['002_b.sql'], ['001_deleted.sql'])).toEqual(['002_b.sql'])
+  })
+})
+
+describe('LEDGER_STATEMENTS', () => {
+  it('creates the ledger before touching it', () => {
+    expect(LEDGER_STATEMENTS[0]).toContain('create table public.schema_migrations')
+  })
+
+  it('leaves the ledger unreachable from the public anon key', () => {
+    // A ledger anyone can delete from is a ledger that lies, and Supabase's
+    // advisor flags the missing RLS as a critical issue. Both halves matter:
+    // RLS without the revoke still leaks nothing, but the revoke is what holds
+    // if a policy is ever added carelessly.
+    expect(LEDGER_STATEMENTS).toContain(
+      'alter table public.schema_migrations enable row level security'
+    )
+    expect(LEDGER_STATEMENTS).toContain(
+      'revoke all on public.schema_migrations from anon, authenticated'
+    )
   })
 })

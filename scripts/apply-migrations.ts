@@ -37,6 +37,20 @@ export function parseBaseline(text: string): string[] {
 }
 
 /**
+ * Builds the ledger and locks it down in the same breath. RLS with no policies
+ * denies anon and authenticated outright — postgres (this script) and
+ * service_role bypass it — and the revoke takes back the grants Supabase hands
+ * every new table in `public` by default. Without both, anyone holding the
+ * public anon key can empty the ledger, and the next run then re-applies every
+ * migration over a schema that already has them.
+ */
+export const LEDGER_STATEMENTS = [
+  'create table public.schema_migrations (version text primary key, applied_at timestamptz not null default now())',
+  'alter table public.schema_migrations enable row level security',
+  'revoke all on public.schema_migrations from anon, authenticated',
+]
+
+/**
  * Migrations present on disk that the database has not recorded yet, sorted by
  * filename so they apply in the order they were written. Applied versions whose
  * file no longer exists are ignored rather than treated as an error — a deleted
@@ -93,10 +107,9 @@ function main() {
   }
 
   if (ledgerExists !== 't') {
-    psql(databaseUrl, [
-      '-c',
-      'create table public.schema_migrations (version text primary key, applied_at timestamptz not null default now())',
-    ])
+    for (const statement of LEDGER_STATEMENTS) {
+      psql(databaseUrl, ['-c', statement])
+    }
 
     // `recipes` comes from the very first migration: if it is already there,
     // this database predates the ledger and its baseline is applied.
