@@ -23,7 +23,15 @@
     "clearDefault": "Zrušiť predvolené",
     "setAsDefault": "Nastaviť ako predvolené",
     "dialogAria": "Filtre",
-    "showResults": "{count, plural, one {Zobraziť # recept} few {Zobraziť # recepty} other {Zobraziť # receptov}}"
+    "showResults": "{count, plural, one {Zobraziť # recept} few {Zobraziť # recepty} other {Zobraziť # receptov}}",
+    "ingredient": "Ingrediencia",
+    "ingredientPlaceholder": "napr. cesnak",
+    "ingredientError": "Vyhľadávanie podľa ingrediencie zlyhalo. Skúste znova.",
+    "totalTime": "Celkový čas (min)",
+    "servings": "Porcie",
+    "custom": "Vlastné",
+    "from": "Od",
+    "to": "Do"
   },
   "view": {
     "prep": "Príprava",
