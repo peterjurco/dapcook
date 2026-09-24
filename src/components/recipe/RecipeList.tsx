@@ -183,7 +183,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           />
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
           <Link
             href="/recipes/import"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
