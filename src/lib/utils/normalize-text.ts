@@ -4,5 +4,5 @@
  * letter plus a combining mark, and the marks are then dropped.
  */
 export function normalizeText(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
