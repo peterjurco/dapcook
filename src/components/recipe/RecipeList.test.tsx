@@ -457,3 +457,17 @@ describe('RecipeList time, portions and ingredient filters', () => {
     expect(screen.getByTestId('filters-button-desktop')).not.toHaveTextContent(/\d/)
   })
 })
+
+describe('RecipeList with no tagged recipes', () => {
+  it('still reaches the filters on desktop when no recipe has a tag', async () => {
+    const untagged = [makeRecipe('r1', 'Lasagne', []), makeRecipe('r2', 'Ramen', [])]
+    const user = userEvent.setup()
+    render(<RecipeList recipes={untagged} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
+
+    const button = screen.getByTestId('filters-button-desktop')
+    expect(button).toBeInTheDocument()
+
+    await user.click(button)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+})

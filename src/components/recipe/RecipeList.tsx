@@ -221,7 +221,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           Filters button lives outside RecipeTagStrip's own container so its
           badge (which pokes outside the button via negative offset) is
           never clipped by anything. */}
-      {rowTags.length > 0 && (
+      {recipes.length > 0 && (
         <div className="flex items-center gap-2 mb-6 pt-1.5 pb-1">
           <div className="hidden sm:block flex-shrink-0">
             <FiltersButton
@@ -232,7 +232,9 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
               label={t('list.filters')}
             />
           </div>
-          <RecipeTagStrip tags={rowTags} renderPill={renderPill} onVisibleCountChange={setVisibleRowCount} />
+          {rowTags.length > 0 && (
+            <RecipeTagStrip tags={rowTags} renderPill={renderPill} onVisibleCountChange={setVisibleRowCount} />
+          )}
         </div>
       )}
 
