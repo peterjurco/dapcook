@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RecipeList } from './RecipeList'
 import { EMPTY_TAXONOMY, type Taxonomy } from '@/lib/tags/taxonomy'
@@ -13,6 +13,14 @@ vi.mock('next/link', () => ({
       {children}
     </a>
   ),
+}))
+
+// The list reads its initial filters from the URL. Tests set `url.params`
+// before rendering; it defaults to an empty query (plain /recipes).
+const url = vi.hoisted(() => ({ params: new URLSearchParams() }))
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => url.params,
+  usePathname: () => '/recipes',
 }))
 
 vi.mock('next-intl', () => ({
@@ -470,5 +478,71 @@ describe('RecipeList with no tagged recipes', () => {
 
     await user.click(button)
     expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+})
+
+describe('RecipeList URL state', () => {
+  const timed = [
+    { ...makeRecipe('r1', 'Lasagne', ['main']), prep_time_min: 30, cook_time_min: 60, servings: 6 },
+    { ...makeRecipe('r2', 'Garlic Bread', ['side']), prep_time_min: 5, cook_time_min: 10, servings: 2 },
+    makeRecipe('r3', 'Ramen', ['main']),
+  ]
+
+  afterEach(() => {
+    url.params = new URLSearchParams()
+    window.history.replaceState(null, '', '/')
+    sessionStorage.clear()
+    vi.restoreAllMocks()
+  })
+
+  it('restores the filters from the URL', () => {
+    url.params = new URLSearchParams('time=-15&q=bread')
+    render(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={[]} />)
+
+    expect(screen.getByText('Garlic Bread')).toBeInTheDocument()
+    expect(screen.queryByText('Lasagne')).not.toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search recipes...')).toHaveValue('bread')
+    expect(screen.getByTestId('filters-button-desktop')).toHaveTextContent('1')
+  })
+
+  it('lets tags in the URL override the default view, dropping unknown ones', () => {
+    url.params = new URLSearchParams('tag=side&tag=gone')
+    render(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={['main']} />)
+
+    expect(screen.getByText('Garlic Bread')).toBeInTheDocument()
+    expect(screen.queryByText('Lasagne')).not.toBeInTheDocument()
+  })
+
+  it('keeps an explicitly cleared selection instead of re-applying the default', () => {
+    url.params = new URLSearchParams('all=1')
+    render(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={['main']} />)
+
+    expect(screen.getByText('Garlic Bread')).toBeInTheDocument()
+    expect(screen.getByText('Lasagne')).toBeInTheDocument()
+  })
+
+  it('replaces the current history entry with the filtered URL and remembers it', async () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState')
+    const pushState = vi.spyOn(window.history, 'pushState')
+    const user = userEvent.setup()
+    render(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.click(within(screen.getByRole('group', { name: 'Total time (min)' })).getByRole('button', { name: '≤ 15' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'side' }))
+
+    await waitFor(() => expect(replaceState).toHaveBeenLastCalledWith(null, '', '/recipes?tag=side&time=-15'))
+    expect(pushState).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem('dapcook:recipe-list-url')).toBe('/recipes?tag=side&time=-15')
+  })
+
+  it('leaves the URL alone on first render when it already matches', async () => {
+    window.history.replaceState(null, '', '/recipes?time=-15')
+    url.params = new URLSearchParams('time=-15')
+    const replaceState = vi.spyOn(window.history, 'replaceState')
+    render(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={[]} />)
+
+    await waitFor(() => expect(sessionStorage.getItem('dapcook:recipe-list-url')).toBe('/recipes?time=-15'))
+    expect(replaceState).not.toHaveBeenCalled()
   })
 })

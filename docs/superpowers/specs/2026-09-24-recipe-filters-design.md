@@ -120,6 +120,25 @@ placeholder, ingredient error, "Custom", from/to placeholders. `errors.json`:
   badge count, Clear all resets every filter.
 - Manual: browser pane at 375 px — modal footer visible above nav, mobile search.
 
+## Follow-up: filters persist in the URL
+
+Opening a recipe and coming back used to reset the filters.
+
+- The list mirrors its filters into the query string, e.g.
+  `/recipes?q=gulas&tag=main&tag=italian&time=-30&portions=3-4&ing=cesnak`
+  (`src/lib/recipes/filter-url.ts`). Ranges are `min-max` with an empty side
+  for an open bound.
+- Plain `/recipes` means "apply my default view". `?all=1` records an
+  explicitly cleared tag selection so it doesn't fall back to the default.
+  Tags in the URL count as touched and override the default.
+- Writes use `history.replaceState` (never `pushState`), 300 ms after the last
+  change, so tweaking filters doesn't add history entries.
+- Browser back restores the URL, and so the filters. The recipe page's
+  "All recipes" link goes to the last list URL of this session
+  (`sessionStorage`, `src/lib/recipes/list-url-memory.ts`). The bottom-nav tab
+  opens plain `/recipes`, i.e. the default view — the reset gesture.
+- Nothing persists beyond the session except the saved default view.
+
 ## Deployment
 
 Branch `feat/recipe-filters` → merge into `staging` → test on

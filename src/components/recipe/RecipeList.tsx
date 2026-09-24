@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Search, Import, Plus, SlidersHorizontal } from 'lucide-react'
 import { RecipeCard } from './RecipeCard'
@@ -10,6 +11,8 @@ import { RecipeFiltersModal } from './RecipeFiltersModal'
 import { RecipeTagStrip } from './RecipeTagStrip'
 import { useIngredientSearch } from './useIngredientSearch'
 import { activeFilterCount, applyFilters, type Range } from '@/lib/recipes/filters'
+import { parseFilterParams, serializeFilterParams } from '@/lib/recipes/filter-url'
+import { rememberListUrl } from '@/lib/recipes/list-url-memory'
 import {
   buildFilterSections,
   sanitizeDefaultFilter,
@@ -18,6 +21,10 @@ import {
   type Taxonomy,
 } from '@/lib/tags/taxonomy'
 import type { RecipeListItem } from '@/lib/recipes/list-columns'
+
+// Search and ingredient text land in the URL once typing pauses, so each
+// keystroke doesn't rewrite history.
+const URL_SYNC_DEBOUNCE_MS = 300
 
 interface RecipeListProps {
   recipes: RecipeListItem[]
@@ -60,17 +67,26 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   const t = useTranslations('recipes')
   const knownTags = tagsByUsage(recipes)
   const initialDefault = sanitizeDefaultFilter(defaultFilter, knownTags)
-  const initialRowTags = [...initialDefault, ...knownTags.filter((t) => !initialDefault.includes(t))]
+  const pathname = usePathname()
+  // The URL is only read once, on mount: from then on the state here is the
+  // source of truth and gets written back to the URL (see the effect below).
+  const searchParams = useSearchParams()
+  const [fromUrl] = useState(() => parseFilterParams(new URLSearchParams(searchParams?.toString())))
+  // Tags in the URL mean the user picked them this visit, so they win over
+  // the default view; plain /recipes still opens the default.
+  const urlTags = fromUrl.tags === null ? null : sanitizeDefaultFilter(fromUrl.tags, knownTags)
+  const initialSelection = urlTags ?? initialDefault
+  const initialRowTags = [...initialSelection, ...knownTags.filter((t) => !initialSelection.includes(t))]
 
-  const [search, setSearch] = useState('')
-  const [selection, setSelection] = useState<string[]>(initialDefault)
+  const [search, setSearch] = useState(fromUrl.search)
+  const [selection, setSelection] = useState<string[]>(initialSelection)
   const [savedDefault, setSavedDefault] = useState<string[]>(initialDefault)
-  const [selectionTouched, setSelectionTouched] = useState(false)
+  const [selectionTouched, setSelectionTouched] = useState(urlTags !== null)
   const [savingDefault, setSavingDefault] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [time, setTime] = useState<Range | null>(null)
-  const [servings, setServings] = useState<Range | null>(null)
-  const [ingredient, setIngredient] = useState('')
+  const [time, setTime] = useState<Range | null>(fromUrl.time)
+  const [servings, setServings] = useState<Range | null>(fromUrl.servings)
+  const [ingredient, setIngredient] = useState(fromUrl.ingredient)
   const ingredientSearch = useIngredientSearch(ingredient)
   // The tag row's order is stable — it doesn't reshuffle just because a
   // visible pill got clicked. It only changes when a tag gets selected (via
@@ -81,6 +97,29 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   const [visibleRowCount, setVisibleRowCount] = useState(initialRowTags.length)
 
   const sections = buildFilterSections(recipes, taxonomy)
+
+  const listQuery = serializeFilterParams({
+    search,
+    tags: selectionTouched ? selection : null,
+    time,
+    servings,
+    ingredient,
+  })
+
+  // Mirror the filters into the URL so leaving for a recipe and coming back
+  // (browser back, or the recipe page's "All recipes" link) restores them.
+  // `replaceState`, not `pushState`: filter tweaks must not pile up history
+  // entries, or Back would step through them instead of leaving the page.
+  useEffect(() => {
+    const url = listQuery ? `${pathname}?${listQuery}` : pathname
+    const timer = setTimeout(() => {
+      if (url !== window.location.pathname + window.location.search) {
+        window.history.replaceState(null, '', url)
+      }
+      rememberListUrl(url)
+    }, URL_SYNC_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [listQuery, pathname])
 
   function toggleTag(tag: string) {
     setSelectionTouched(true)
