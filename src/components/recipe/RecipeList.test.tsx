@@ -436,6 +436,7 @@ describe('RecipeList time, portions and ingredient filters', () => {
 
     expect(await screen.findByText('Ingredient search failed. Try again.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /show 3 recipes/i })).toBeInTheDocument()
+    expect(screen.getByTestId('filters-button-desktop')).not.toHaveTextContent(/\d/)
   })
 
   it('resets tags, ranges and ingredient on Clear all', async () => {

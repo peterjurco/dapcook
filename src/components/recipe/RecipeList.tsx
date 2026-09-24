@@ -136,7 +136,12 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     { tags: effectiveSelection, time, servings, search, ingredientIds: ingredientSearch.ids },
     taxonomy
   )
-  const activeCount = activeFilterCount({ tags: selection, time, servings, ingredient })
+  const activeCount = activeFilterCount({
+    tags: selection,
+    time,
+    servings,
+    ingredient: ingredientSearch.error ? '' : ingredient,
+  })
 
   function renderPill(tag: string) {
     const color = tagColor(taxonomy, tag)
