@@ -379,3 +379,81 @@ describe('RecipeList default view', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('RecipeList time, portions and ingredient filters', () => {
+  const timed = [
+    { ...makeRecipe('r1', 'Lasagne', ['main']), prep_time_min: 30, cook_time_min: 60, servings: 6 },
+    { ...makeRecipe('r2', 'Garlic Bread', ['side']), prep_time_min: 5, cook_time_min: 10, servings: 2 },
+    makeRecipe('r3', 'Ramen', ['main']),
+  ]
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('filters by a total time preset, hiding recipes without a time', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={timed} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    const time = within(screen.getByRole('group', { name: 'Total time (min)' }))
+    await user.click(time.getByRole('button', { name: '≤ 15' }))
+
+    expect(screen.getByRole('button', { name: /show 1 recipe$/i })).toBeInTheDocument()
+    expect(screen.getByTestId('filters-button-desktop')).toHaveTextContent('1')
+  })
+
+  it('filters by a portions preset', async () => {
+    const user = userEvent.setup()
+    render(<RecipeList recipes={timed} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    const portions = within(screen.getByRole('group', { name: 'Portions' }))
+    await user.click(portions.getByRole('button', { name: '5+' }))
+
+    expect(screen.getByRole('button', { name: /show 1 recipe$/i })).toBeInTheDocument()
+  })
+
+  it('filters by ingredient using the ids the server returns', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ids: ['r2'] }) })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<RecipeList recipes={timed} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.type(screen.getByRole('textbox', { name: 'Ingredient' }), 'garlic')
+
+    expect(await screen.findByRole('button', { name: /show 1 recipe$/i })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith('/api/recipes/ingredient-search?q=garlic', expect.anything())
+    expect(screen.getByTestId('filters-button-desktop')).toHaveTextContent('1')
+  })
+
+  it('shows an error and keeps every recipe when the ingredient search fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) }))
+    const user = userEvent.setup()
+    render(<RecipeList recipes={timed} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.type(screen.getByRole('textbox', { name: 'Ingredient' }), 'garlic')
+
+    expect(await screen.findByText('Ingredient search failed. Try again.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /show 3 recipes/i })).toBeInTheDocument()
+  })
+
+  it('resets tags, ranges and ingredient on Clear all', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ids: ['r2'] }) }))
+    const user = userEvent.setup()
+    render(<RecipeList recipes={timed} taxonomy={EMPTY_TAXONOMY} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    const dialog = within(screen.getByRole('dialog'))
+    await user.click(dialog.getByRole('button', { name: 'side' }))
+    await user.click(within(screen.getByRole('group', { name: 'Portions' })).getByRole('button', { name: '1–2' }))
+    await user.type(dialog.getByRole('textbox', { name: 'Ingredient' }), 'garlic')
+    expect(await screen.findByTestId('filters-button-desktop')).toHaveTextContent('3')
+
+    await user.click(dialog.getByRole('button', { name: /clear all/i }))
+
+    expect(dialog.getByRole('textbox', { name: 'Ingredient' })).toHaveValue('')
+    expect(screen.getByRole('button', { name: /show 3 recipes/i })).toBeInTheDocument()
+    expect(screen.getByTestId('filters-button-desktop')).not.toHaveTextContent(/\d/)
+  })
+})

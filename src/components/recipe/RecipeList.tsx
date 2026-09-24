@@ -8,9 +8,10 @@ import { RecipeCard } from './RecipeCard'
 import { RECIPE_GRID_CLASSES } from './gridClasses'
 import { RecipeFiltersModal } from './RecipeFiltersModal'
 import { RecipeTagStrip } from './RecipeTagStrip'
+import { useIngredientSearch } from './useIngredientSearch'
+import { activeFilterCount, applyFilters, type Range } from '@/lib/recipes/filters'
 import {
   buildFilterSections,
-  filterRecipesByTags,
   sanitizeDefaultFilter,
   tagColor,
   tagsByUsage,
@@ -67,6 +68,10 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   const [selectionTouched, setSelectionTouched] = useState(false)
   const [savingDefault, setSavingDefault] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [time, setTime] = useState<Range | null>(null)
+  const [servings, setServings] = useState<Range | null>(null)
+  const [ingredient, setIngredient] = useState('')
+  const ingredientSearch = useIngredientSearch(ingredient)
   // The tag row's order is stable — it doesn't reshuffle just because a
   // visible pill got clicked. It only changes when a tag gets selected (via
   // the Filters modal, typically) that isn't currently among the tags the
@@ -92,10 +97,13 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     }
   }
 
-  function clearAllTags() {
+  function clearAllFilters() {
     setSelectionTouched(true)
     setSelection([])
     setRowTags(knownTags)
+    setTime(null)
+    setServings(null)
+    setIngredient('')
   }
 
   const searching = search.trim().length > 0
@@ -123,11 +131,12 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     setSavingDefault(false)
   }
 
-  let filtered = filterRecipesByTags(recipes, effectiveSelection, taxonomy)
-  if (searching) {
-    const q = search.toLowerCase()
-    filtered = filtered.filter((r) => r.title.toLowerCase().includes(q))
-  }
+  const filtered = applyFilters(
+    recipes,
+    { tags: effectiveSelection, time, servings, search, ingredientIds: ingredientSearch.ids },
+    taxonomy
+  )
+  const activeCount = activeFilterCount({ tags: selection, time, servings, ingredient })
 
   function renderPill(tag: string) {
     const color = tagColor(taxonomy, tag)
@@ -195,7 +204,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             <FiltersButton
               testId="filters-button-mobile"
               showLabel={false}
-              count={selection.length}
+              count={activeCount}
               onClick={() => setFiltersOpen(true)}
               label={t('list.filters')}
             />
@@ -217,7 +226,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             <FiltersButton
               testId="filters-button-desktop"
               showLabel
-              count={selection.length}
+              count={activeCount}
               onClick={() => setFiltersOpen(true)}
               label={t('list.filters')}
             />
@@ -232,8 +241,17 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           taxonomy={taxonomy}
           selection={selection}
           onToggleTag={toggleTag}
-          onClearAll={clearAllTags}
+          time={time}
+          onTimeChange={setTime}
+          servings={servings}
+          onServingsChange={setServings}
+          ingredient={ingredient}
+          onIngredientChange={setIngredient}
+          ingredientError={ingredientSearch.error}
+          onClearAll={clearAllFilters}
+          activeCount={activeCount}
           resultCount={filtered.length}
+          resultPending={ingredientSearch.loading}
           selectionIsDefault={selectionIsDefault}
           showDefaultAction={showDefaultAction}
           savingDefault={savingDefault}
