@@ -60,6 +60,25 @@ describe('GET /api/recipes/ingredient-search', () => {
     expect(await (await get('garlic')).json()).toEqual({ ids: [] })
   })
 
+  it('matches a diacritics-free query against an accented ingredient name', async () => {
+    vi.mocked(createClient).mockReturnValue(makeSupabase({ id: 'u1' }).client as unknown as ReturnType<typeof createClient>)
+    expect(await (await get('česnak')).json()).toEqual({ ids: ['r1'] })
+  })
+
+  it('skips malformed rows instead of throwing', async () => {
+    const malformedRows = [
+      { id: 'bad1', ingredients: {} },
+      { id: 'bad2', ingredients: [null, { name: 42 }] },
+      { id: 'good', ingredients: [{ id: 'i1', quantity: 1, unit: 'ks', name: 'Garlic', notes: '' }] },
+    ]
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase({ id: 'u1' }, { data: malformedRows, error: null }).client as unknown as ReturnType<typeof createClient>
+    )
+    const res = await get('garlic')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ ids: ['good'] })
+  })
+
   it('returns 500 when the query fails', async () => {
     vi.mocked(createClient).mockReturnValue(
       makeSupabase({ id: 'u1' }, { data: null, error: { message: 'boom' } }).client as unknown as ReturnType<typeof createClient>

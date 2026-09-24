@@ -32,9 +32,13 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const ids = (data ?? [])
-    .filter((r) =>
-      ((r.ingredients as unknown as Ingredient[] | null) ?? []).some((i) => normalizeText(i.name ?? '').includes(q))
-    )
+    .filter((r) => {
+      const ingredients = r.ingredients as unknown
+      if (!Array.isArray(ingredients)) return false
+      return (ingredients as Partial<Ingredient>[]).some(
+        (i) => typeof i?.name === 'string' && normalizeText(i.name).includes(q)
+      )
+    })
     .map((r) => r.id)
 
   return NextResponse.json({ ids })

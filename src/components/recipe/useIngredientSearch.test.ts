@@ -74,4 +74,24 @@ describe('useIngredientSearch', () => {
     rerender({ term: '' })
     expect(result.current).toEqual({ ids: null, loading: false, error: false })
   })
+
+  it('clears a stale error once a new search starts', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, json: async () => ({}) })
+    const { result, rerender } = renderHook(({ term }) => useIngredientSearch(term), { initialProps: { term: 'garlic' } })
+    await act(() => vi.advanceTimersByTimeAsync(INGREDIENT_SEARCH_DEBOUNCE_MS))
+    expect(result.current.error).toBe(true)
+
+    fetchMock.mockImplementation(() => new Promise(() => {}))
+    rerender({ term: 'onion' })
+    expect(result.current).toEqual({ ids: null, loading: true, error: false })
+  })
+
+  it('only searches once diacritics are stripped down to two characters', async () => {
+    // Two bare combining marks: two raw characters, but normalizeText strips
+    // them to an empty string, so this must not be treated as active.
+    const term = '́́'
+    renderHook(() => useIngredientSearch(term))
+    await act(() => vi.advanceTimersByTimeAsync(INGREDIENT_SEARCH_DEBOUNCE_MS))
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })

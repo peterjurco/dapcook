@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { MIN_INGREDIENT_TERM } from '@/lib/recipes/filters'
+import { normalizeText } from '@/lib/utils/normalize-text'
 
 export const INGREDIENT_SEARCH_DEBOUNCE_MS = 300
 
@@ -21,7 +22,7 @@ interface IngredientSearch {
  */
 export function useIngredientSearch(term: string): IngredientSearch {
   const q = term.trim()
-  const active = q.length >= MIN_INGREDIENT_TERM
+  const active = normalizeText(q).length >= MIN_INGREDIENT_TERM
   const [ids, setIds] = useState<Set<string> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
@@ -36,6 +37,7 @@ export function useIngredientSearch(term: string): IngredientSearch {
 
     const controller = new AbortController()
     setLoading(true)
+    setError(false)
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/recipes/ingredient-search?q=${encodeURIComponent(q)}`, {

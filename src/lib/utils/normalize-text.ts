@@ -4,6 +4,5 @@
  * letter plus a combining mark, and the marks are then dropped.
  */
 export function normalizeText(s: string): string {
-  // eslint-disable-next-line no-misleading-character-class
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
