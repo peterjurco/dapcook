@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -25,6 +25,11 @@ import type { RecipeListItem } from '@/lib/recipes/list-columns'
 // Search and ingredient text land in the URL once typing pauses, so each
 // keystroke doesn't rewrite history.
 const URL_SYNC_DEBOUNCE_MS = 300
+
+/** Selected tags first, then the rest by usage. */
+function rowOrder(selection: string[], knownTags: string[]): string[] {
+  return [...selection, ...knownTags.filter((t) => !selection.includes(t))]
+}
 
 interface RecipeListProps {
   recipes: RecipeListItem[]
@@ -68,15 +73,17 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   const knownTags = tagsByUsage(recipes)
   const initialDefault = sanitizeDefaultFilter(defaultFilter, knownTags)
   const pathname = usePathname()
-  // The URL is only read once, on mount: from then on the state here is the
-  // source of truth and gets written back to the URL (see the effect below).
+  // The state here is the source of truth and gets written back to the URL
+  // (see the effects below). The URL is read on mount, and again only when
+  // it changes to something this list didn't write — a navigation.
   const searchParams = useSearchParams()
-  const [fromUrl] = useState(() => parseFilterParams(new URLSearchParams(searchParams?.toString())))
+  const urlQuery = searchParams?.toString() ?? ''
+  const [fromUrl] = useState(() => parseFilterParams(new URLSearchParams(urlQuery)))
   // Tags in the URL mean the user picked them this visit, so they win over
   // the default view; plain /recipes still opens the default.
   const urlTags = fromUrl.tags === null ? null : sanitizeDefaultFilter(fromUrl.tags, knownTags)
   const initialSelection = urlTags ?? initialDefault
-  const initialRowTags = [...initialSelection, ...knownTags.filter((t) => !initialSelection.includes(t))]
+  const initialRowTags = rowOrder(initialSelection, knownTags)
 
   const [search, setSearch] = useState(fromUrl.search)
   const [selection, setSelection] = useState<string[]>(initialSelection)
@@ -95,6 +102,8 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   // lower-priority tags out of the fitted width if needed.
   const [rowTags, setRowTags] = useState<string[]>(initialRowTags)
   const [visibleRowCount, setVisibleRowCount] = useState(initialRowTags.length)
+  // The query this list last read from or wrote to the URL.
+  const syncedQuery = useRef(urlQuery)
 
   const sections = buildFilterSections(recipes, taxonomy)
 
@@ -113,6 +122,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   useEffect(() => {
     const url = listQuery ? `${pathname}?${listQuery}` : pathname
     const timer = setTimeout(() => {
+      syncedQuery.current = listQuery
       if (url !== window.location.pathname + window.location.search) {
         window.history.replaceState(null, '', url)
       }
@@ -120,6 +130,26 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     }, URL_SYNC_DEBOUNCE_MS)
     return () => clearTimeout(timer)
   }, [listQuery, pathname])
+
+  // Navigating to the list while already on it (the bottom-nav tab opens
+  // plain /recipes) keeps this component mounted and only swaps the params.
+  // Anything we didn't write ourselves is a navigation: load it like a mount.
+  useEffect(() => {
+    if (urlQuery === syncedQuery.current) return
+    syncedQuery.current = urlQuery
+    const next = parseFilterParams(new URLSearchParams(urlQuery))
+    const tags = next.tags === null ? null : sanitizeDefaultFilter(next.tags, knownTags)
+    const nextSelection = tags ?? savedDefault
+    setSearch(next.search)
+    setSelection(nextSelection)
+    setSelectionTouched(tags !== null)
+    setTime(next.time)
+    setServings(next.servings)
+    setIngredient(next.ingredient)
+    setRowTags(rowOrder(nextSelection, knownTags))
+    // Only a URL change should trigger this; the other values are read as of then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlQuery])
 
   function toggleTag(tag: string) {
     setSelectionTouched(true)
