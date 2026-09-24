@@ -536,6 +536,38 @@ describe('RecipeList URL state', () => {
     expect(sessionStorage.getItem('dapcook:recipe-list-url')).toBe('/recipes?tag=side&time=-15')
   })
 
+  it('resets to the default view when navigated to plain /recipes while already on the list', () => {
+    // The bottom-nav "Recipes" tab: same page, so the list stays mounted and
+    // only the search params change underneath it.
+    url.params = new URLSearchParams('time=-15&tag=side')
+    const { rerender } = render(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={['main']} />)
+    expect(screen.queryByText('Lasagne')).not.toBeInTheDocument()
+
+    url.params = new URLSearchParams()
+    rerender(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={['main']} />)
+
+    expect(screen.getByText('Lasagne')).toBeInTheDocument()
+    expect(screen.getByText('Ramen')).toBeInTheDocument()
+    expect(screen.queryByText('Garlic Bread')).not.toBeInTheDocument()
+    expect(screen.getByTestId('filters-button-desktop')).toHaveTextContent('1')
+  })
+
+  it('does not reset when the params change because the list wrote them itself', async () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState')
+    const user = userEvent.setup()
+    const { rerender } = render(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={[]} />)
+
+    await user.click(screen.getByTestId('filters-button-desktop'))
+    await user.click(within(screen.getByRole('group', { name: 'Total time (min)' })).getByRole('button', { name: '≤ 15' }))
+    await waitFor(() => expect(replaceState).toHaveBeenLastCalledWith(null, '', '/recipes?time=-15'))
+
+    // Next keeps useSearchParams in sync with replaceState.
+    url.params = new URLSearchParams('time=-15')
+    rerender(<RecipeList recipes={timed} taxonomy={grouped} defaultFilter={[]} />)
+
+    expect(screen.getByRole('button', { name: /show 1 recipe$/i })).toBeInTheDocument()
+  })
+
   it('leaves the URL alone on first render when it already matches', async () => {
     window.history.replaceState(null, '', '/recipes?time=-15')
     url.params = new URLSearchParams('time=-15')
