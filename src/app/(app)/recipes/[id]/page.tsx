@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { ChevronLeft, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { AddToPlanButton } from '@/components/recipe/AddToPlanButton'
+import { BackToRecipesLink } from '@/components/recipe/BackToRecipesLink'
 import { RecipeView } from '@/components/recipe/RecipeView'
 import { ShareRecipeButton } from '@/components/recipe/ShareRecipeButton'
 import { buildTagMeta, type Taxonomy } from '@/lib/tags/taxonomy'
@@ -31,14 +32,13 @@ export default async function RecipeDetailPage({ params }: Props) {
 
   const toolbar = (
     <div className="flex items-center justify-between mb-6">
-      <Link
-        href="/recipes"
-        aria-label={t('detailPage.allRecipesAria')}
+      <BackToRecipesLink
+        ariaLabel={t('detailPage.allRecipesAria')}
         className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition-colors"
       >
         <ChevronLeft size={16} />
         <span className="hidden sm:inline">{t('detailPage.allRecipes')}</span>
-      </Link>
+      </BackToRecipesLink>
       <div className="flex items-center gap-2">
         <AddToPlanButton recipeId={r.id} />
         <ShareRecipeButton recipeId={r.id} initialShareToken={r.share_token} />
