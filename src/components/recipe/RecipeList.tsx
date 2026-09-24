@@ -165,13 +165,14 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 mb-4">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-fraunces flex-shrink-0">
           <span className="text-emerald-700">{t('list.headingR')}</span>{t('list.headingRest')}
         </h1>
 
-        {/* Search — desktop only */}
-        <div className="relative flex-1 max-w-md hidden sm:block">
+        {/* Search — between title and actions on desktop; its own full-width
+            row under them on mobile */}
+        <div className="relative order-last w-full sm:order-none sm:w-auto sm:flex-1 sm:max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
