@@ -40,11 +40,12 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
  */
 export function RangeFilter({ label, presets, value, onChange }: RangeFilterProps) {
   const t = useTranslations('recipes')
-  const [customOpen, setCustomOpen] = useState(false)
+  // Seeded once from the initial value (e.g. a custom range restored when the
+  // modal reopens) and from then on driven only by the Custom chip — never by
+  // `value` — so the inputs don't unmount mid-edit just because what's typed
+  // so far happens to equal a preset (or is momentarily empty).
+  const [customOpen, setCustomOpen] = useState(() => value !== null && !presetFor(value, presets))
   const activePreset = presetFor(value, presets)
-  // A range no preset describes can only have come from the inputs, so they
-  // stay visible for it — including after the modal is closed and reopened.
-  const showCustom = customOpen || (value !== null && !activePreset)
 
   function selectPreset(preset: RangePreset) {
     setCustomOpen(false)
@@ -52,7 +53,7 @@ export function RangeFilter({ label, presets, value, onChange }: RangeFilterProp
   }
 
   function toggleCustom() {
-    if (!showCustom) {
+    if (!customOpen) {
       setCustomOpen(true)
       return
     }
@@ -77,11 +78,11 @@ export function RangeFilter({ label, presets, value, onChange }: RangeFilterProp
             {preset.label}
           </Chip>
         ))}
-        <Chip active={showCustom && !activePreset} onClick={toggleCustom}>
+        <Chip active={customOpen && !activePreset} onClick={toggleCustom}>
           {t('filtersModal.custom')}
         </Chip>
       </div>
-      {showCustom && (
+      {customOpen && (
         <div className="flex items-center gap-2 mt-3">
           <input
             type="text"

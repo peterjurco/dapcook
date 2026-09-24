@@ -91,6 +91,18 @@ describe('RangeFilter', () => {
     expect(onChange).toHaveBeenLastCalledWith(null)
   })
 
+  it('keeps custom inputs open and focused while editing, even if the typed value equals a preset', async () => {
+    const user = userEvent.setup()
+    render(<Harness initial={{ min: null, max: 150 }} />)
+
+    const toInput = to()
+    toInput.focus()
+    await user.keyboard('{Backspace}')
+
+    expect(screen.getByRole('textbox', { name: 'Total time (min): To' })).toBe(document.activeElement)
+    expect(chip('≤ 15')).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('shows the inputs straight away for a custom range, and clears it when Custom is closed', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
