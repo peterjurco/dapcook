@@ -1,5 +1,6 @@
 {
   "unauthorized": "Unauthorized",
+  "queryTooShort": "Search term is too short",
   "noHousehold": "No household",
   "titleRequired": "Title is required",
   "notFound": "Not found",

@@ -1,5 +1,6 @@
 {
   "unauthorized": "Neautorizovaný prístup",
+  "queryTooShort": "Hľadaný výraz je príliš krátky",
   "noHousehold": "Žiadna domácnosť",
   "titleRequired": "Názov je povinný",
   "notFound": "Nenájdené",

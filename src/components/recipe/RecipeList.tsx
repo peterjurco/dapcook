@@ -8,9 +8,10 @@ import { RecipeCard } from './RecipeCard'
 import { RECIPE_GRID_CLASSES } from './gridClasses'
 import { RecipeFiltersModal } from './RecipeFiltersModal'
 import { RecipeTagStrip } from './RecipeTagStrip'
+import { useIngredientSearch } from './useIngredientSearch'
+import { activeFilterCount, applyFilters, type Range } from '@/lib/recipes/filters'
 import {
   buildFilterSections,
-  filterRecipesByTags,
   sanitizeDefaultFilter,
   tagColor,
   tagsByUsage,
@@ -67,6 +68,10 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   const [selectionTouched, setSelectionTouched] = useState(false)
   const [savingDefault, setSavingDefault] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [time, setTime] = useState<Range | null>(null)
+  const [servings, setServings] = useState<Range | null>(null)
+  const [ingredient, setIngredient] = useState('')
+  const ingredientSearch = useIngredientSearch(ingredient)
   // The tag row's order is stable — it doesn't reshuffle just because a
   // visible pill got clicked. It only changes when a tag gets selected (via
   // the Filters modal, typically) that isn't currently among the tags the
@@ -92,10 +97,13 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     }
   }
 
-  function clearAllTags() {
+  function clearAllFilters() {
     setSelectionTouched(true)
     setSelection([])
     setRowTags(knownTags)
+    setTime(null)
+    setServings(null)
+    setIngredient('')
   }
 
   const searching = search.trim().length > 0
@@ -123,11 +131,17 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
     setSavingDefault(false)
   }
 
-  let filtered = filterRecipesByTags(recipes, effectiveSelection, taxonomy)
-  if (searching) {
-    const q = search.toLowerCase()
-    filtered = filtered.filter((r) => r.title.toLowerCase().includes(q))
-  }
+  const filtered = applyFilters(
+    recipes,
+    { tags: effectiveSelection, time, servings, search, ingredientIds: ingredientSearch.ids },
+    taxonomy
+  )
+  const activeCount = activeFilterCount({
+    tags: selection,
+    time,
+    servings,
+    ingredient: ingredientSearch.error ? '' : ingredient,
+  })
 
   function renderPill(tag: string) {
     const color = tagColor(taxonomy, tag)
@@ -156,13 +170,14 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 mb-4">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-fraunces flex-shrink-0">
           <span className="text-emerald-700">{t('list.headingR')}</span>{t('list.headingRest')}
         </h1>
 
-        {/* Search — desktop only */}
-        <div className="relative flex-1 max-w-md hidden sm:block">
+        {/* Search — between title and actions on desktop; its own full-width
+            row under them on mobile */}
+        <div className="relative order-last w-full sm:order-none sm:w-auto sm:flex-1 sm:max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -173,7 +188,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           />
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
           <Link
             href="/recipes/import"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
@@ -195,7 +210,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
             <FiltersButton
               testId="filters-button-mobile"
               showLabel={false}
-              count={selection.length}
+              count={activeCount}
               onClick={() => setFiltersOpen(true)}
               label={t('list.filters')}
             />
@@ -211,18 +226,22 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           Filters button lives outside RecipeTagStrip's own container so its
           badge (which pokes outside the button via negative offset) is
           never clipped by anything. */}
-      {rowTags.length > 0 && (
-        <div className="flex items-center gap-2 mb-6 pt-1.5 pb-1">
+      {recipes.length > 0 && (
+        // Without tags the row holds only the desktop Filters button, so on
+        // mobile (where that button lives in the header) it would be empty.
+        <div className={`${rowTags.length > 0 ? 'flex' : 'hidden sm:flex'} items-center gap-2 mb-6 pt-1.5 pb-1`}>
           <div className="hidden sm:block flex-shrink-0">
             <FiltersButton
               testId="filters-button-desktop"
               showLabel
-              count={selection.length}
+              count={activeCount}
               onClick={() => setFiltersOpen(true)}
               label={t('list.filters')}
             />
           </div>
-          <RecipeTagStrip tags={rowTags} renderPill={renderPill} onVisibleCountChange={setVisibleRowCount} />
+          {rowTags.length > 0 && (
+            <RecipeTagStrip tags={rowTags} renderPill={renderPill} onVisibleCountChange={setVisibleRowCount} />
+          )}
         </div>
       )}
 
@@ -232,8 +251,17 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           taxonomy={taxonomy}
           selection={selection}
           onToggleTag={toggleTag}
-          onClearAll={clearAllTags}
+          time={time}
+          onTimeChange={setTime}
+          servings={servings}
+          onServingsChange={setServings}
+          ingredient={ingredient}
+          onIngredientChange={setIngredient}
+          ingredientError={ingredientSearch.error}
+          onClearAll={clearAllFilters}
+          activeCount={activeCount}
           resultCount={filtered.length}
+          resultPending={ingredientSearch.loading}
           selectionIsDefault={selectionIsDefault}
           showDefaultAction={showDefaultAction}
           savingDefault={savingDefault}
