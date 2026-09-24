@@ -23,7 +23,15 @@
     "clearDefault": "Clear default",
     "setAsDefault": "Set as default",
     "dialogAria": "Filters",
-    "showResults": "{count, plural, one {Show # recipe} other {Show # recipes}}"
+    "showResults": "{count, plural, one {Show # recipe} other {Show # recipes}}",
+    "ingredient": "Ingredient",
+    "ingredientPlaceholder": "e.g. garlic",
+    "ingredientError": "Ingredient search failed. Try again.",
+    "totalTime": "Total time (min)",
+    "servings": "Portions",
+    "custom": "Custom",
+    "from": "From",
+    "to": "To"
   },
   "view": {
     "prep": "Prep",
