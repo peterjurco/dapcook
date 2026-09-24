@@ -227,7 +227,9 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           badge (which pokes outside the button via negative offset) is
           never clipped by anything. */}
       {recipes.length > 0 && (
-        <div className="flex items-center gap-2 mb-6 pt-1.5 pb-1">
+        // Without tags the row holds only the desktop Filters button, so on
+        // mobile (where that button lives in the header) it would be empty.
+        <div className={`${rowTags.length > 0 ? 'flex' : 'hidden sm:flex'} items-center gap-2 mb-6 pt-1.5 pb-1`}>
           <div className="hidden sm:block flex-shrink-0">
             <FiltersButton
               testId="filters-button-desktop"
