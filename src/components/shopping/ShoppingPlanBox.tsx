@@ -3,13 +3,14 @@
 import { useTranslations } from 'next-intl'
 import { X, AlertTriangle } from 'lucide-react'
 import { ShoppingItemRow } from './ShoppingItemRow'
+import { Stepper } from '@/components/ui/Stepper'
 import { toShoppingItem, type PlanEntry } from '@/lib/shopping/plan-entries'
+
+const MAX_PORTIONS = 99
 
 interface Props {
   entry: PlanEntry
-  /** Raw input text — may be temporarily empty while the user types. */
-  portionsText: string
-  onPortionsChange: (raw: string) => void
+  onPortionsChange: (portions: number) => void
   onToggleRemove: () => void
   onCheckIngredient: (id: string, checked: boolean) => void
   /** Receives the row's free edit text, e.g. "150g rice". */
@@ -18,7 +19,7 @@ interface Props {
 }
 
 export function ShoppingPlanBox({
-  entry, portionsText,
+  entry,
   onPortionsChange, onToggleRemove,
   onCheckIngredient, onEditIngredient, onDeleteIngredient,
 }: Props) {
@@ -83,17 +84,18 @@ export function ShoppingPlanBox({
             ) : (
               <span />
             )}
-            <label className="flex items-center gap-2 text-xs text-gray-400">
-              {t('generate.portions')}
-              <input
-                type="number"
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-xs text-gray-400">{t('generate.portions')}</span>
+              <Stepper
+                value={entry.portions}
                 min={1}
-                value={portionsText}
-                onChange={(e) => onPortionsChange(e.target.value)}
-                style={{ fontSize: '16px' }}
-                className="w-16 text-sm text-center text-gray-900 px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+                max={MAX_PORTIONS}
+                onChange={onPortionsChange}
+                label={t('generate.portions')}
+                decreaseLabel={t('generate.decreasePortions')}
+                increaseLabel={t('generate.increasePortions')}
               />
-            </label>
+            </div>
           </div>
         </>
       )}

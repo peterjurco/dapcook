@@ -6,6 +6,8 @@
     "backToPlanner": "Späť na plánovač",
     "noServingsWarning": "Počet porcií nie je určený — používa sa 1",
     "portions": "Porcie",
+    "decreasePortions": "Menej porcií",
+    "increasePortions": "Viac porcií",
     "genericError": "Niečo sa pokazilo. Skúste to znova.",
     "networkError": "Chyba siete. Skúste to znova.",
     "undo": "Späť",

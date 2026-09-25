@@ -6,6 +6,8 @@
     "backToPlanner": "Go back to the planner",
     "noServingsWarning": "No servings defined — using 1",
     "portions": "Portions",
+    "decreasePortions": "Fewer portions",
+    "increasePortions": "More portions",
     "genericError": "Something went wrong. Please try again.",
     "networkError": "Network error. Please try again.",
     "undo": "Undo",
