@@ -260,6 +260,16 @@ describe('POST /api/onboarding/tags', () => {
     expect(mocks.groupUpserts).toHaveLength(0)
   })
 
+  it('only lets the household creator sync tags', async () => {
+    mocks.household = { onboarding_step: 'tags', created_by: 'someone-else' }
+    mocks.tags = [{ name: 'Soup', group_id: null }]
+
+    const res = await post({ groups: [], previous: [{ name: 'Course', tags: ['Soup'] }] })
+
+    expect(res.status).toBe(403)
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+
   it('requires a signed-in user with a household', async () => {
     mocks.user = null
     expect((await post({ groups: [] })).status).toBe(401)

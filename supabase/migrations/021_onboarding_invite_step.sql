@@ -13,3 +13,6 @@ SET created_by = (SELECT p.id FROM profiles p WHERE p.household_id = h.id LIMIT 
 WHERE h.created_by IS NULL
   AND h.onboarding_step IS NOT NULL
   AND (SELECT count(*) FROM profiles p WHERE p.household_id = h.id) = 1;
+
+-- Households still without a creator can never finish the wizard; mark them done.
+UPDATE households SET onboarding_step = NULL WHERE created_by IS NULL AND onboarding_step IS NOT NULL;

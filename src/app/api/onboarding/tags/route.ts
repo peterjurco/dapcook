@@ -59,11 +59,12 @@ export async function POST(request: NextRequest) {
 
   const { data: household, error: householdError } = await supabase
     .from('households')
-    .select('onboarding_step')
+    .select('onboarding_step, created_by')
     .eq('id', householdId)
     .single()
   if (householdError) return NextResponse.json({ error: householdError.message }, { status: 500 })
   if (!household?.onboarding_step) return NextResponse.json({ error: 'Onboarding finished' }, { status: 409 })
+  if (household.created_by !== user.id) return NextResponse.json({ error: 'Not the household creator' }, { status: 403 })
 
   // Only what the wizard saved last time (`previous`) may be removed: people who
   // joined mid-wizard can already have tags of their own.
