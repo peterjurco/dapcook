@@ -14,9 +14,17 @@ import { POST } from './route'
 import { authMock } from '@/test/authMock'
 import { householdIdMock } from '@/test/householdMock'
 
-function makeSupabase({ categories = [] as { name: string; color: string | null }[] } = {}) {
+function makeSupabase({
+  categories = [] as { name: string; color: string | null }[],
+  listExists = true,
+} = {}) {
   const itemsInsert = vi.fn().mockResolvedValue({ error: null })
   const categoriesInsert = vi.fn().mockResolvedValue({ error: null })
+  const listsInsert = vi.fn().mockReturnValue({
+    select: vi.fn().mockReturnValue({
+      single: vi.fn().mockResolvedValue({ data: { id: 'list-new' } }),
+    }),
+  })
   const fromMap = {
     shopping_categories: {
       select: vi.fn().mockReturnThis(),
@@ -34,7 +42,8 @@ function makeSupabase({ categories = [] as { name: string; color: string | null 
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'list-1' } }),
+      maybeSingle: vi.fn().mockResolvedValue(listExists ? { data: { id: 'list-1' } } : { data: null }),
+      insert: listsInsert,
     },
     shopping_items: {
       select: vi.fn().mockReturnThis(),
@@ -50,7 +59,7 @@ function makeSupabase({ categories = [] as { name: string; color: string | null 
     from: vi.fn((table: keyof typeof fromMap) => fromMap[table]),
   }
   vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>)
-  return { itemsInsert, categoriesInsert }
+  return { itemsInsert, categoriesInsert, listsInsert, fromMap }
 }
 
 function request(body: unknown) {
@@ -61,7 +70,14 @@ function request(body: unknown) {
   })
 }
 
-function listItem(p: { name: string; quantity: number | null; unit: string | null; category: string | null; sort_order: number }) {
+function listItem(p: {
+  name: string
+  quantity: number | null
+  unit: string | null
+  category: string | null
+  sort_order: number
+  shopping_list_id?: string
+}) {
   return { shopping_list_id: 'list-1', is_checked: false, source_recipe_ids: [], ...p }
 }
 
@@ -155,5 +171,132 @@ describe('POST /api/shopping/items/add-from-plan', () => {
     householdIdMock.mockResolvedValue(null)
     const res = await POST(request({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }] }))
     expect(res.status).toBe(403)
+  })
+
+  it('returns 400 on invalid JSON body', async () => {
+    makeSupabase()
+    const req = new NextRequest('http://localhost/api/shopping/items/add-from-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'not json',
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('treats a non-array ingredients field as empty and still processes valid customItems', async () => {
+    const { itemsInsert } = makeSupabase()
+    const res = await POST(request({ ingredients: 'nope', customItems: [{ name: 'rice', portions: 2 }] }))
+    expect(res.status).toBe(200)
+    expect(makeShoppingListSmart).not.toHaveBeenCalled()
+    expect(itemsInsert).toHaveBeenCalledWith([
+      listItem({ name: 'rice', quantity: 2, unit: null, category: null, sort_order: 5 }),
+    ])
+  })
+
+  it('returns 400 when ingredients exceed the cap', async () => {
+    makeSupabase()
+    const ingredients = Array.from({ length: 301 }, (_, i) => ({
+      name: `item${i}`,
+      quantity: 1,
+      unit: null,
+      recipe_id: 'r1',
+    }))
+    const res = await POST(request({ ingredients, customItems: [] }))
+    expect(res.status).toBe(400)
+    expect(makeShoppingListSmart).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 when a name exceeds the length cap', async () => {
+    makeSupabase()
+    const longName = 'a'.repeat(201)
+    const res = await POST(request({
+      ingredients: [{ name: longName, quantity: 1, unit: null, recipe_id: 'r1' }],
+      customItems: [],
+    }))
+    expect(res.status).toBe(400)
+    expect(makeShoppingListSmart).not.toHaveBeenCalled()
+  })
+
+  it('drops blank ingredient entries before calling the AI', async () => {
+    makeSupabase()
+    vi.mocked(makeShoppingListSmart).mockResolvedValue({
+      items: [{ name: 'onion', quantity: 1, unit: '', category: 'Produce', source_recipe_ids: ['r1'] }],
+      newCategories: [],
+    })
+
+    await POST(request({
+      ingredients: [
+        { name: '  ', quantity: 1, unit: null, recipe_id: 'r1' },
+        { name: 'onion', quantity: 1, unit: null, recipe_id: 'r1' },
+      ],
+      customItems: [],
+    }))
+
+    const [rawItems] = vi.mocked(makeShoppingListSmart).mock.calls[0]
+    expect(rawItems.map((i) => i.name)).toEqual(['onion'])
+  })
+
+  it('drops AI-returned items with an empty name', async () => {
+    const { itemsInsert } = makeSupabase()
+    vi.mocked(makeShoppingListSmart).mockResolvedValue({
+      items: [
+        { name: '', quantity: 1, unit: '', category: 'Produce', source_recipe_ids: [] },
+        { name: 'onion', quantity: 1, unit: '', category: 'Produce', source_recipe_ids: [] },
+      ],
+      newCategories: [],
+    })
+
+    const res = await POST(request({
+      ingredients: [{ name: 'onion', quantity: 1, unit: null, recipe_id: 'r1' }],
+      customItems: [],
+    }))
+
+    expect(res.status).toBe(200)
+    expect(itemsInsert).toHaveBeenCalledWith([
+      listItem({ name: 'onion', quantity: 1, unit: null, category: 'Produce', sort_order: 5 }),
+    ])
+  })
+
+  it('returns 500 when the AI returns no usable items and there are no custom items', async () => {
+    const { itemsInsert } = makeSupabase()
+    vi.mocked(makeShoppingListSmart).mockResolvedValue({ items: [], newCategories: [] })
+
+    const res = await POST(request({
+      ingredients: [{ name: 'onion', quantity: 1, unit: null, recipe_id: 'r1' }],
+      customItems: [],
+    }))
+
+    expect(res.status).toBe(500)
+    expect(await res.json()).toEqual({ error: 'AI returned no items' })
+    expect(itemsInsert).not.toHaveBeenCalled()
+  })
+
+  it('creates a shopping list when the household has none yet', async () => {
+    const { itemsInsert } = makeSupabase({ listExists: false })
+
+    const res = await POST(request({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }] }))
+
+    expect(res.status).toBe(200)
+    expect(itemsInsert).toHaveBeenCalledWith([
+      listItem({ shopping_list_id: 'list-new', name: 'rice', quantity: 1, unit: null, category: null, sort_order: 5 }),
+    ])
+  })
+
+  it('returns 500 when the item insert fails', async () => {
+    const { itemsInsert } = makeSupabase()
+    itemsInsert.mockResolvedValue({ error: { message: 'boom' } })
+
+    const res = await POST(request({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }] }))
+
+    expect(res.status).toBe(500)
+  })
+
+  it('scopes the shopping list lookup to the household', async () => {
+    const { fromMap } = makeSupabase()
+
+    await POST(request({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }] }))
+
+    expect(fromMap.shopping_lists.eq).toHaveBeenCalledWith('household_id', 'hh-1')
   })
 })
