@@ -29,6 +29,10 @@ export function nextStep(step: OnboardingStep): OnboardingStep {
   return ONBOARDING_STEPS[Math.min(index + 1, ONBOARDING_STEPS.length - 1)]
 }
 
+export function previousStep(step: OnboardingStep): OnboardingStep {
+  return ONBOARDING_STEPS[Math.max(ONBOARDING_STEPS.indexOf(step) - 1, 0)]
+}
+
 /** What `onboarding_step` becomes once `step` is done — null means onboarding is finished. */
 export function persistedStepAfter(step: PersistedStep): PersistedStep | null {
   return PERSISTED_STEPS[PERSISTED_STEPS.indexOf(step) + 1] ?? null

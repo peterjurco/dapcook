@@ -80,6 +80,59 @@ describe('OnboardingWizard', () => {
     expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'invite', skipped: false })
   })
 
+  it('offers Back from intro but not on the language or translation steps', async () => {
+    render(<OnboardingWizard initialStep="language" locale="en" />)
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('button', { name: 'English' })).toBeInTheDocument()
+  })
+
+  it('has no Back on the translation step', () => {
+    render(<OnboardingWizard initialStep="translation" locale="en" household={household} />)
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
+  })
+
+  it('goes back without saving or tracking anything', () => {
+    render(<OnboardingWizard initialStep="units" locale="en" household={household} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('Translate recipes?')).toBeInTheDocument()
+    expect(fetch).not.toHaveBeenCalled()
+    expect(capture).not.toHaveBeenCalled()
+  })
+
+  it('suggests the interface language as translation target when translation is off', () => {
+    render(<OnboardingWizard initialStep="translation" locale="sk" household={household} />)
+    fireEvent.click(screen.getByRole('switch'))
+    expect(screen.getByRole('button', { name: 'Slovak' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('remembers saved answers when coming back to a step', async () => {
+    render(<OnboardingWizard initialStep="units" locale="en" household={household} />)
+    fireEvent.click(screen.getByRole('button', { name: /Imperial/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Soup' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(await screen.findByText('Shopping categories')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('button', { name: 'Soup' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('button', { name: /Imperial/ })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('shows tags that were saved in an earlier session', () => {
+    render(
+      <OnboardingWizard
+        initialStep="tags"
+        locale="en"
+        household={household}
+        tags={{ selected: { diet: ['Vegan'] }, custom: {} }}
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Vegan' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('finishes onboarding from the done screen and lands on recipes', async () => {
     render(<OnboardingWizard initialStep="done" locale="en" household={household} />)
     fireEvent.click(screen.getByRole('button', { name: 'Go to recipes' }))

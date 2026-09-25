@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { TAG_CATALOG, buildTagGroupsPayload } from './tag-catalog'
+import { TAG_CATALOG, buildTagGroupsPayload, selectionFromSavedTags } from './tag-catalog'
 import { DEFAULT_SHOPPING_CATEGORIES, SHOPPING_RULE_EXAMPLES } from './defaults'
 import { locales } from '@/i18n/config'
 
@@ -33,6 +33,34 @@ describe('buildTagGroupsPayload', () => {
 
   it('returns nothing when nothing was picked', () => {
     expect(buildTagGroupsPayload({}, 'en')).toEqual([])
+  })
+})
+
+describe('selectionFromSavedTags', () => {
+  it('maps saved groups back to catalog groups by their localized name', () => {
+    expect(selectionFromSavedTags([
+      { name: 'Chod', tags: ['Polievka', 'Dezert'] },
+      { name: 'Stravovanie', tags: ['Vegánske'] },
+    ], 'sk')).toEqual({
+      selected: { course: ['Polievka', 'Dezert'], diet: ['Vegánske'] },
+      custom: {},
+    })
+  })
+
+  it('turns saved tags missing from the catalog into custom chips of their group', () => {
+    expect(selectionFromSavedTags([{ name: 'Diet', tags: ['Vegan', 'Paleo'] }], 'en')).toEqual({
+      selected: { diet: ['Vegan', 'Paleo'] },
+      custom: { diet: ['Paleo'] },
+    })
+  })
+
+  it('ignores groups that are not in the catalog', () => {
+    expect(selectionFromSavedTags([{ name: 'Mine', tags: ['x'] }], 'en')).toEqual({ selected: {}, custom: {} })
+  })
+
+  it('round-trips with buildTagGroupsPayload', () => {
+    const saved = [{ name: 'Course', tags: ['Soup'] }, { name: 'Diet', tags: ['Paleo'] }]
+    expect(buildTagGroupsPayload(selectionFromSavedTags(saved, 'en').selected, 'en')).toEqual(saved)
   })
 })
 

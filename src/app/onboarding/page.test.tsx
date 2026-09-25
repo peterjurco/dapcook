@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   household: null as Record<string, unknown> | null,
   categories: [] as unknown[],
   rules: [] as unknown[],
+  tagGroups: [] as unknown[],
+  tags: [] as unknown[],
 }))
 
 function chain(resolve: () => Promise<{ data: unknown }>) {
@@ -29,6 +31,8 @@ vi.mock('@/lib/supabase/server', () => ({
       if (table === 'households') return chain(async () => ({ data: mocks.household }))
       if (table === 'shopping_categories') return chain(async () => ({ data: mocks.categories }))
       if (table === 'shopping_rules') return chain(async () => ({ data: mocks.rules }))
+      if (table === 'tag_groups') return chain(async () => ({ data: mocks.tagGroups }))
+      if (table === 'tags') return chain(async () => ({ data: mocks.tags }))
       throw new Error(`unexpected table ${table}`)
     },
   }),
@@ -44,6 +48,8 @@ beforeEach(() => {
   mocks.household = null
   mocks.categories = []
   mocks.rules = []
+  mocks.tagGroups = []
+  mocks.tags = []
 })
 
 describe('OnboardingPage', () => {
@@ -80,6 +86,30 @@ describe('OnboardingPage', () => {
     })
     expect(result.props.categories).toEqual([{ id: 'cat-1' }])
     expect(result.props.rules).toEqual([{ id: 'rule-1' }])
+  })
+
+  it('passes the saved tags in, mapped onto the catalog', async () => {
+    mocks.getCurrentProfile.mockResolvedValue({ id: 'user-1', household_id: 'hh-1', ui_language: 'en' })
+    mocks.household = {
+      onboarding_step: 'shopping_categories',
+      created_by: 'user-1',
+      translation_enabled: false,
+      preferred_language: 'en',
+      preferred_units: 'metric',
+    }
+    mocks.tagGroups = [{ id: 'g1', name: 'Course' }, { id: 'g2', name: 'Diet' }]
+    mocks.tags = [
+      { name: 'Soup', group_id: 'g1' },
+      { name: 'Paleo', group_id: 'g2' },
+      { name: 'loose', group_id: null },
+    ]
+
+    const result = await OnboardingPage()
+
+    expect(result.props.tags).toEqual({
+      selected: { course: ['Soup'], diet: ['Paleo'] },
+      custom: { diet: ['Paleo'] },
+    })
   })
 
   it('sends a household that has finished onboarding to recipes', async () => {

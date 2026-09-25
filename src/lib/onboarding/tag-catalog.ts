@@ -123,3 +123,28 @@ export function buildTagGroupsPayload(selected: Record<string, string[]>, locale
     tags: Array.from(new Set((selected[group.id] ?? []).map((t) => t.trim()).filter(Boolean))),
   })).filter((group) => group.tags.length > 0)
 }
+
+export interface TagSelection {
+  /** Picked tag names per catalog group id, custom ones included. */
+  selected: Record<string, string[]>
+  /** Tags the user added per catalog group id, shown as extra chips. */
+  custom: Record<string, string[]>
+}
+
+/**
+ * The inverse of `buildTagGroupsPayload`: what the wizard shows for tags that
+ * are already saved. Groups are matched by their name in `locale`; a saved tag
+ * that is not in its group's catalog list becomes a custom chip.
+ */
+export function selectionFromSavedTags(groups: TagGroupPayload[], locale: Locale): TagSelection {
+  const selection: TagSelection = { selected: {}, custom: {} }
+  for (const saved of groups) {
+    const group = TAG_CATALOG.find((g) => g.name[locale] === saved.name)
+    if (!group || saved.tags.length === 0) continue
+    const known = new Set(group.tags.map((tag) => tag[locale]))
+    selection.selected[group.id] = saved.tags
+    const custom = saved.tags.filter((name) => !known.has(name))
+    if (custom.length > 0) selection.custom[group.id] = custom
+  }
+  return selection
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -32,6 +32,8 @@ const PALETTE = [
 
 interface Props {
   initialCategories: ShoppingCategory[]
+  /** Reports every change, so a parent that unmounts the editor can show it again as it was left. */
+  onCategoriesChange?: (categories: ShoppingCategory[]) => void
 }
 
 interface RowProps {
@@ -158,9 +160,13 @@ function SortableCategoryRow({ t, cat, ...rowProps }: RowProps) {
   )
 }
 
-export function ShoppingCategoriesEditor({ initialCategories }: Props) {
+export function ShoppingCategoriesEditor({ initialCategories, onCategoriesChange }: Props) {
   const t = useTranslations('settings')
   const [categories, setCategories] = useState<ShoppingCategory[]>(initialCategories)
+
+  useEffect(() => {
+    onCategoriesChange?.(categories)
+  }, [categories, onCategoriesChange])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isPersistedStep, nextStep, persistedStepAfter, stepNumber, TOTAL_STEPS } from './steps'
+import { isPersistedStep, nextStep, persistedStepAfter, previousStep, stepNumber, TOTAL_STEPS } from './steps'
 
 describe('onboarding steps', () => {
   it('walks the steps in order and stays on done', () => {
@@ -9,6 +9,13 @@ describe('onboarding steps', () => {
     expect(nextStep('shopping_categories')).toBe('invite')
     expect(nextStep('invite')).toBe('done')
     expect(nextStep('done')).toBe('done')
+  })
+
+  it('walks back one step at a time and stays on language', () => {
+    expect(previousStep('intro')).toBe('language')
+    expect(previousStep('units')).toBe('translation')
+    expect(previousStep('invite')).toBe('shopping_categories')
+    expect(previousStep('language')).toBe('language')
   })
 
   it('stores the following persisted step, and null after the last one', () => {
