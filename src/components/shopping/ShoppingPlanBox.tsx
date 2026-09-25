@@ -62,10 +62,7 @@ export function ShoppingPlanBox({
                       recipeNames={{}}
                       onCheck={onCheckIngredient}
                       onUpdate={(id, changes) => {
-                        // Clearing the editor makes the row send back the bare name. A real edit
-                        // carries the quantity prefix, so the bare name means "no change".
-                        if (changes.name === undefined || changes.name === item.name) return
-                        onEditIngredient(id, changes.name)
+                        if (changes.name !== undefined) onEditIngredient(id, changes.name)
                       }}
                       onDelete={onDeleteIngredient}
                     />

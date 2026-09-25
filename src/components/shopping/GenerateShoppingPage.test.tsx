@@ -174,6 +174,19 @@ describe('GenerateShoppingPage', () => {
     expect(box('Carbonara').getByText('300g')).toBeInTheDocument()
   })
 
+  it('drops the quantity when an ingredient is edited to its bare name', async () => {
+    renderPage()
+    await userEvent.click(box('Carbonara').getByText('spaghetti'))
+    const editor = box('Carbonara').getByDisplayValue('200g spaghetti')
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'spaghetti{Enter}')
+    expect(box('Carbonara').queryByText('200g')).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    expect(lastFetchBody().ingredients[0]).toEqual({ name: 'spaghetti', quantity: null, unit: null, recipe_id: 'r1' })
+  })
+
   it('sends only custom items when the recipe is removed', async () => {
     renderPage()
     await userEvent.click(box('Carbonara').getByRole('button', { name: 'Remove from shopping list' }))
