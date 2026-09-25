@@ -2,6 +2,7 @@ import type { ShoppingItem } from '@/types/database'
 import type { Ingredient } from '@/types/recipe'
 import type { MealSlotWithRecipe, SlotRecipe } from '@/types/planner'
 import { CUSTOM_LABELS } from '@/types/planner'
+import { formatQty } from './format-quantity'
 
 export interface PlanIngredient {
   /** `${recipeId}:${index}` — stable across edits. */
@@ -52,7 +53,7 @@ function toPlanIngredients(recipeId: string, raw: unknown, servings: number | nu
     id: `${recipeId}:${i}`,
     name: ing.name,
     unit: ing.unit || null,
-    quantityPerPortion: ing.quantity != null ? ing.quantity / (servings ?? 1) : null,
+    quantityPerPortion: ing.quantity != null ? ing.quantity / (servings || 1) : null,
     checked: false,
   }))
 }
@@ -78,7 +79,7 @@ export function buildPlanEntries(slots: PlanSlot[], dayLabel: (slot: PlanSlot) =
           title: recipe.title,
           servings: recipe.servings,
           days: [],
-          portions: recipe.servings ?? 1,
+          portions: recipe.servings || 1,
           removed: false,
           ingredients: toPlanIngredients(recipe.id, recipe.ingredients, recipe.servings),
         }
@@ -128,7 +129,7 @@ export function displayQuantity(quantityPerPortion: number | null, portions: num
   return Number((quantityPerPortion * portions).toFixed(3))
 }
 
-const LEADING_NUMBER = /^(\d+(?:[.,]\d+)?)\s*(.*)$/
+const LEADING_NUMBER = /^(\d+(?:[.,]\d+)?)(?![\d/.,])\s*(.*)$/
 
 /**
  * ShoppingItemRow saves an edit as free text ("150g rice"). Split it back so the
@@ -158,11 +159,25 @@ export function parseItemText(
 
 export function applyIngredientEdit(ingredient: PlanIngredient, text: string, portions: number): PlanIngredient {
   const parsed = parseItemText(text, ingredient.unit)
+  const displayed = displayQuantity(ingredient.quantityPerPortion, portions)
+  // ShoppingItemRow pre-fills the editor with the rounded displayed quantity — if it comes
+  // back unchanged (same unit, same rounded number), keep the stored per-portion value
+  // instead of recomputing from the rounded-off number, which would drift it.
+  const isUnchangedRoundTrip =
+    parsed.quantity != null &&
+    displayed != null &&
+    parsed.unit === ingredient.unit &&
+    parsed.quantity === Number(formatQty(displayed))
+
   return {
     ...ingredient,
     name: parsed.name || ingredient.name,
     unit: parsed.unit,
-    quantityPerPortion: parsed.quantity == null ? null : parsed.quantity / portions,
+    quantityPerPortion: isUnchangedRoundTrip
+      ? ingredient.quantityPerPortion
+      : parsed.quantity == null
+        ? null
+        : parsed.quantity / (portions || 1),
   }
 }
 

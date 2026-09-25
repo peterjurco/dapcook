@@ -60,6 +60,14 @@ describe('parseItemText', () => {
   it('returns no quantity when the text has no leading number', () => {
     expect(parseItemText('  some rice ', 'g')).toEqual({ quantity: null, unit: null, name: 'some rice' })
   })
+
+  it('does not treat a fraction as a leading number', () => {
+    expect(parseItemText('1/2 cup rice', 'cup')).toEqual({ quantity: null, unit: null, name: '1/2 cup rice' })
+  })
+
+  it('parses a quantity with no known unit', () => {
+    expect(parseItemText('2 eggs', null)).toEqual({ quantity: 2, unit: null, name: 'eggs' })
+  })
 })
 
 describe('applyIngredientEdit', () => {
@@ -86,6 +94,25 @@ describe('applyIngredientEdit', () => {
   it('keeps the checked flag', () => {
     expect(applyIngredientEdit(ingredient({ checked: true }), '1 g rice', 1).checked).toBe(true)
   })
+
+  it('keeps the stored quantity when the displayed (rounded) value is re-typed unchanged', () => {
+    const edited = applyIngredientEdit(ingredient({ unit: 'g', quantityPerPortion: 62.5 }), '188g brown flour', 3)
+    expect(edited).toMatchObject({ name: 'brown flour', unit: 'g', quantityPerPortion: 62.5 })
+  })
+
+  it('still recomputes when the quantity actually changes', () => {
+    const edited = applyIngredientEdit(ingredient({ unit: 'g', quantityPerPortion: 62.5 }), '200g brown flour', 3)
+    expect(edited).toMatchObject({ name: 'brown flour', unit: 'g', quantityPerPortion: 200 / 3 })
+  })
+
+  it('does not divide by zero when portions is 0', () => {
+    expect(applyIngredientEdit(ingredient(), '150g rice', 0)).toMatchObject({ quantityPerPortion: 150 })
+  })
+
+  it('keeps a null quantity null when the edit has no leading number', () => {
+    const edited = applyIngredientEdit(ingredient({ unit: 'pinch', quantityPerPortion: null }), 'pinch salt', 2)
+    expect(edited).toMatchObject({ name: 'pinch salt', unit: null, quantityPerPortion: null })
+  })
 })
 
 describe('toShoppingItem', () => {
@@ -101,6 +128,10 @@ describe('toShoppingItem', () => {
       sort_order: 2,
       source_recipe_ids: [],
     })
+  })
+
+  it('renders a null quantity when the ingredient has none', () => {
+    expect(toShoppingItem(ingredient({ quantityPerPortion: null }), 3, 0).quantity).toBeNull()
   })
 })
 
@@ -193,6 +224,15 @@ describe('buildPlanEntries', () => {
       [recipeSlot({ id: 'r1', day: 1, title: 'Pasta', servings: null, ingredients: [ing({ quantity: 100, unit: 'g', name: 'flour' })] })],
       dayLabel,
     )
+    expect(entry.kind === 'recipe' && entry.ingredients[0].quantityPerPortion).toBe(100)
+  })
+
+  it('guards against division by zero when servings is 0', () => {
+    const [entry] = buildPlanEntries(
+      [recipeSlot({ id: 'r1', day: 1, title: 'Pasta', servings: 0, ingredients: [ing({ quantity: 100, unit: 'g', name: 'flour' })] })],
+      dayLabel,
+    )
+    expect(entry.portions).toBe(1)
     expect(entry.kind === 'recipe' && entry.ingredients[0].quantityPerPortion).toBe(100)
   })
 
