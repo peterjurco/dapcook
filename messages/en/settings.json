@@ -34,7 +34,8 @@
   "inviteLink": {
     "copied": "Copied",
     "copy": "Copy",
-    "share": "Share"
+    "share": "Share",
+    "shareText": "Join our household on dapcook"
   },
   "plannerRules": {
     "disableTitle": "Disable rule",

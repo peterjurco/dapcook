@@ -34,7 +34,8 @@
   "inviteLink": {
     "copied": "Skopírované",
     "copy": "Kopírovať",
-    "share": "Zdieľať"
+    "share": "Zdieľať",
+    "shareText": "Pridaj sa k našej domácnosti v dapcooku"
   },
   "plannerRules": {
     "disableTitle": "Vypnúť pravidlo",

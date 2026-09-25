@@ -20,7 +20,6 @@ import { inviteUrl } from '@/lib/utils/invite'
 export default async function SettingsPage() {
   const supabase = createClient()
   const t = await getTranslations('settings')
-  const tAuth = await getTranslations('auth')
 
   const user = await getCurrentUser()
 
@@ -123,7 +122,7 @@ export default async function SettingsPage() {
             <p className="text-xs text-gray-400 mb-2">
               {t('page.inviteLinkHelp')}
             </p>
-            <InviteLink url={inviteUrl(household?.invite_token ?? '')} shareText={tAuth('onboarding.invite.shareText')} />
+            <InviteLink url={inviteUrl(household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
           </div>
         </div>
       </section>
