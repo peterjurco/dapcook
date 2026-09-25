@@ -51,10 +51,14 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
     posthog?.capture('onboarding_step_completed', { step: completed, skipped })
   }
 
-  /** Leaves `current`. Persisted steps record where to resume before moving on. */
+  /**
+   * Leaves `current`. Persisted steps record where to resume before moving on, except
+   * `shopping_rules`: its stored step stays put until the Done screen's own PATCH, so
+   * closing/refreshing on Done still lands back on Done instead of skipping it.
+   */
   async function advance(current: OnboardingStep, skipped = false) {
     setError(null)
-    if (isPersistedStep(current)) {
+    if (isPersistedStep(current) && current !== 'shopping_rules') {
       const ok = await sendJson('PATCH', '/api/household', { onboarding_step: persistedStepAfter(current) })
       if (!ok) {
         setError(t('onboarding.saveError'))
@@ -63,6 +67,16 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
     }
     track(current, skipped)
     setStep(nextStep(current))
+  }
+
+  async function finish() {
+    setError(null)
+    const ok = await sendJson('PATCH', '/api/household', { onboarding_step: null })
+    if (!ok) {
+      setError(t('onboarding.saveError'))
+      return
+    }
+    router.push('/recipes?ob=1')
   }
 
   const next = () => advance(step)
@@ -143,11 +157,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
         )}
 
         {step === 'done' && (
-          <StepFrame
-            title={t('onboarding.done.title')}
-            onNext={() => router.push('/recipes?ob=1')}
-            nextLabel={t('onboarding.done.cta')}
-          >
+          <StepFrame title={t('onboarding.done.title')} onNext={finish} nextLabel={t('onboarding.done.cta')}>
             <p className="text-sm text-gray-600">{t('onboarding.done.body')}</p>
           </StepFrame>
         )}

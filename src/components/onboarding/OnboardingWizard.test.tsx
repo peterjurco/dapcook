@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { TranslationValues } from 'use-intl'
 import { mockTranslate } from '@/test/mockMessages'
 import { OnboardingWizard } from './OnboardingWizard'
@@ -71,12 +71,27 @@ describe('OnboardingWizard', () => {
     expect(screen.getByText('Translate recipes?')).toBeInTheDocument()
   })
 
-  it('offers rule examples, finishes onboarding and lands on recipes', async () => {
+  it('finishing the shopping rules step does not save progress, only tracks it', async () => {
     render(<OnboardingWizard initialStep="shopping_rules" locale="en" household={household} rules={[]} />)
     expect(screen.getByRole('button', { name: '+ Count eggs in pieces, not grams' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Go to recipes' }))
+    expect(await screen.findByRole('button', { name: 'Go to recipes' })).toBeInTheDocument()
+    expect(fetch).not.toHaveBeenCalled()
+    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'shopping_rules', skipped: false })
+  })
+
+  it('finishes onboarding from the done screen and lands on recipes', async () => {
+    render(<OnboardingWizard initialStep="done" locale="en" household={household} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Go to recipes' }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/recipes?ob=1'))
     expect(bodies()).toEqual([['/api/household', JSON.stringify({ onboarding_step: null })]])
-    expect(push).toHaveBeenCalledWith('/recipes?ob=1')
+  })
+
+  it('stays on the done screen and shows an error when finishing fails', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
+    render(<OnboardingWizard initialStep="done" locale="en" household={household} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Go to recipes' }))
+    expect(await screen.findByText("Couldn't save. Please try again.")).toBeInTheDocument()
+    expect(push).not.toHaveBeenCalled()
   })
 })
