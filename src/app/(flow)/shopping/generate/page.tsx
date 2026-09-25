@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
 import { GenerateShoppingPage } from '@/components/shopping/GenerateShoppingPage'
-import type { MealSlotWithRecipe } from '@/types/planner'
+import type { PlanSlot } from '@/lib/shopping/plan-entries'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
 
@@ -28,14 +28,14 @@ export default async function ShoppingGeneratePage({ searchParams }: Props) {
     .eq('week_start', weekStartStr)
     .maybeSingle()
 
-  let slots: MealSlotWithRecipe[] = []
+  let slots: PlanSlot[] = []
   if (weekPlan) {
     const { data } = await supabase
       .from('meal_slots')
-      .select('*, recipe:recipes(id, title, image_url, cook_time_min, prep_time_min, servings)')
+      .select('*, recipe:recipes(id, title, image_url, cook_time_min, prep_time_min, servings, ingredients)')
       .eq('week_plan_id', weekPlan.id)
       .order('day_of_week')
-    slots = (data ?? []) as unknown as MealSlotWithRecipe[]
+    slots = (data ?? []) as unknown as PlanSlot[]
   }
 
   return <GenerateShoppingPage slots={slots} weekStart={weekStart} />

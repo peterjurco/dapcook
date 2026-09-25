@@ -3,33 +3,20 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { ArrowLeft, X, AlertTriangle } from 'lucide-react'
-import type { MealSlotWithRecipe } from '@/types/planner'
-import { CUSTOM_LABELS } from '@/types/planner'
+import { ArrowLeft } from 'lucide-react'
 import { getWeekDays, formatDayLabel } from '@/lib/utils/week'
-
-interface BaseEntry {
-  key: string
-  title: string
-  days: string[]
-  portions: number
-  removed: boolean
-}
-interface RecipeEntry extends BaseEntry {
-  kind: 'recipe'
-  recipeId: string
-  servings: number | null
-}
-interface CustomEntry extends BaseEntry {
-  kind: 'custom'
-  name: string
-}
-type Entry = RecipeEntry | CustomEntry
-
-const PRESET_LABELS = new Set<string>(CUSTOM_LABELS)
+import {
+  applyIngredientEdit,
+  buildPlanEntries,
+  buildSubmitPayload,
+  type PlanEntry,
+  type PlanIngredient,
+  type PlanSlot,
+} from '@/lib/shopping/plan-entries'
+import { ShoppingPlanBox } from './ShoppingPlanBox'
 
 interface Props {
-  slots: MealSlotWithRecipe[]
+  slots: PlanSlot[]
   weekStart: Date
 }
 
@@ -37,117 +24,86 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
   const router = useRouter()
   const locale = useLocale()
   const t = useTranslations('shopping')
-  const weekDays = getWeekDays(weekStart)
 
-  function dayLabel(slot: MealSlotWithRecipe): string {
-    const { weekday, day } = formatDayLabel(weekDays[slot.day_of_week - 1], locale)
-    return `${weekday} ${day}`
-  }
-
-  // One entry per unique recipe — collect which days it appears on.
-  const recipeMap = new Map<string, RecipeEntry>()
-  for (const slot of slots) {
-    if (!slot.recipe_id || !slot.recipe) continue
-    const recipe = slot.recipe
-    if (!recipeMap.has(recipe.id)) {
-      recipeMap.set(recipe.id, {
-        kind: 'recipe',
-        key: recipe.id,
-        recipeId: recipe.id,
-        title: recipe.title,
-        servings: recipe.servings,
-        days: [],
-        portions: recipe.servings ?? 1,
-        removed: false,
-      })
-    }
-    recipeMap.get(recipe.id)!.days.push(dayLabel(slot))
-  }
-
-  // One entry per unique typed custom meal — preset status labels are not shoppable.
-  const customMap = new Map<string, CustomEntry>()
-  for (const slot of slots) {
-    if (slot.recipe_id) continue
-    const label = slot.custom_label?.trim()
-    if (!label || PRESET_LABELS.has(label)) continue
-    if (!customMap.has(label)) {
-      customMap.set(label, {
-        kind: 'custom',
-        key: `custom:${label}`,
-        name: label,
-        title: label,
-        days: [],
-        portions: 1,
-        removed: false,
-      })
-    }
-    customMap.get(label)!.days.push(dayLabel(slot))
-  }
-
-  const initialEntries: Entry[] = [...Array.from(recipeMap.values()), ...Array.from(customMap.values())]
-
-  const [entries, setEntries] = useState<Entry[]>(initialEntries)
+  const [entries, setEntries] = useState<PlanEntry[]>(() => {
+    const weekDays = getWeekDays(weekStart)
+    return buildPlanEntries(slots, (slot) => {
+      const { weekday, day } = formatDayLabel(weekDays[slot.day_of_week - 1], locale)
+      return `${weekday} ${day}`
+    })
+  })
   // Raw text state lets the input be temporarily empty while the user is typing
   const [portionsText, setPortionsText] = useState<Record<string, string>>(() =>
-    Object.fromEntries(initialEntries.map((e) => [e.key, String(e.portions)])),
+    Object.fromEntries(entries.map((e) => [e.key, String(e.portions)])),
   )
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const activeEntries = entries.filter((e) => !e.removed)
+  const payload = buildSubmitPayload(entries)
+  const itemCount = payload.ingredients.length + payload.customItems.length
+
+  function updateEntry(key: string, update: (entry: PlanEntry) => PlanEntry) {
+    setEntries((prev) => prev.map((e) => (e.key === key ? update(e) : e)))
+  }
+
+  function updateIngredients(key: string, update: (ingredients: PlanIngredient[], portions: number) => PlanIngredient[]) {
+    updateEntry(key, (e) => (e.kind === 'recipe' ? { ...e, ingredients: update(e.ingredients, e.portions) } : e))
+  }
 
   function updatePortions(key: string, raw: string) {
     setPortionsText((prev) => ({ ...prev, [key]: raw }))
     const num = parseInt(raw, 10)
-    if (!isNaN(num) && num >= 1) {
-      setEntries((prev) => prev.map((e) => (e.key === key ? { ...e, portions: num } : e)))
-    }
+    if (!isNaN(num) && num >= 1) updateEntry(key, (e) => ({ ...e, portions: num }))
   }
 
   function toggleRemove(key: string) {
-    setEntries((prev) => prev.map((e) => (e.key === key ? { ...e, removed: !e.removed } : e)))
+    updateEntry(key, (e) => ({ ...e, removed: !e.removed }))
   }
 
-  async function handleGenerate() {
-    setIsGenerating(true)
+  function checkIngredient(key: string, id: string, checked: boolean) {
+    updateIngredients(key, (list) => list.map((i) => (i.id === id ? { ...i, checked } : i)))
+  }
+
+  function editIngredient(key: string, id: string, text: string) {
+    updateIngredients(key, (list, portions) => list.map((i) => (i.id === id ? applyIngredientEdit(i, text, portions) : i)))
+  }
+
+  function deleteIngredient(key: string, id: string) {
+    updateIngredients(key, (list) => list.filter((i) => i.id !== id))
+  }
+
+  async function handleAdd() {
+    setIsAdding(true)
     setError(null)
 
-    const recipes = activeEntries
-      .filter((e): e is RecipeEntry => e.kind === 'recipe')
-      .map((e) => ({ recipe_id: e.recipeId, portions: e.portions }))
-    const customItems = activeEntries
-      .filter((e): e is CustomEntry => e.kind === 'custom')
-      .map((e) => ({ name: e.name, portions: e.portions }))
-
     try {
-      const res = await fetch('/api/shopping/preview', {
+      const res = await fetch('/api/shopping/items/add-from-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipes, customItems }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
         setError(t('generate.genericError'))
-        setIsGenerating(false)
+        setIsAdding(false)
         return
       }
-
-      const data = await res.json() as { items: unknown[]; categories: unknown[] }
-      sessionStorage.setItem('shopping_preview', JSON.stringify(data))
 
       // Persist recipe portions so the planner can show them next to meal names
       try {
         const saved = JSON.parse(localStorage.getItem('recipe_portions') ?? '{}') as Record<string, number>
-        for (const e of recipes) saved[e.recipe_id] = e.portions
+        for (const e of entries) {
+          if (e.kind === 'recipe' && !e.removed) saved[e.recipeId] = e.portions
+        }
         localStorage.setItem('recipe_portions', JSON.stringify(saved))
       } catch {
         // ignore storage errors
       }
 
-      router.push('/shopping/review')
+      router.push('/shopping')
     } catch {
       setError(t('generate.networkError'))
-      setIsGenerating(false)
+      setIsAdding(false)
     }
   }
 
@@ -176,49 +132,16 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
       ) : (
         <div className="space-y-3">
           {entries.map((entry) => (
-            <div
+            <ShoppingPlanBox
               key={entry.key}
-              className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
-                entry.removed ? 'border-gray-100 bg-gray-50 opacity-50' : 'border-gray-200 bg-white'
-              }`}
-            >
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${entry.removed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                  {entry.title}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">{entry.days.join(', ')}</p>
-                {entry.kind === 'recipe' && entry.servings == null && !entry.removed && (
-                  <p className="flex items-center gap-1 text-xs text-amber-600 mt-1">
-                    <AlertTriangle size={11} />
-                    {t('generate.noServingsWarning')}
-                  </p>
-                )}
-              </div>
-
-              {/* Portions input */}
-              {!entry.removed && (
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <label className="text-xs text-gray-400">{t('generate.portions')}</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={portionsText[entry.key] ?? String(entry.portions)}
-                    onChange={(e) => updatePortions(entry.key, e.target.value)}
-                    style={{ fontSize: '16px' }}
-                    className="w-16 text-sm text-center px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
-                  />
-                </div>
-              )}
-
-              {/* Remove / undo */}
-              <button
-                type="button"
-                onClick={() => toggleRemove(entry.key)}
-                className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-700 transition-colors mt-1"
-              >
-                {entry.removed ? t('generate.undo') : <X size={14} />}
-              </button>
-            </div>
+              entry={entry}
+              portionsText={portionsText[entry.key] ?? String(entry.portions)}
+              onPortionsChange={(raw) => updatePortions(entry.key, raw)}
+              onToggleRemove={() => toggleRemove(entry.key)}
+              onCheckIngredient={(id, checked) => checkIngredient(entry.key, id, checked)}
+              onEditIngredient={(id, text) => editIngredient(entry.key, id, text)}
+              onDeleteIngredient={(id) => deleteIngredient(entry.key, id)}
+            />
           ))}
         </div>
       )}
@@ -229,14 +152,14 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button
             type="button"
-            onClick={handleGenerate}
-            disabled={isGenerating || activeEntries.length === 0}
+            onClick={handleAdd}
+            disabled={isAdding || itemCount === 0}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isGenerating ? (
+            {isAdding ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : null}
-            {isGenerating ? t('generate.generating') : t('generate.generate')}
+            {isAdding ? t('generate.adding') : t('generate.addToList', { count: itemCount })}
           </button>
         </div>
       </div>
