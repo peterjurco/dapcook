@@ -58,9 +58,10 @@ describe('OnboardingPage', () => {
   })
 
   it('resumes a household at its stored onboarding step', async () => {
-    mocks.getCurrentProfile.mockResolvedValue({ household_id: 'hh-1', ui_language: 'sk' })
+    mocks.getCurrentProfile.mockResolvedValue({ id: 'user-1', household_id: 'hh-1', ui_language: 'sk' })
     mocks.household = {
       onboarding_step: 'tags',
+      created_by: 'user-1',
       translation_enabled: true,
       preferred_language: 'sk',
       preferred_units: 'metric',
@@ -82,14 +83,43 @@ describe('OnboardingPage', () => {
   })
 
   it('sends a household that has finished onboarding to recipes', async () => {
-    mocks.getCurrentProfile.mockResolvedValue({ household_id: 'hh-1', ui_language: 'en' })
+    mocks.getCurrentProfile.mockResolvedValue({ id: 'user-1', household_id: 'hh-1', ui_language: 'en' })
     mocks.household = {
       onboarding_step: null,
+      created_by: 'user-1',
       translation_enabled: false,
       preferred_language: 'en',
       preferred_units: 'metric',
     }
 
     await expect(OnboardingPage()).rejects.toThrow('REDIRECT:/recipes')
+  })
+
+  it('sends a member who is not the household creator to recipes', async () => {
+    mocks.getCurrentProfile.mockResolvedValue({ id: 'user-2', household_id: 'hh-1', ui_language: 'en' })
+    mocks.household = {
+      onboarding_step: 'tags',
+      created_by: 'user-1',
+      translation_enabled: false,
+      preferred_language: 'en',
+      preferred_units: 'metric',
+    }
+
+    await expect(OnboardingPage()).rejects.toThrow('REDIRECT:/recipes')
+  })
+
+  it('starts at the done screen when the stored step is no longer known', async () => {
+    mocks.getCurrentProfile.mockResolvedValue({ id: 'user-1', household_id: 'hh-1', ui_language: 'en' })
+    mocks.household = {
+      onboarding_step: 'shopping_rules',
+      created_by: 'user-1',
+      translation_enabled: false,
+      preferred_language: 'en',
+      preferred_units: 'metric',
+    }
+
+    const result = await OnboardingPage()
+
+    expect(result.props.initialStep).toBe('done')
   })
 })

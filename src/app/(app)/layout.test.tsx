@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   getCurrentProfile: vi.fn(),
-  readOnboardingStep: vi.fn(),
+  readOnboardingStatus: vi.fn(),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -14,7 +14,10 @@ vi.mock('@/lib/auth/current-user', () => ({
   getCurrentUser: mocks.getCurrentUser,
   getCurrentProfile: mocks.getCurrentProfile,
 }))
-vi.mock('@/lib/onboarding/status', () => ({ readOnboardingStep: mocks.readOnboardingStep }))
+vi.mock('@/lib/onboarding/status', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/onboarding/status')>()),
+  readOnboardingStatus: mocks.readOnboardingStatus,
+}))
 vi.mock('next-intl/server', () => ({ getMessages: vi.fn(async () => ({})), setRequestLocale: vi.fn() }))
 vi.mock('next-intl', () => ({ NextIntlClientProvider: ({ children }: { children: unknown }) => children }))
 vi.mock('@/components/layout/AppShell', () => ({ AppShell: ({ children }: { children: unknown }) => children }))
@@ -34,14 +37,19 @@ describe('(app) layout', () => {
     await expect(AppLayout({ children: null })).rejects.toThrow('REDIRECT:/onboarding')
   })
 
-  it('sends a household that has not finished the wizard back to it', async () => {
-    mocks.readOnboardingStep.mockResolvedValue('tags')
+  it('sends the creator of a household that has not finished the wizard back to it', async () => {
+    mocks.readOnboardingStatus.mockResolvedValue({ step: 'tags', createdBy: 'user-1' })
     await expect(AppLayout({ children: null })).rejects.toThrow('REDIRECT:/onboarding')
-    expect(mocks.readOnboardingStep).toHaveBeenCalledWith('hh-1')
+    expect(mocks.readOnboardingStatus).toHaveBeenCalledWith('hh-1')
+  })
+
+  it('lets a member who joined mid-wizard into the app', async () => {
+    mocks.readOnboardingStatus.mockResolvedValue({ step: 'tags', createdBy: 'someone-else' })
+    await expect(AppLayout({ children: null })).resolves.toBeDefined()
   })
 
   it('renders the app once onboarding is finished', async () => {
-    mocks.readOnboardingStep.mockResolvedValue(null)
+    mocks.readOnboardingStatus.mockResolvedValue({ step: null, createdBy: 'user-1' })
     await expect(AppLayout({ children: null })).resolves.toBeDefined()
   })
 })

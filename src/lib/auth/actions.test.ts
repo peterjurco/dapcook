@@ -43,7 +43,7 @@ beforeEach(() => {
 describe('createHousehold', () => {
   it('starts the wizard at the translation step and sends the user back to it', async () => {
     await expect(createHousehold('  Home  ')).rejects.toThrow('REDIRECT:/onboarding')
-    expect(mocks.inserts.households[0]).toMatchObject({ name: 'Home', onboarding_step: 'translation' })
+    expect(mocks.inserts.households[0]).toMatchObject({ name: 'Home', onboarding_step: 'translation', created_by: 'user-1' })
   })
 
   it('seeds the default shopping categories in the UI language, in order', async () => {

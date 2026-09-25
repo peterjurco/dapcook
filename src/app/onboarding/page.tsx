@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentProfile } from '@/lib/auth/current-user'
 import { defaultLocale, isLocale } from '@/i18n/config'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
+import { isPersistedStep } from '@/lib/onboarding/steps'
 
 export default async function OnboardingPage() {
   const profile = await getCurrentProfile()
@@ -16,21 +17,21 @@ export default async function OnboardingPage() {
   const [{ data: household }, { data: categories }, { data: rules }] = await Promise.all([
     supabase
       .from('households')
-      .select('onboarding_step, translation_enabled, preferred_language, preferred_units')
+      .select('onboarding_step, created_by, invite_token, translation_enabled, preferred_language, preferred_units')
       .eq('id', profile.household_id)
       .single(),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
     supabase.from('shopping_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
   ])
 
-  if (!household?.onboarding_step) redirect('/recipes')
+  if (!household?.onboarding_step || household.created_by !== profile.id) redirect('/recipes')
 
   // Keyed by household so the wizard remounts (and picks up `initialStep`)
   // when createHousehold redirects back here.
   return (
     <OnboardingWizard
       key={profile.household_id}
-      initialStep={household.onboarding_step}
+      initialStep={isPersistedStep(household.onboarding_step) ? household.onboarding_step : 'done'}
       locale={locale}
       household={{
         translationEnabled: household.translation_enabled,

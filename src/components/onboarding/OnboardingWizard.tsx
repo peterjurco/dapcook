@@ -53,12 +53,12 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
 
   /**
    * Leaves `current`. Persisted steps record where to resume before moving on, except
-   * `shopping_rules`: its stored step stays put until the Done screen's own PATCH, so
+   * `invite`: its stored step stays put until the Done screen's own PATCH, so
    * closing/refreshing on Done still lands back on Done instead of skipping it.
    */
   async function advance(current: OnboardingStep, skipped = false) {
     setError(null)
-    if (isPersistedStep(current) && current !== 'shopping_rules') {
+    if (isPersistedStep(current) && current !== 'invite') {
       const ok = await sendJson('PATCH', '/api/household', { onboarding_step: persistedStepAfter(current) })
       if (!ok) {
         setError(t('onboarding.saveError'))
@@ -140,7 +140,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
           </StepFrame>
         )}
 
-        {step === 'shopping_rules' && (
+        {step === 'invite' && (
           <StepFrame
             title={t('onboarding.shoppingRules.title')}
             help={t('onboarding.shoppingRules.help')}

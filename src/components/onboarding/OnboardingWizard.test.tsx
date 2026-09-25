@@ -40,7 +40,7 @@ describe('OnboardingWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
     fireEvent.click(await screen.findByRole('button', { name: "Let's start" }))
     expect(await screen.findByLabelText('Household name')).toBeInTheDocument()
-    expect(screen.getByText('Step 2 of 8')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 7')).toBeInTheDocument()
     expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'language', skipped: false })
     expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'intro', skipped: false })
   })
@@ -71,13 +71,13 @@ describe('OnboardingWizard', () => {
     expect(screen.getByText('Translate recipes?')).toBeInTheDocument()
   })
 
-  it('finishing the shopping rules step does not save progress, only tracks it', async () => {
-    render(<OnboardingWizard initialStep="shopping_rules" locale="en" household={household} rules={[]} />)
+  it('finishing the last step does not save progress, only tracks it', async () => {
+    render(<OnboardingWizard initialStep="invite" locale="en" household={household} rules={[]} />)
     expect(screen.getByRole('button', { name: '+ Count eggs in pieces, not grams' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByRole('button', { name: 'Go to recipes' })).toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
-    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'shopping_rules', skipped: false })
+    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'invite', skipped: false })
   })
 
   it('finishes onboarding from the done screen and lands on recipes', async () => {
