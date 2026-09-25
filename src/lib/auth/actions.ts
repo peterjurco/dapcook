@@ -104,7 +104,7 @@ export async function createHousehold(name: string) {
   forgetHouseholdId(user.id)
 
   const locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
-  await Promise.all([
+  const [shoppingListResult, categoriesResult] = await Promise.all([
     supabase.from('shopping_lists').insert({ household_id: householdId, name: 'Shopping list' }),
     supabase.from('shopping_categories').insert(
       DEFAULT_SHOPPING_CATEGORIES.map((category, index) => ({
@@ -114,6 +114,12 @@ export async function createHousehold(name: string) {
       }))
     ),
   ])
+  if (shoppingListResult.error || categoriesResult.error) {
+    console.error('[createHousehold] seeding failed', {
+      shoppingList: shoppingListResult.error,
+      categories: categoriesResult.error,
+    })
+  }
 
   redirect('/onboarding')
 }
