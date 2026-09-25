@@ -163,6 +163,53 @@ describe('GenerateShoppingPage', () => {
     expect(box('Carbonara').getByText('spaghetti')).toBeInTheDocument()
   })
 
+  it('keeps the quantity when the editor is cleared and blurred', async () => {
+    renderPage()
+    await userEvent.click(box('Carbonara').getByText('spaghetti'))
+    await userEvent.clear(box('Carbonara').getByDisplayValue('200g spaghetti'))
+    await userEvent.tab()
+    expect(box('Carbonara').getByText('200g')).toBeInTheDocument()
+
+    await setPortions('Carbonara', '3')
+    expect(box('Carbonara').getByText('300g')).toBeInTheDocument()
+  })
+
+  it('sends only custom items when the recipe is removed', async () => {
+    renderPage()
+    await userEvent.click(box('Carbonara').getByRole('button', { name: 'Remove from shopping list' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Add 1 item to shopping list' }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    expect(lastFetchBody()).toEqual({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }] })
+  })
+
+  it('shows a network error and stays on the page when the request fails', async () => {
+    vi.mocked(global.fetch).mockRejectedValue(new Error('offline'))
+    renderPage()
+    await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
+    expect(await screen.findByText('Network error. Please try again.')).toBeInTheDocument()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('leaves a deleted ingredient out of the count and the request', async () => {
+    renderPage()
+    await userEvent.click(box('Carbonara').getAllByRole('button', { name: 'Delete' })[1])
+    expect(box('Carbonara').queryByText('onion')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Add 2 items to shopping list' }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    expect(lastFetchBody()).toEqual({
+      ingredients: [{ name: 'spaghetti', quantity: 200, unit: 'g', recipe_id: 'r1' }],
+      customItems: [{ name: 'rice', portions: 1 }],
+    })
+  })
+
+  it('remembers recipe portions after a successful add', async () => {
+    localStorage.removeItem('recipe_portions')
+    renderPage()
+    await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    expect(JSON.parse(localStorage.getItem('recipe_portions')!)).toEqual({ r1: 2 })
+  })
+
   // Slovak has a distinct "few" plural category (2-4) that English doesn't —
   // check it against the real catalog so the one/few/other forms aren't collapsed.
   it('uses the Slovak "few" plural category for counts 2-4', () => {

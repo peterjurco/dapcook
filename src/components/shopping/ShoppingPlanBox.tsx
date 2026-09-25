@@ -53,18 +53,24 @@ export function ShoppingPlanBox({
           {entry.kind === 'recipe' && (
             entry.ingredients.length > 0 ? (
               <div className="px-3 border-t border-gray-100">
-                {entry.ingredients.map((ingredient, i) => (
-                  <ShoppingItemRow
-                    key={ingredient.id}
-                    item={toShoppingItem(ingredient, entry.portions, i)}
-                    recipeNames={{}}
-                    onCheck={onCheckIngredient}
-                    onUpdate={(id, changes) => {
-                      if (changes.name !== undefined) onEditIngredient(id, changes.name)
-                    }}
-                    onDelete={onDeleteIngredient}
-                  />
-                ))}
+                {entry.ingredients.map((ingredient, i) => {
+                  const item = toShoppingItem(ingredient, entry.portions, i)
+                  return (
+                    <ShoppingItemRow
+                      key={ingredient.id}
+                      item={item}
+                      recipeNames={{}}
+                      onCheck={onCheckIngredient}
+                      onUpdate={(id, changes) => {
+                        // Clearing the editor makes the row send back the bare name. A real edit
+                        // carries the quantity prefix, so the bare name means "no change".
+                        if (changes.name === undefined || changes.name === item.name) return
+                        onEditIngredient(id, changes.name)
+                      }}
+                      onDelete={onDeleteIngredient}
+                    />
+                  )
+                })}
               </div>
             ) : (
               <p className="px-3 pb-2 text-xs text-gray-400">{t('generate.noIngredients')}</p>
