@@ -8,6 +8,9 @@ const DEV_EMAIL = 'dev@dapcook.local'
 
 // Never statically cache/optimize this route: it mutates auth state on every hit.
 export const dynamic = 'force-dynamic'
+// Next 14 caches fetch POSTs made from GET handlers; a cached generate_link
+// response hands back an already-used token.
+export const fetchCache = 'force-no-store'
 
 /**
  * Local-only sign-in so agents (and people) can use the app without Google
