@@ -5,6 +5,12 @@ import { NextRequest } from 'next/server'
 const mocks = vi.hoisted(() => ({
   groupUpserts: [] as unknown[],
   tagUpserts: [] as unknown[],
+  groupDeletes: [] as unknown[],
+  calls: [] as string[],
+  rpc: vi.fn(),
+  onboardingStep: 'tags' as string | null,
+  existingGroups: [] as Array<{ id: string; name: string }>,
+  existingTags: [] as Array<{ name: string }>,
   user: { id: 'user-1', email: null } as { id: string; email: null } | null,
 }))
 
@@ -14,8 +20,31 @@ vi.mock('@/lib/auth/household', async () => ({
 }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
+    rpc: async (name: string, args: unknown) => {
+      mocks.calls.push(`rpc:${name}`)
+      return mocks.rpc(name, args)
+    },
     from: (table: string) => ({
+      select: () => ({
+        eq: () => {
+          if (table === 'households') {
+            return { single: async () => ({ data: { onboarding_step: mocks.onboardingStep }, error: null }) }
+          }
+          const data = table === 'tag_groups' ? mocks.existingGroups : mocks.existingTags
+          return Promise.resolve({ data, error: null })
+        },
+      }),
+      delete: () => ({
+        eq: () => ({
+          in: async (_column: string, ids: unknown[]) => {
+            mocks.calls.push(`delete:${table}`)
+            mocks.groupDeletes.push(ids)
+            return { error: null }
+          },
+        }),
+      }),
       upsert: (rows: { name?: string }) => {
+        mocks.calls.push(`upsert:${table}`)
         if (table === 'tag_groups') {
           mocks.groupUpserts.push(rows)
           return { select: () => ({ single: async () => ({ data: { id: `g-${rows.name}` }, error: null }) }) }
@@ -38,6 +67,12 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.groupUpserts = []
   mocks.tagUpserts = []
+  mocks.groupDeletes = []
+  mocks.calls = []
+  mocks.rpc.mockResolvedValue({ error: null })
+  mocks.onboardingStep = 'tags'
+  mocks.existingGroups = []
+  mocks.existingTags = []
   mocks.user = { id: 'user-1', email: null }
   householdIdMock.mockResolvedValue('hh-1')
 })
@@ -123,6 +158,53 @@ describe('POST /api/onboarding/tags', () => {
     ]
     const res = await post({ groups })
     expect(res.status).toBe(201)
+  })
+
+  it('removes saved tags and groups left out of the payload, before upserting the rest', async () => {
+    mocks.existingGroups = [{ id: 'g-old-course', name: 'Course' }, { id: 'g-old-diet', name: 'Diet' }]
+    mocks.existingTags = [{ name: 'Soup' }, { name: 'Dessert' }, { name: 'Vegan' }]
+
+    const res = await post({ groups: [{ name: 'Course', tags: ['Soup'] }] })
+
+    expect(res.status).toBe(201)
+    expect(mocks.rpc.mock.calls).toEqual([
+      ['delete_tag', { p_household_id: 'hh-1', p_name: 'Dessert' }],
+      ['delete_tag', { p_household_id: 'hh-1', p_name: 'Vegan' }],
+    ])
+    expect(mocks.groupDeletes).toEqual([['g-old-diet']])
+    expect(mocks.calls).toEqual([
+      'rpc:delete_tag', 'rpc:delete_tag', 'delete:tag_groups', 'upsert:tag_groups', 'upsert:tags',
+    ])
+  })
+
+  it('clears every onboarding tag when the payload is empty', async () => {
+    mocks.existingGroups = [{ id: 'g-old-course', name: 'Course' }]
+    mocks.existingTags = [{ name: 'Soup' }]
+
+    const res = await post({ groups: [] })
+
+    expect(res.status).toBe(201)
+    expect(mocks.rpc).toHaveBeenCalledWith('delete_tag', { p_household_id: 'hh-1', p_name: 'Soup' })
+    expect(mocks.groupDeletes).toEqual([['g-old-course']])
+    expect(mocks.groupUpserts).toHaveLength(0)
+  })
+
+  it('fails when a tag cannot be removed', async () => {
+    mocks.existingTags = [{ name: 'Soup' }]
+    mocks.rpc.mockResolvedValue({ error: { message: 'boom' } })
+
+    expect((await post({ groups: [] })).status).toBe(500)
+  })
+
+  it('refuses once onboarding is finished', async () => {
+    mocks.onboardingStep = null
+    mocks.existingTags = [{ name: 'Soup' }]
+
+    const res = await post({ groups: [] })
+
+    expect(res.status).toBe(409)
+    expect(mocks.rpc).not.toHaveBeenCalled()
+    expect(mocks.groupUpserts).toHaveLength(0)
   })
 
   it('requires a signed-in user with a household', async () => {

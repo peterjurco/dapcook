@@ -56,6 +56,41 @@ export async function POST(request: NextRequest) {
   const groups = parseGroups(body.groups)
   if (!groups) return NextResponse.json({ error: 'Invalid groups' }, { status: 400 })
 
+  // The payload replaces every tag and group, which is only safe while the
+  // household is still in the wizard and has nothing but onboarding tags.
+  const { data: household, error: householdError } = await supabase
+    .from('households')
+    .select('onboarding_step')
+    .eq('id', householdId)
+    .single()
+  if (householdError) return NextResponse.json({ error: householdError.message }, { status: 500 })
+  if (!household?.onboarding_step) return NextResponse.json({ error: 'Onboarding finished' }, { status: 409 })
+
+  const [{ data: savedTags, error: savedTagsError }, { data: savedGroups, error: savedGroupsError }] = await Promise.all([
+    supabase.from('tags').select('name').eq('household_id', householdId),
+    supabase.from('tag_groups').select('id, name').eq('household_id', householdId),
+  ])
+  const loadError = savedTagsError ?? savedGroupsError
+  if (loadError) return NextResponse.json({ error: loadError.message }, { status: 500 })
+
+  const keptTags = new Set(groups.flatMap((group) => group.tags))
+  const keptGroups = new Set(groups.map((group) => group.name))
+
+  // delete_tag also strips the name from recipe tag arrays, keeping them consistent.
+  const tagResults = await Promise.all(
+    (savedTags ?? [])
+      .filter((tag) => !keptTags.has(tag.name))
+      .map((tag) => supabase.rpc('delete_tag', { p_household_id: householdId, p_name: tag.name }))
+  )
+  const tagError = tagResults.find((result) => result.error)?.error
+  if (tagError) return NextResponse.json({ error: tagError.message }, { status: 500 })
+
+  const staleGroupIds = (savedGroups ?? []).filter((group) => !keptGroups.has(group.name)).map((group) => group.id)
+  if (staleGroupIds.length > 0) {
+    const { error } = await supabase.from('tag_groups').delete().eq('household_id', householdId).in('id', staleGroupIds)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
   // Upserts keep a retried step (e.g. after a dropped connection) from failing on unique names.
   for (const [position, group] of Array.from(groups.entries())) {
     const { data: row, error: groupError } = await supabase
