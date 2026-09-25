@@ -212,6 +212,8 @@ describe('POST /api/recipes/import', () => {
     const events = await collectEvents(res)
     const steps = events.filter(e => e.type === 'step').map(e => (e as Extract<ImportEvent, { type: 'step' }>).key)
     expect(steps).toContain('translating')
+    const translating = events.find(e => e.type === 'step' && e.key === 'translating') as Extract<ImportEvent, { type: 'step' }>
+    expect(translating.message).toBe('Translating to Slovak...')
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Pasta' }),
       { targetLanguage: 'sk', targetUnits: 'metric' },

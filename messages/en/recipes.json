@@ -178,7 +178,7 @@
     "stepScraping": "Fetching recipe page...",
     "stepExtracting": "Reading the full page with AI...",
     "stepParsing": "Reading ingredients and steps...",
-    "stepTranslating": "Translating to {language}...",
+    "stepTranslating": "Translating to {languageName}...",
     "stepConverting": "Converting units...",
     "idleSubtitle": "Paste a link from any recipe website",
     "urlPlaceholder": "https://www.bbcgoodfood.com/recipes/...",
