@@ -48,11 +48,11 @@ export function TagsStep({ value, onSaved, onNext, onSkip, onBack, locale }: Pro
   async function save() {
     setFailed(false)
     const groups = buildTagGroupsPayload(selected, locale)
-    // The endpoint replaces what is saved, so an empty selection still has to
-    // be sent once something was saved before — that is how it gets removed.
-    const hadSaved = buildTagGroupsPayload(value.selected, locale).length > 0
-    if (groups.length > 0 || hadSaved) {
-      if (!(await sendJson('POST', '/api/onboarding/tags', { groups }))) return setFailed(true)
+    // The endpoint removes what was in `previous` but no longer in `groups`, so
+    // an empty selection still has to be sent once something was saved.
+    const previous = buildTagGroupsPayload(value.selected, locale)
+    if (groups.length > 0 || previous.length > 0) {
+      if (!(await sendJson('POST', '/api/onboarding/tags', { groups, previous }))) return setFailed(true)
       onSaved({ selected, custom })
     }
     await onNext()

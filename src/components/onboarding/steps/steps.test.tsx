@@ -165,10 +165,13 @@ describe('TagsStep', () => {
     await waitFor(() => expect(onNext).toHaveBeenCalled())
     expect(fetch).toHaveBeenCalledWith('/api/onboarding/tags', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ groups: [
-        { name: 'Course', tags: ['Soup'] },
-        { name: 'Diet', tags: ['Paleo'] },
-      ] }),
+      body: JSON.stringify({
+        groups: [
+          { name: 'Course', tags: ['Soup'] },
+          { name: 'Diet', tags: ['Paleo'] },
+        ],
+        previous: [],
+      }),
     }))
     expect(onSaved).toHaveBeenCalledWith({ selected: { course: ['Soup'], diet: ['Paleo'] }, custom: { diet: ['Paleo'] } })
   })
@@ -180,13 +183,13 @@ describe('TagsStep', () => {
     expect(screen.getByRole('button', { name: 'Salad' })).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('still syncs when every saved tag was deselected, so they are removed', async () => {
+  it('sends the previously saved selection, so only deselected wizard tags get removed', async () => {
     const { onNext } = renderTags({ selected: { course: ['Soup'] }, custom: {} })
     fireEvent.click(screen.getByRole('button', { name: 'Soup' }))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     await waitFor(() => expect(onNext).toHaveBeenCalled())
     expect(fetch).toHaveBeenCalledWith('/api/onboarding/tags', expect.objectContaining({
-      body: JSON.stringify({ groups: [] }),
+      body: JSON.stringify({ groups: [], previous: [{ name: 'Course', tags: ['Soup'] }] }),
     }))
   })
 
