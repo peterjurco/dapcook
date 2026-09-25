@@ -123,7 +123,7 @@ export function buildSubmitPayload(entries: PlanEntry[]): PlanPayload {
   return payload
 }
 
-/** Same rounding as scaleIngredients. */
+/** Rounded to 3 decimals. */
 export function displayQuantity(quantityPerPortion: number | null, portions: number): number | null {
   if (quantityPerPortion == null) return null
   return Number((quantityPerPortion * portions).toFixed(3))

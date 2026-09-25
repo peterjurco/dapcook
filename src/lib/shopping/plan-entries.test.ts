@@ -21,7 +21,7 @@ describe('displayQuantity', () => {
     expect(displayQuantity(50, 4)).toBe(200)
   })
 
-  it('rounds to 3 decimals like scaleIngredients', () => {
+  it('rounds to 3 decimals', () => {
     expect(displayQuantity(100 / 3, 3)).toBe(100)
     expect(displayQuantity(1 / 3, 1)).toBe(0.333)
   })
