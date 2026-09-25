@@ -23,7 +23,7 @@ Route handler `src/app/dev/login/route.ts`:
 - Query params:
   - `next` — redirect target (default `/recipes`; must start with `/`).
   - `fresh=1` — sets the dev user's `profiles.household_id = NULL` (and `ui_language` back to `en`) before redirecting, so onboarding can be run again. Old dev households are left in place.
-- Middleware: `/dev` is treated as a public path only in development.
+- Middleware: `/dev` is a public path in every environment; the route itself returns 404 outside development, so nothing is exposed.
 - Documented in `CLAUDE.md` under a new "Local development" section (URL, params, the "no paid AI calls during testing" rule).
 
 ## 2. Data model
