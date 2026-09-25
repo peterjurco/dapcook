@@ -33,10 +33,6 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
       return `${weekday} ${day}`
     })
   })
-  // Raw text state lets the input be temporarily empty while the user is typing
-  const [portionsText, setPortionsText] = useState<Record<string, string>>(() =>
-    Object.fromEntries(entries.map((e) => [e.key, String(e.portions)])),
-  )
   const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,10 +48,8 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
     updateEntry(key, (e) => (e.kind === 'recipe' ? { ...e, ingredients: update(e.ingredients, e.portions) } : e))
   }
 
-  function updatePortions(key: string, raw: string) {
-    setPortionsText((prev) => ({ ...prev, [key]: raw }))
-    const num = parseInt(raw, 10)
-    if (!isNaN(num) && num >= 1) updateEntry(key, (e) => ({ ...e, portions: num }))
+  function updatePortions(key: string, portions: number) {
+    updateEntry(key, (e) => ({ ...e, portions }))
   }
 
   function toggleRemove(key: string) {
@@ -137,8 +131,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
             <ShoppingPlanBox
               key={entry.key}
               entry={entry}
-              portionsText={portionsText[entry.key] ?? String(entry.portions)}
-              onPortionsChange={(raw) => updatePortions(entry.key, raw)}
+              onPortionsChange={(portions) => updatePortions(entry.key, portions)}
               onToggleRemove={() => toggleRemove(entry.key)}
               onCheckIngredient={(id, checked) => checkIngredient(entry.key, id, checked)}
               onEditIngredient={(id, text) => editIngredient(entry.key, id, text)}

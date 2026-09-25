@@ -78,10 +78,10 @@ function renderPage(slots: PlanSlot[] = [carbonara, customSlot({ id: 'c1', day_o
 
 const box = (name: string) => within(screen.getByRole('region', { name }))
 
-async function setPortions(boxName: string, value: string) {
-  const input = box(boxName).getByRole('spinbutton', { name: 'Portions' })
-  await userEvent.clear(input)
-  await userEvent.type(input, value)
+async function stepPortions(boxName: string, direction: 'More portions' | 'Fewer portions', times = 1) {
+  for (let i = 0; i < times; i++) {
+    await userEvent.click(box(boxName).getByRole('button', { name: direction }))
+  }
 }
 
 function lastFetchBody() {
@@ -112,8 +112,16 @@ describe('GenerateShoppingPage', () => {
 
   it('rescales ingredients when portions change', async () => {
     renderPage()
-    await setPortions('Carbonara', '3')
+    await stepPortions('Carbonara', 'More portions')
     expect(box('Carbonara').getByText('300g')).toBeInTheDocument()
+  })
+
+  it('rescales ingredients down when portions decrease, stopping at 1', async () => {
+    renderPage()
+    await stepPortions('Carbonara', 'Fewer portions')
+    expect(box('Carbonara').getByText('100g')).toBeInTheDocument()
+    expect(box('Carbonara').getByRole('group', { name: 'Portions' })).toHaveTextContent('1')
+    expect(box('Carbonara').getByRole('button', { name: 'Fewer portions' })).toBeDisabled()
   })
 
   it('rescales an edited ingredient when portions change', async () => {
@@ -124,7 +132,7 @@ describe('GenerateShoppingPage', () => {
     await userEvent.type(editor, '150g spaghetti{Enter}')
     expect(box('Carbonara').getByText('150g')).toBeInTheDocument()
 
-    await setPortions('Carbonara', '4')
+    await stepPortions('Carbonara', 'More portions', 2)
     expect(box('Carbonara').getByText('300g')).toBeInTheDocument()
   })
 
@@ -170,7 +178,7 @@ describe('GenerateShoppingPage', () => {
     await userEvent.tab()
     expect(box('Carbonara').getByText('200g')).toBeInTheDocument()
 
-    await setPortions('Carbonara', '3')
+    await stepPortions('Carbonara', 'More portions')
     expect(box('Carbonara').getByText('300g')).toBeInTheDocument()
   })
 
