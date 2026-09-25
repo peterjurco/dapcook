@@ -54,6 +54,11 @@ quantity). Displayed quantity = `quantityPerPortion × portions`, rounded as
   (matches `scaleIngredients`; a null `servings` means portions is the multiplier).
 - Editing an ingredient sets `quantityPerPortion = editedQuantity / currentPortions`
   (null if the edit has no quantity); name and unit are stored as edited.
+- `ShoppingItemRow` saves edits as free text (`{ name: "150g rice", quantity: null,
+  unit: null }`), so the edit text is parsed back: a leading number (`150`, `1.5`,
+  `1,5`) becomes the quantity; if the text right after it is the ingredient's
+  current unit it stays the unit; the rest is the name. Text without a leading
+  number leaves the ingredient with no quantity (it no longer scales).
 - Changing portions recomputes every displayed quantity from `quantityPerPortion`,
   so edited ingredients scale proportionally and repeated changes (4→5→4) do not
   drift.
