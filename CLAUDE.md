@@ -37,6 +37,8 @@ Supabase SQL editor. Never edit `supabase/baseline.txt`.
   - `?fresh=1` — detach the dev user from its household (and reset its language to English) and
     open `/onboarding`, to walk through the wizard again. Old dev households stay in staging.
   - The route returns 404 unless `NODE_ENV === 'development'`.
+  - `next dev` listens on all interfaces, so anyone on the LAN can hit `/dev/login` — run
+    `npm run dev -- -H localhost` on untrusted networks.
 - **No paid AI calls while testing:** do not trigger anything that calls the Anthropic API
   (AI recipe import, translation, shopping-list generation, "make smarter") unless the user
   explicitly asks. Tests must mock the SDK.

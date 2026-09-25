@@ -5,6 +5,9 @@ import { forgetHouseholdId } from '@/lib/auth/household'
 
 const DEV_EMAIL = 'dev@dapcook.local'
 
+// Never statically cache/optimize this route: it mutates auth state on every hit.
+export const dynamic = 'force-dynamic'
+
 /**
  * Local-only sign-in so agents (and people) can use the app without Google
  * OAuth. It mints a magic link with the service-role key and verifies it
