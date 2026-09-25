@@ -14,6 +14,7 @@
     "addToList": "{count, plural, one {Pridať # položku do zoznamu} few {Pridať # položky do zoznamu} other {Pridať # položiek do zoznamu}}",
     "adding": "Pridávam…",
     "noIngredients": "Tento recept nemá žiadne ingrediencie.",
+    "remove": "Odobrať",
     "removeAria": "Odstrániť z nákupného zoznamu",
     "tooManyItems": "Príliš veľa ingrediencií (max. {max}). Odstráňte niektoré recepty alebo odškrtnite, čo už máte doma."
   },

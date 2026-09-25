@@ -23,6 +23,8 @@ export interface PlanSlot extends Omit<MealSlotWithRecipe, 'recipe'> {
 interface BaseEntry {
   key: string
   title: string
+  /** Null for custom meals and recipes without a photo. */
+  imageUrl: string | null
   days: string[]
   portions: number
   removed: boolean
@@ -93,6 +95,7 @@ export function buildPlanEntries(slots: PlanSlot[], dayLabel: (slot: PlanSlot) =
           key: recipe.id,
           recipeId: recipe.id,
           title: recipe.title,
+          imageUrl: recipe.image_url,
           servings: recipe.servings,
           days: [],
           portions: recipe.servings || 1,
@@ -109,7 +112,7 @@ export function buildPlanEntries(slots: PlanSlot[], dayLabel: (slot: PlanSlot) =
     if (!label || PRESET_LABELS.has(label)) continue
     let entry = customs.get(label)
     if (!entry) {
-      entry = { kind: 'custom', key: `custom:${label}`, name: label, title: label, days: [], portions: 1, removed: false }
+      entry = { kind: 'custom', key: `custom:${label}`, name: label, title: label, imageUrl: null, days: [], portions: 1, removed: false }
       customs.set(label, entry)
     }
     entry.days.push(dayLabel(slot))

@@ -14,6 +14,7 @@
     "addToList": "{count, plural, one {Add # item to shopping list} other {Add # items to shopping list}}",
     "adding": "Adding…",
     "noIngredients": "This recipe has no ingredients.",
+    "remove": "Remove",
     "removeAria": "Remove from shopping list",
     "tooManyItems": "Too many ingredients ({max} max). Remove some recipes or tick off what you already have."
   },
