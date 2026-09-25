@@ -1,7 +1,8 @@
 'use client'
 
+import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { X, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import { Stepper } from '@/components/ui/Stepper'
 import { toShoppingItem, type PlanEntry } from '@/lib/shopping/plan-entries'
@@ -32,7 +33,15 @@ export function ShoppingPlanBox({
         entry.removed ? 'border-gray-100 bg-gray-50 opacity-50' : 'border-gray-200 bg-white'
       }`}
     >
-      <div className="flex items-start gap-3 p-3">
+      <div className="flex items-center gap-3 p-3">
+        {/* Decorative — the title next to it already names the recipe */}
+        <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+          {entry.imageUrl ? (
+            <Image src={entry.imageUrl} alt="" width={40} height={40} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-lg" aria-hidden="true">🍽️</div>
+          )}
+        </div>
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium ${entry.removed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
             {entry.title}
@@ -43,9 +52,9 @@ export function ShoppingPlanBox({
           type="button"
           onClick={onToggleRemove}
           aria-label={entry.removed ? undefined : t('generate.removeAria')}
-          className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-700 transition-colors mt-1"
+          className="flex-shrink-0 px-2.5 py-1.5 text-xs font-medium text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors"
         >
-          {entry.removed ? t('generate.undo') : <X size={14} />}
+          {entry.removed ? t('generate.undo') : t('generate.remove')}
         </button>
       </div>
 
@@ -77,8 +86,9 @@ export function ShoppingPlanBox({
 
           <div className="flex items-center justify-between gap-3 px-3 py-2 border-t border-gray-100">
             {entry.kind === 'recipe' && entry.servings == null ? (
-              <p className="flex items-center gap-1 text-xs text-amber-600">
-                <AlertTriangle size={11} />
+              // Icon pinned to the first line (16px line-height, 11px icon) when the text wraps
+              <p className="flex items-start gap-1 text-xs text-amber-600">
+                <AlertTriangle size={11} className="flex-shrink-0 mt-[2.5px]" />
                 {t('generate.noServingsWarning')}
               </p>
             ) : (

@@ -141,6 +141,7 @@ function recipeSlot(p: {
   title: string
   servings: number | null
   ingredients?: unknown
+  imageUrl?: string | null
 }): PlanSlot {
   return {
     id: `slot-${p.id}-${p.day}`,
@@ -155,7 +156,7 @@ function recipeSlot(p: {
     recipe: {
       id: p.id,
       title: p.title,
-      image_url: null,
+      image_url: p.imageUrl ?? null,
       cook_time_min: null,
       prep_time_min: null,
       servings: p.servings,
@@ -193,6 +194,17 @@ describe('buildPlanEntries', () => {
     )
     expect(entries).toHaveLength(1)
     expect(entries[0]).toMatchObject({ kind: 'recipe', key: 'r1', title: 'Pasta', days: ['D1', 'D3'], portions: 2 })
+  })
+
+  it('carries the recipe image; custom meals have none', () => {
+    const entries = buildPlanEntries(
+      [
+        recipeSlot({ id: 'r1', day: 1, title: 'Pasta', servings: 2, imageUrl: 'https://img/pasta.jpg' }),
+        customSlot({ id: 'c1', day: 2, label: 'rice' }),
+      ],
+      dayLabel,
+    )
+    expect(entries.map((e) => e.imageUrl)).toEqual(['https://img/pasta.jpg', null])
   })
 
   it('defaults portions to 1 when the recipe has no servings', () => {
@@ -304,6 +316,7 @@ describe('buildSubmitPayload', () => {
     key: 'r1',
     recipeId: 'r1',
     title: 'Pasta',
+    imageUrl: null,
     servings: 2,
     days: [],
     portions: 3,
@@ -314,7 +327,7 @@ describe('buildSubmitPayload', () => {
       { id: 'r1:2', name: 'oil', unit: 'ml', quantityPerPortion: 10, checked: true },
     ],
   }
-  const custom: PlanEntry = { kind: 'custom', key: 'custom:rice', name: 'rice', title: 'rice', days: [], portions: 2, removed: false }
+  const custom: PlanEntry = { kind: 'custom', key: 'custom:rice', name: 'rice', title: 'rice', imageUrl: null, days: [], portions: 2, removed: false }
 
   it('sends scaled unchecked ingredients and custom meals', () => {
     expect(buildSubmitPayload([recipe, custom])).toEqual({

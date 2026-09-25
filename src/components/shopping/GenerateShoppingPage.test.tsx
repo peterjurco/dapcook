@@ -24,7 +24,14 @@ beforeEach(() => {
 
 const ing = (p: Partial<Ingredient>): Ingredient => ({ id: 'x', quantity: null, unit: '', name: '', notes: '', ...p })
 
-function recipeSlot(p: { id: string; day_of_week: number; title: string; servings: number | null; ingredients?: Ingredient[] }): PlanSlot {
+function recipeSlot(p: {
+  id: string
+  day_of_week: number
+  title: string
+  servings: number | null
+  ingredients?: Ingredient[]
+  imageUrl?: string | null
+}): PlanSlot {
   return {
     id: `slot-${p.id}`,
     week_plan_id: 'w',
@@ -38,7 +45,7 @@ function recipeSlot(p: { id: string; day_of_week: number; title: string; serving
     recipe: {
       id: p.id,
       title: p.title,
-      image_url: null,
+      image_url: p.imageUrl ?? null,
       cook_time_min: null,
       prep_time_min: null,
       servings: p.servings,
@@ -150,6 +157,24 @@ describe('GenerateShoppingPage', () => {
       ingredients: [{ name: 'spaghetti', quantity: 200, unit: 'g', recipe_id: 'r1' }],
       customItems: [{ name: 'rice', portions: 1 }],
     })
+  })
+
+  it('shows the recipe image next to the title and a placeholder for custom meals', () => {
+    renderPage([
+      recipeSlot({ id: 'r1', day_of_week: 1, title: 'Carbonara', servings: 2, imageUrl: 'https://images.test/carbonara.jpg' }),
+      customSlot({ id: 'c1', day_of_week: 2, label: 'rice' }),
+    ])
+    // Decorative (alt="") — the title right next to it already names the recipe.
+    const image = screen.getByRole('region', { name: 'Carbonara' }).querySelector('img')
+    expect(image?.getAttribute('src')).toContain(encodeURIComponent('https://images.test/carbonara.jpg'))
+    expect(image).toHaveAttribute('alt', '')
+    expect(screen.getByRole('region', { name: 'rice' }).querySelector('img')).toBeNull()
+    expect(box('rice').getByText('🍽️')).toBeInTheDocument()
+  })
+
+  it('labels the recipe remove button with text, unlike the ingredient X', () => {
+    renderPage()
+    expect(box('Carbonara').getByRole('button', { name: 'Remove from shopping list' })).toHaveTextContent('Remove')
   })
 
   it('removes a whole recipe and can undo it', async () => {
