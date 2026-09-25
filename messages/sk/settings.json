@@ -82,7 +82,7 @@
   },
   "translation": {
     "toggleLabel": "Prekladať importované recepty",
-    "confirmMessage": "Preložiť vaše recepty do jazyka {language}?",
+    "confirmMessage": "Preložiť vaše recepty do {language, select, en {angličtiny} es {španielčiny} fr {francúzštiny} de {nemčiny} it {taliančiny} pt {portugalčiny} nl {holandčiny} pl {poľštiny} uk {ukrajinčiny} cs {češtiny} sk {slovenčiny} other {jazyka {languageName}}}?",
     "confirmLabel": "Preložiť všetko"
   },
   "units": {
