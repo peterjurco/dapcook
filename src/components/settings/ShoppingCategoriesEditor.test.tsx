@@ -62,7 +62,12 @@ describe('ShoppingCategoriesEditor', () => {
     const remove = screen.getAllByRole('button', { name: 'Delete' })[0]
     expect(rename.nextElementSibling).toBe(remove)
     for (const button of [rename, remove]) {
-      expect(button).toHaveClass('opacity-100', '[@media(hover:hover)]:opacity-0', '[@media(hover:hover)]:group-hover:opacity-100')
+      expect(button).toHaveClass(
+        'opacity-100',
+        '[@media(hover:hover)]:opacity-0',
+        '[@media(hover:hover)]:group-hover:opacity-100',
+        'focus-visible:opacity-100'
+      )
     }
   })
 })

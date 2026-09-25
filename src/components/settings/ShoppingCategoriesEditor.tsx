@@ -21,9 +21,9 @@ import { useTranslations } from 'next-intl'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { ShoppingCategory } from '@/types/database'
 
-// Row actions appear on hover, except on touch screens, which cannot hover.
+// Row actions appear on hover or keyboard focus, and always on touch screens, which cannot hover.
 const ROW_ACTION_VISIBILITY =
-  'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity'
+  'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity'
 
 const PALETTE = [
   '#ef4444', '#f87171', '#dc2626', '#f43f5e', '#fb7185', '#be185d', '#ec4899', '#f9a8d4',
@@ -167,16 +167,16 @@ function SortableCategoryRow({ t, cat, ...rowProps }: RowProps) {
 export function ShoppingCategoriesEditor({ initialCategories, onCategoriesChange, confirmDelete = true }: Props) {
   const t = useTranslations('settings')
   const [categories, setCategories] = useState<ShoppingCategory[]>(initialCategories)
-
-  useEffect(() => {
-    onCategoriesChange?.(categories)
-  }, [categories, onCategoriesChange])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [addName, setAddName] = useState('')
   const [addingNew, setAddingNew] = useState(false)
+
+  useEffect(() => {
+    onCategoriesChange?.(categories)
+  }, [categories, onCategoriesChange])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
