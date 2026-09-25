@@ -41,7 +41,9 @@ ALTER TABLE households
 Migration `supabase/migrations/021_onboarding_invite_step.sql` (feedback round, idempotent):
 
 - replaces the CHECK so the last step is `invite` instead of `shopping_rules` (rows at `shopping_rules` move to `invite`),
-- adds `households.created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL`, set by `createHousehold`.
+- adds `households.created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL`, set by `createHousehold`,
+- backfills `created_by` for households already mid-wizard that have exactly one member (that member),
+- resets `onboarding_step` to `NULL` for households still without a creator, since nobody could finish their wizard.
 
 `PATCH /api/household` additionally accepts:
 - `name` (trimmed, 1–80 chars)
@@ -79,7 +81,7 @@ Steps:
    - Metric: 500 g flour · 250 ml milk · 180 °C
    - Imperial: 1 lb flour · 1 cup milk · 350 °F
    Saves via `PATCH /api/household { preferred_units }`.
-6. **Tags** — "What kind of recipes will you add?" Chips grouped by category from `src/lib/onboarding/tag-catalog.ts` (EN/SK labels). Nothing preselected. Each group has "+ Add" for custom tags (inline input, adds a selected chip to that group). On Next → `POST /api/onboarding/tags { groups: [{ name, tags: string[] }] }`, a full sync: the payload is the complete desired set. The endpoint answers 409 once `onboarding_step` is null; otherwise it deletes saved tags (via the `delete_tag` RPC) and groups missing from the payload, then upserts each group with ≥1 tag (position = catalog order) and its `tags` rows with `group_id`. Names stored in the UI language. The step skips the request only when nothing is selected and nothing was saved before; an empty payload after a previous save clears the tags.
+6. **Tags** — "What kind of recipes will you add?" Chips grouped by category from `src/lib/onboarding/tag-catalog.ts` (EN/SK labels). Nothing preselected. Each group has "+ Add" for custom tags (inline input, adds a selected chip to that group). On Next → `POST /api/onboarding/tags { groups, previous }` (both `[{ name, tags: string[] }]`, validated with the same limits): `groups` is the new selection, `previous` the selection the wizard saved last time. The endpoint answers 409 once `onboarding_step` is null and 403 unless the user is the household's `created_by`. It deletes only tags in `previous` that are not in `groups` (via the `delete_tag` RPC), upserts each group with ≥1 tag (position = catalog order) and its `tags` rows with `group_id`, then deletes groups in `previous` that are not in `groups` and no longer hold any tag. Tags and groups the wizard did not create — e.g. by someone who joined mid-wizard — are never touched. Names stored in the UI language. The step skips the request only when both `groups` and `previous` are empty.
 7. **Shopping categories** — explanation: dapcook builds a shopping list from planned recipes and sorts it into these categories; order them the way you walk through your store. Reuses `ShoppingCategoriesEditor` (add, rename, reorder, delete, color) with the prefilled defaults, with `confirmDelete={false}` (Settings keeps the confirmation). Rename (pencil) and delete (bin) sit next to the name, shown on hover on devices that can hover and always on touch. Edits persist immediately via existing APIs; Next just advances.
 8. **Invite** — "Cook together": explains that the whole household shares recipes, meal plan and shopping list, and shows `InviteLink` with the household's invite URL (`inviteUrl(token)`). `InviteLink` has Copy and, where `navigator.share` exists, Share (system share sheet; cancelling is ignored). Settings uses the same component.
 9. **Done** — "You're all set" → sets `onboarding_step = NULL` → `/recipes?ob=1`.
@@ -120,7 +122,7 @@ All new strings in `messages/{en,sk}/auth.json` under `onboarding.*` (wizard) an
 Vitest (AI SDK never called; no test hits paid APIs):
 - `extractInviteToken` — URL variants, bare token, garbage.
 - `tag-catalog` → payload builder: only groups with selections, custom tags included, localized names.
-- `POST /api/onboarding/tags` — creates groups/tags, skips empty groups, removes deselected tags/groups, 409 once onboarding is finished, auth/household checks.
+- `POST /api/onboarding/tags` — creates groups/tags, skips empty groups, removes only previously saved tags/groups that were deselected, keeps tags the wizard did not create, 409 once onboarding is finished, 403 for non-creators, auth/household checks.
 - `PATCH /api/household` — `name` and `onboarding_step` validation.
 - `auth/callback` — invalid pending token → `/join-invalid`.
 - `(app)` layout / onboarding page guard — redirects by household + `onboarding_step` + creator.
