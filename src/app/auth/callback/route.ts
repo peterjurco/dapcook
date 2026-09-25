@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { forgetHouseholdId } from '@/lib/auth/household'
+import { safeNextPath } from '@/lib/auth/safe-next-path'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/recipes'
+  const next = safeNextPath(searchParams.get('next'), '/recipes')
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=no_code`)
