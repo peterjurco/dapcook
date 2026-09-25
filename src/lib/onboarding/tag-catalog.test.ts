@@ -5,7 +5,19 @@ import { locales } from '@/i18n/config'
 
 describe('TAG_CATALOG', () => {
   it('offers the agreed groups in order', () => {
-    expect(TAG_CATALOG.map((g) => g.id)).toEqual(['course', 'cuisine', 'diet', 'ingredient', 'effort'])
+    expect(TAG_CATALOG.map((g) => g.id)).toEqual(['course', 'cuisine', 'diet', 'ingredient'])
+  })
+
+  it('offers the agreed diet tags', () => {
+    expect(TAG_CATALOG.find((g) => g.id === 'diet')?.tags).toEqual([
+      { en: 'Vegetarian', sk: 'Vegetariánske' },
+      { en: 'Vegan', sk: 'Vegánske' },
+      { en: 'Gluten-free', sk: 'Bezlepkové' },
+      { en: 'Dairy-free', sk: 'Bezmliečne' },
+      { en: 'Lactose-free', sk: 'Bezlaktózové' },
+      { en: 'High-protein', sk: 'Proteín' },
+      { en: 'Keto', sk: 'Keto' },
+    ])
   })
 
   it.each(locales)('has every label in %s, and no tag name twice (tag names are unique per household)', (locale) => {
