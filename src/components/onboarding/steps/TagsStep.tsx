@@ -93,6 +93,7 @@ export function TagsStep({ onNext, onSkip, locale }: Props) {
                     }}
                     onBlur={() => addCustom(group.id)}
                     placeholder={t('onboarding.tags.addPlaceholder')}
+                    maxLength={50}
                     className="px-2.5 py-1 text-xs rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 w-28"
                   />
                 ) : (
