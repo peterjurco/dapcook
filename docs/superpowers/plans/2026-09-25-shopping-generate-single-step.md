@@ -1475,14 +1475,14 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ### Task 6: Remove the old review flow
 
 **Files:**
-- Delete: `src/app/api/shopping/preview/route.ts`, `src/app/api/shopping/items/append/route.ts`, `src/app/(flow)/shopping/review/page.tsx`, `src/components/shopping/ShoppingReviewClient.tsx`, `src/components/shopping/ShoppingReviewClient.test.tsx`
+- Delete: `src/app/api/shopping/preview/route.ts`, `src/app/api/shopping/items/append/route.ts`, `src/app/(flow)/shopping/review/page.tsx`, `src/components/shopping/ShoppingReviewClient.tsx`, `src/components/shopping/ShoppingReviewClient.test.tsx`, `src/lib/shopping/scale-ingredients.ts` + test (only caller was `preview`)
 - Modify: `src/app/(flow)/layout.test.tsx:25-29` (comment)
 - Modify: `messages/en/shopping.json`, `messages/sk/shopping.json` (drop unused keys)
 
 - [ ] **Step 1: Delete files**
 
 ```bash
-cd /Users/vacuumlabs/Developer/dapcook && git rm -q src/app/api/shopping/preview/route.ts src/app/api/shopping/items/append/route.ts "src/app/(flow)/shopping/review/page.tsx" src/components/shopping/ShoppingReviewClient.tsx src/components/shopping/ShoppingReviewClient.test.tsx
+cd /Users/vacuumlabs/Developer/dapcook && git rm -q src/app/api/shopping/preview/route.ts src/app/api/shopping/items/append/route.ts "src/app/(flow)/shopping/review/page.tsx" src/components/shopping/ShoppingReviewClient.tsx src/components/shopping/ShoppingReviewClient.test.tsx src/lib/shopping/scale-ingredients.ts src/lib/shopping/scale-ingredients.test.ts
 ```
 
 - [ ] **Step 2: Fix the stale comment in `src/app/(flow)/layout.test.tsx`**
@@ -1509,7 +1509,7 @@ In both `messages/en/shopping.json` and `messages/sk/shopping.json`: remove `gen
 Run:
 
 ```bash
-cd /Users/vacuumlabs/Developer/dapcook && grep -rn "shopping/preview\|items/append\|shopping/review\|shopping_preview\|ShoppingReviewClient\|'review\.\|generate\.generat" src messages
+cd /Users/vacuumlabs/Developer/dapcook && grep -rn "scaleIngredients\|shopping/preview\|items/append\|shopping/review\|shopping_preview\|ShoppingReviewClient\|'review\.\|generate\.generat" src messages
 ```
 
 Expected: no output.

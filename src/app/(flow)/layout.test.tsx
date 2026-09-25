@@ -25,8 +25,7 @@ vi.mock('next-intl/server', () => ({
 // Deliberately NOT mocking 'next-intl' itself: this test exists to catch a real
 // regression where (flow)/layout.tsx rendered its children without a
 // NextIntlClientProvider, so any real useLocale()/useTranslations() call
-// under it threw as soon as the user navigated to /shopping/generate or
-// /shopping/review.
+// under it threw as soon as the user navigated to /shopping/generate.
 function LocaleProbe() {
   const locale = useLocale()
   return <span>locale:{locale}</span>
