@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       id: `plan-${i}`,
       shopping_list_id: 'plan',
       name: item.name.trim(),
-      quantity: typeof item.quantity === 'number' && Number.isFinite(item.quantity) ? item.quantity : null,
+      quantity: typeof item.quantity === 'number' && Number.isFinite(item.quantity) && item.quantity >= 0 ? item.quantity : null,
       unit: typeof item.unit === 'string' && item.unit ? item.unit : null,
       category: null,
       is_checked: false,

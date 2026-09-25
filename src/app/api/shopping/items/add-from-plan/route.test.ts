@@ -218,6 +218,25 @@ describe('POST /api/shopping/items/add-from-plan', () => {
     expect(makeShoppingListSmart).not.toHaveBeenCalled()
   })
 
+  it('treats a negative quantity as missing', async () => {
+    makeSupabase()
+    vi.mocked(makeShoppingListSmart).mockResolvedValue({
+      items: [{ name: 'onion', quantity: null, unit: '', category: 'Produce', source_recipe_ids: ['r1'] }],
+      newCategories: [],
+    })
+
+    await POST(request({
+      ingredients: [
+        { name: 'onion', quantity: -2, unit: null, recipe_id: 'r1' },
+        { name: 'salt', quantity: 0, unit: 'g', recipe_id: 'r1' },
+      ],
+      customItems: [],
+    }))
+
+    const [rawItems] = vi.mocked(makeShoppingListSmart).mock.calls[0]
+    expect(rawItems.map((i) => [i.name, i.quantity])).toEqual([['onion', null], ['salt', 0]])
+  })
+
   it('drops blank ingredient entries before calling the AI', async () => {
     makeSupabase()
     vi.mocked(makeShoppingListSmart).mockResolvedValue({
