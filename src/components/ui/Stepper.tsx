@@ -13,10 +13,10 @@ interface Props {
   increaseLabel: string
 }
 
-// 40px filled round buttons — comfortable tap targets without a keyboard popping up on mobile.
+// 40px filled rounded-square buttons — comfortable tap targets without a keyboard popping up on mobile.
 // Disabled keeps its filled shape (lighter) instead of fading out, so the pair stays balanced.
 const buttonClass =
-  'w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 disabled:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors'
+  'w-10 h-10 flex items-center justify-center rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 disabled:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors'
 
 export function Stepper({ value, min, max, onChange, label, decreaseLabel, increaseLabel }: Props) {
   return (
