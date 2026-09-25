@@ -13,6 +13,7 @@ export interface Database {
           translation_enabled: boolean
           created_at: string
           last_sign_in_at: string | null
+          onboarding_step: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'shopping_rules' | null
         }
         Insert: {
           id?: string
@@ -23,6 +24,7 @@ export interface Database {
           translation_enabled?: boolean
           created_at?: string
           last_sign_in_at?: string | null
+          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'shopping_rules' | null
         }
         Update: {
           id?: string
@@ -33,6 +35,7 @@ export interface Database {
           translation_enabled?: boolean
           created_at?: string
           last_sign_in_at?: string | null
+          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'shopping_rules' | null
         }
         Relationships: []
       }

@@ -9,3 +9,9 @@ export function isLocale(value: string | null | undefined): value is Locale {
 export function toIntlLocale(locale: Locale): string {
   return locale === 'sk' ? 'sk-SK' : 'en-GB'
 }
+
+/** Each interface language named in itself, for language pickers. */
+export const LOCALE_LABELS: Record<Locale, string> = {
+  en: 'English',
+  sk: 'Slovenčina',
+}

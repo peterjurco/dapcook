@@ -45,34 +45,31 @@ export async function GET(request: NextRequest) {
   }
 
   if (!profile?.household_id) {
-    // Check for a pending invite stored in a cookie (set before OAuth to survive the round-trip)
+    // Pending invite stored in a cookie before OAuth, to survive the round-trip.
     const pendingToken = request.cookies.get('pending_invite_token')?.value
 
-    console.log('[auth/callback] no household. pendingToken:', pendingToken ?? '(none)', '| next:', next)
-    console.log('[auth/callback] all cookies:', request.cookies.getAll().map(c => c.name))
-
     if (pendingToken) {
-      const { data: householdRows, error: rpcError } = await supabase.rpc('get_household_by_invite_token', {
+      const { data: householdRows } = await supabase.rpc('get_household_by_invite_token', {
         token: pendingToken,
       })
       const household = (householdRows as Array<{ id: string; name: string }> | null)?.[0] ?? null
 
-      console.log('[auth/callback] rpc result:', { household, rpcError })
+      // A dead invite (regenerated or mistyped) must not drop the invitee into
+      // onboarding, where they would unknowingly create a second household.
+      const target = household ? '/recipes?ob=1&obm=join' : '/join-invalid'
 
       if (household) {
-        const { error: updateError } = await supabase
+        await supabase
           .from('profiles')
           .update({ household_id: household.id })
           .eq('id', data.user.id)
 
-        console.log('[auth/callback] profile update error:', updateError)
-
         forgetHouseholdId(data.user.id)
-
-        const response = NextResponse.redirect(`${origin}/recipes`)
-        response.cookies.delete('pending_invite_token')
-        return response
       }
+
+      const response = NextResponse.redirect(`${origin}${target}`)
+      response.cookies.delete('pending_invite_token')
+      return response
     }
 
     if (!next.startsWith('/join/')) {

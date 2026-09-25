@@ -3,11 +3,13 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
-import { generateInviteToken } from '@/lib/utils/invite'
+import { generateInviteToken, extractInviteToken } from '@/lib/utils/invite'
 import { getUserTranslations } from '@/i18n/server-utils'
 import { getOrigin } from './getOrigin'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { forgetHouseholdId } from './household'
+import { DEFAULT_SHOPPING_CATEGORIES } from '@/lib/onboarding/defaults'
+import { defaultLocale, isLocale } from '@/i18n/config'
 import { safeNextPath } from './safe-next-path'
 
 export async function signInWithGoogle(redirectTo?: string) {
@@ -34,7 +36,6 @@ export async function signInWithGoogle(redirectTo?: string) {
 }
 
 export async function signInWithGoogleForJoin(token: string) {
-  console.log('[signInWithGoogleForJoin] setting cookie for token:', token)
   const cookieStore = cookies()
   cookieStore.set('pending_invite_token', token, {
     httpOnly: true,
@@ -78,12 +79,15 @@ export async function createHousehold(name: string) {
     .from('profiles').select('ui_language').eq('id', user.id).single()
   const t = await getUserTranslations(profile, 'errors')
 
+  const trimmedName = name.trim()
+  if (!trimmedName) return { error: t('createHouseholdFailed') }
+
   const inviteToken = generateInviteToken()
   const householdId = crypto.randomUUID()
 
   const { error: householdError } = await supabase
     .from('households')
-    .insert({ id: householdId, name, invite_token: inviteToken })
+    .insert({ id: householdId, name: trimmedName, invite_token: inviteToken, onboarding_step: 'translation' })
 
   if (householdError) {
     return { error: t('createHouseholdFailed') }
@@ -100,23 +104,40 @@ export async function createHousehold(name: string) {
 
   forgetHouseholdId(user.id)
 
-  await supabase
-    .from('shopping_lists')
-    .insert({ household_id: householdId, name: 'Shopping list' })
+  const locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
+  const [shoppingListResult, categoriesResult] = await Promise.all([
+    supabase.from('shopping_lists').insert({ household_id: householdId, name: 'Shopping list' }),
+    supabase.from('shopping_categories').insert(
+      DEFAULT_SHOPPING_CATEGORIES.map((category, index) => ({
+        household_id: householdId,
+        name: category[locale],
+        sort_order: index,
+      }))
+    ),
+  ])
+  if (shoppingListResult.error || categoriesResult.error) {
+    console.error('[createHousehold] seeding failed', {
+      shoppingList: shoppingListResult.error,
+      categories: categoriesResult.error,
+    })
+  }
 
-  redirect('/recipes?ob=1')
+  redirect('/onboarding')
 }
 
-export async function joinHousehold(inviteToken: string) {
+export async function joinHousehold(invite: string) {
   const supabase = createClient()
 
   const user = await getCurrentUser()
 
-  if (!user) redirect(`/join/${inviteToken}`)
+  if (!user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles').select('ui_language').eq('id', user.id).single()
   const t = await getUserTranslations(profile, 'errors')
+
+  const inviteToken = extractInviteToken(invite)
+  if (!inviteToken) return { error: t('invalidInviteCode') }
 
   const { data: householdRows, error: lookupError } = await supabase
     .rpc('get_household_by_invite_token', { token: inviteToken })
@@ -137,5 +158,5 @@ export async function joinHousehold(inviteToken: string) {
 
   forgetHouseholdId(user.id)
 
-  redirect('/recipes?ob=1')
+  redirect('/recipes?ob=1&obm=join')
 }
