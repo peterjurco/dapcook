@@ -2,7 +2,7 @@ import { unstable_cache, revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { PersistedStep } from './steps'
 
-function onboardingCacheTag(householdId: string): string {
+export function onboardingCacheTag(householdId: string): string {
   return `onboarding-of:${householdId}`
 }
 
@@ -18,11 +18,12 @@ export function readOnboardingStep(householdId: string): Promise<PersistedStep |
   return unstable_cache(
     async () => {
       const supabase = createAdminClient()
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('households')
         .select('onboarding_step')
         .eq('id', householdId)
         .single()
+      if (error) throw error
       return data?.onboarding_step ?? null
     },
     ['onboarding-of', householdId],
