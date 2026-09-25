@@ -7,3 +7,11 @@ export function generateInviteToken(): string {
 export function isValidInviteToken(token: string): boolean {
   return /^[a-f0-9]{32}$/.test(token)
 }
+
+/** Accepts what people actually paste — the whole invite link — as well as a bare token. */
+export function extractInviteToken(input: string): string | null {
+  const trimmed = input.trim()
+  if (isValidInviteToken(trimmed)) return trimmed
+  const match = trimmed.match(/\/join\/([a-f0-9]{32})(?:[/?#]|$)/)
+  return match ? match[1] : null
+}
