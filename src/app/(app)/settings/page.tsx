@@ -15,6 +15,7 @@ import { buildTagMeta } from '@/lib/tags/taxonomy'
 import { getTranslations } from 'next-intl/server'
 import { isLocale, defaultLocale } from '@/i18n/config'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { inviteUrl } from '@/lib/utils/invite'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -64,9 +65,6 @@ export default async function SettingsPage() {
   }
 
   const recipeIds = (recipes ?? []).map((r) => r.id)
-
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const inviteUrl = `${origin}/join/${household?.invite_token}`
 
   return (
     <div className="max-w-xl mx-auto px-6 pt-6 pb-10 space-y-8">
@@ -124,7 +122,7 @@ export default async function SettingsPage() {
             <p className="text-xs text-gray-400 mb-2">
               {t('page.inviteLinkHelp')}
             </p>
-            <InviteLink url={inviteUrl} />
+            <InviteLink url={inviteUrl(household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
           </div>
         </div>
       </section>

@@ -6,25 +6,30 @@ import { SUPPORTED_LANGUAGES } from '@/lib/constants/languages'
 import { StepFrame } from '../StepFrame'
 import { sendJson } from '../send-json'
 
-interface Props {
-  onNext: () => Promise<void>
-  onSkip: () => Promise<void>
-  initialEnabled: boolean
-  initialLanguage: string
-  /** Suggested target when translation was off — the interface language. */
-  defaultLanguage: string
+export interface TranslationAnswer {
+  enabled: boolean
+  language: string
 }
 
-export function TranslationStep({ onNext, onSkip, initialEnabled, initialLanguage, defaultLanguage }: Props) {
+interface Props {
+  /** The last saved answer, shown again when the step is revisited. */
+  value: TranslationAnswer
+  onSaved: (value: TranslationAnswer) => void
+  onNext: () => Promise<void>
+  onSkip: () => Promise<void>
+}
+
+export function TranslationStep({ value, onSaved, onNext, onSkip }: Props) {
   const t = useTranslations('auth')
-  const [enabled, setEnabled] = useState(initialEnabled)
-  const [language, setLanguage] = useState(initialEnabled ? initialLanguage : defaultLanguage)
+  const [enabled, setEnabled] = useState(value.enabled)
+  const [language, setLanguage] = useState(value.language)
   const [failed, setFailed] = useState(false)
 
   async function save() {
     setFailed(false)
     const ok = await sendJson('PATCH', '/api/household', { translation_enabled: enabled, preferred_language: language })
     if (!ok) return setFailed(true)
+    onSaved({ enabled, language })
     await onNext()
   }
 

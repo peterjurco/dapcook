@@ -5,7 +5,7 @@ import { getCurrentProfile, getCurrentUser } from '@/lib/auth/current-user'
 import { AppShell } from '@/components/layout/AppShell'
 import { PostHogIdentifier } from '@/components/providers/PostHogIdentifier'
 import { isLocale, defaultLocale } from '@/i18n/config'
-import { readOnboardingStep } from '@/lib/onboarding/status'
+import { needsOnboarding, readOnboardingStatus } from '@/lib/onboarding/status'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const profile = await getCurrentProfile()
   if (!profile?.household_id) redirect('/onboarding')
-  if (await readOnboardingStep(profile.household_id)) redirect('/onboarding')
+  if (needsOnboarding(await readOnboardingStatus(profile.household_id), user.id)) redirect('/onboarding')
 
   const isAdmin = user.email === process.env.ADMIN_EMAIL
 

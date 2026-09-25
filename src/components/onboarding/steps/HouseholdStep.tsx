@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { createHousehold, joinHousehold } from '@/lib/auth/actions'
+import { BackButton } from '../StepFrame'
 
 interface Props {
   /** Called right before the server action runs — the action redirects, so nothing runs after it. */
   onSubmit: (method: 'create' | 'join') => void
+  onBack?: () => void
 }
 
-export function HouseholdStep({ onSubmit }: Props) {
+export function HouseholdStep({ onSubmit, onBack }: Props) {
   const t = useTranslations('auth')
   const [mode, setMode] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
@@ -88,6 +90,12 @@ export function HouseholdStep({ onSubmit }: Props) {
       >
         {mode === 'create' ? t('onboarding.household.haveInvite') : t('onboarding.household.createInstead')}
       </button>
+
+      {onBack && (
+        <div className="flex">
+          <BackButton onClick={onBack} disabled={pending} />
+        </div>
+      )}
     </section>
   )
 }

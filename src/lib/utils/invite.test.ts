@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { generateInviteToken, isValidInviteToken, extractInviteToken } from './invite'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { generateInviteToken, isValidInviteToken, extractInviteToken, inviteUrl } from './invite'
 
 describe('generateInviteToken', () => {
   it('returns a string of 32 hex characters', () => {
@@ -49,5 +49,21 @@ describe('extractInviteToken', () => {
     expect(extractInviteToken('hello')).toBeNull()
     expect(extractInviteToken(`https://dapcook.vercel.app/recipes/${token}`)).toBeNull()
     expect(extractInviteToken(`https://dapcook.vercel.app/join/${token}abc`)).toBeNull()
+  })
+})
+
+describe('inviteUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('builds the join link on the configured site', () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://dapcook.vercel.app')
+    expect(inviteUrl('abc')).toBe('https://dapcook.vercel.app/join/abc')
+  })
+
+  it('falls back to localhost', () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', undefined)
+    expect(inviteUrl('abc')).toBe('http://localhost:3000/join/abc')
   })
 })

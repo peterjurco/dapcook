@@ -4,20 +4,24 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { Locale } from '@/i18n/config'
-import { TAG_CATALOG, buildTagGroupsPayload } from '@/lib/onboarding/tag-catalog'
+import { TAG_CATALOG, buildTagGroupsPayload, type TagSelection } from '@/lib/onboarding/tag-catalog'
 import { StepFrame } from '../StepFrame'
 import { sendJson } from '../send-json'
 
 interface Props {
+  /** What is saved right now, shown again when the step is revisited. */
+  value: TagSelection
+  onSaved: (value: TagSelection) => void
   onNext: () => Promise<void>
   onSkip: () => Promise<void>
+  onBack: () => void
   locale: Locale
 }
 
-export function TagsStep({ onNext, onSkip, locale }: Props) {
+export function TagsStep({ value, onSaved, onNext, onSkip, onBack, locale }: Props) {
   const t = useTranslations('auth')
-  const [selected, setSelected] = useState<Record<string, string[]>>({})
-  const [custom, setCustom] = useState<Record<string, string[]>>({})
+  const [selected, setSelected] = useState<Record<string, string[]>>(value.selected)
+  const [custom, setCustom] = useState<Record<string, string[]>>(value.custom)
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [failed, setFailed] = useState(false)
@@ -44,8 +48,12 @@ export function TagsStep({ onNext, onSkip, locale }: Props) {
   async function save() {
     setFailed(false)
     const groups = buildTagGroupsPayload(selected, locale)
-    if (groups.length > 0 && !(await sendJson('POST', '/api/onboarding/tags', { groups }))) {
-      return setFailed(true)
+    // The endpoint removes what was in `previous` but no longer in `groups`, so
+    // an empty selection still has to be sent once something was saved.
+    const previous = buildTagGroupsPayload(value.selected, locale)
+    if (groups.length > 0 || previous.length > 0) {
+      if (!(await sendJson('POST', '/api/onboarding/tags', { groups, previous }))) return setFailed(true)
+      onSaved({ selected, custom })
     }
     await onNext()
   }
@@ -57,6 +65,7 @@ export function TagsStep({ onNext, onSkip, locale }: Props) {
       error={failed ? t('onboarding.saveError') : null}
       onNext={save}
       onSkip={onSkip}
+      onBack={onBack}
       settingsNote
     >
       <div className="space-y-5">

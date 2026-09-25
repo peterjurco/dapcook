@@ -66,11 +66,10 @@ export const TAG_CATALOG: TagCatalogGroup[] = [
       { en: 'Vegetarian', sk: 'Vegetariánske' },
       { en: 'Vegan', sk: 'Vegánske' },
       { en: 'Gluten-free', sk: 'Bezlepkové' },
-      { en: 'Dairy-free', sk: 'Bez mliečnych výrobkov' },
-      { en: 'Low-carb', sk: 'Nízkosacharidové' },
-      { en: 'High-protein', sk: 'Vysokobielkovinové' },
+      { en: 'Dairy-free', sk: 'Bezmliečne' },
+      { en: 'Lactose-free', sk: 'Bezlaktózové' },
+      { en: 'High-protein', sk: 'Proteín' },
       { en: 'Keto', sk: 'Keto' },
-      { en: 'Light', sk: 'Ľahké' },
     ],
   },
   {
@@ -91,20 +90,6 @@ export const TAG_CATALOG: TagCatalogGroup[] = [
       { en: 'Mushrooms', sk: 'Huby' },
     ],
   },
-  {
-    id: 'effort',
-    name: { en: 'Effort & time', sk: 'Náročnosť a čas' },
-    tags: [
-      { en: 'Quick (under 30 min)', sk: 'Rýchle (do 30 min)' },
-      { en: 'Easy', sk: 'Jednoduché' },
-      { en: 'Weekend project', sk: 'Víkendový projekt' },
-      { en: 'One-pot', sk: 'Z jedného hrnca' },
-      { en: 'Meal prep', sk: 'Varenie dopredu' },
-      { en: 'Freezer-friendly', sk: 'Vhodné na zmrazenie' },
-      { en: 'Slow cooker', sk: 'Pomalý hrniec' },
-      { en: 'Air fryer', sk: 'Teplovzdušná fritéza' },
-    ],
-  },
 ]
 
 export interface TagGroupPayload {
@@ -122,4 +107,29 @@ export function buildTagGroupsPayload(selected: Record<string, string[]>, locale
     name: group.name[locale],
     tags: Array.from(new Set((selected[group.id] ?? []).map((t) => t.trim()).filter(Boolean))),
   })).filter((group) => group.tags.length > 0)
+}
+
+export interface TagSelection {
+  /** Picked tag names per catalog group id, custom ones included. */
+  selected: Record<string, string[]>
+  /** Tags the user added per catalog group id, shown as extra chips. */
+  custom: Record<string, string[]>
+}
+
+/**
+ * The inverse of `buildTagGroupsPayload`: what the wizard shows for tags that
+ * are already saved. Groups are matched by their name in `locale`; a saved tag
+ * that is not in its group's catalog list becomes a custom chip.
+ */
+export function selectionFromSavedTags(groups: TagGroupPayload[], locale: Locale): TagSelection {
+  const selection: TagSelection = { selected: {}, custom: {} }
+  for (const saved of groups) {
+    const group = TAG_CATALOG.find((g) => g.name[locale] === saved.name)
+    if (!group || saved.tags.length === 0) continue
+    const known = new Set(group.tags.map((tag) => tag[locale]))
+    selection.selected[group.id] = saved.tags
+    const custom = saved.tags.filter((name) => !known.has(name))
+    if (custom.length > 0) selection.custom[group.id] = custom
+  }
+  return selection
 }

@@ -5,30 +5,31 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { usePostHog } from 'posthog-js/react'
 import type { Locale } from '@/i18n/config'
-import type { ShoppingCategory, ShoppingRule } from '@/types/database'
+import type { ShoppingCategory } from '@/types/database'
 import {
   isPersistedStep,
   nextStep,
   persistedStepAfter,
+  previousStep,
   stepNumber,
   TOTAL_STEPS,
   type OnboardingStep,
 } from '@/lib/onboarding/steps'
-import { SHOPPING_RULE_EXAMPLES } from '@/lib/onboarding/defaults'
+import type { TagSelection } from '@/lib/onboarding/tag-catalog'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
-import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
+import { InviteLink } from '@/components/settings/InviteLink'
 import { StepFrame } from './StepFrame'
 import { sendJson } from './send-json'
 import { LanguageStep } from './steps/LanguageStep'
 import { HouseholdStep } from './steps/HouseholdStep'
-import { TranslationStep } from './steps/TranslationStep'
-import { UnitsStep } from './steps/UnitsStep'
+import { TranslationStep, type TranslationAnswer } from './steps/TranslationStep'
+import { UnitsStep, type Units } from './steps/UnitsStep'
 import { TagsStep } from './steps/TagsStep'
 
 export interface OnboardingHousehold {
   translationEnabled: boolean
   preferredLanguage: string
-  preferredUnits: 'metric' | 'imperial'
+  preferredUnits: Units
 }
 
 interface Props {
@@ -37,15 +38,28 @@ interface Props {
   /** Present once the household exists (steps from `translation` on). */
   household?: OnboardingHousehold
   categories?: ShoppingCategory[]
-  rules?: ShoppingRule[]
+  inviteUrl?: string
+  /** Tags already saved for the household, mapped onto the catalog. */
+  tags?: TagSelection
 }
 
-export function OnboardingWizard({ initialStep, locale, household, categories = [], rules = [] }: Props) {
+const NO_TAGS: TagSelection = { selected: {}, custom: {} }
+
+export function OnboardingWizard({ initialStep, locale, household, categories = [], inviteUrl = '', tags = NO_TAGS }: Props) {
   const t = useTranslations('auth')
   const router = useRouter()
   const posthog = usePostHog()
   const [step, setStep] = useState<OnboardingStep>(initialStep)
   const [error, setError] = useState<string | null>(null)
+  // Answers live here, not in the steps, so they survive going back and forth.
+  const [translation, setTranslation] = useState<TranslationAnswer>(() => ({
+    enabled: household?.translationEnabled ?? false,
+    // With translation off, suggest the interface language as the target.
+    language: household?.translationEnabled ? household.preferredLanguage : locale,
+  }))
+  const [units, setUnits] = useState<Units>(household?.preferredUnits ?? 'metric')
+  const [tagSelection, setTagSelection] = useState<TagSelection>(tags)
+  const [shoppingCategories, setShoppingCategories] = useState<ShoppingCategory[]>(categories)
 
   function track(completed: OnboardingStep, skipped: boolean) {
     posthog?.capture('onboarding_step_completed', { step: completed, skipped })
@@ -53,12 +67,12 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
 
   /**
    * Leaves `current`. Persisted steps record where to resume before moving on, except
-   * `shopping_rules`: its stored step stays put until the Done screen's own PATCH, so
+   * `invite`: its stored step stays put until the Done screen's own PATCH, so
    * closing/refreshing on Done still lands back on Done instead of skipping it.
    */
   async function advance(current: OnboardingStep, skipped = false) {
     setError(null)
-    if (isPersistedStep(current) && current !== 'shopping_rules') {
+    if (isPersistedStep(current) && current !== 'invite') {
       const ok = await sendJson('PATCH', '/api/household', { onboarding_step: persistedStepAfter(current) })
       if (!ok) {
         setError(t('onboarding.saveError'))
@@ -77,6 +91,12 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
       return
     }
     router.push('/recipes?ob=1')
+  }
+
+  /** Client-side only: the stored step stays the furthest one reached. */
+  function back() {
+    setError(null)
+    setStep(previousStep(step))
   }
 
   const next = () => advance(step)
@@ -104,29 +124,32 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
         {step === 'language' && <LanguageStep onNext={next} />}
 
         {step === 'intro' && (
-          <StepFrame title={t('onboarding.intro.title')} onNext={next} nextLabel={t('onboarding.intro.start')}>
+          <StepFrame title={t('onboarding.intro.title')} onNext={next} onBack={back} nextLabel={t('onboarding.intro.start')}>
             <p className="text-sm text-gray-600">{t('onboarding.intro.body')}</p>
             <p className="text-sm text-gray-500">{t('onboarding.intro.settingsNote')}</p>
           </StepFrame>
         )}
 
-        {step === 'household' && <HouseholdStep onSubmit={() => track('household', false)} />}
+        {step === 'household' && <HouseholdStep onSubmit={() => track('household', false)} onBack={back} />}
 
         {step === 'translation' && household && (
-          <TranslationStep
-            onNext={next}
-            onSkip={skip}
-            initialEnabled={household.translationEnabled}
-            initialLanguage={household.preferredLanguage}
-            defaultLanguage={locale}
-          />
+          <TranslationStep value={translation} onSaved={setTranslation} onNext={next} onSkip={skip} />
         )}
 
         {step === 'units' && household && (
-          <UnitsStep onNext={next} onSkip={skip} initialUnits={household.preferredUnits} />
+          <UnitsStep value={units} onSaved={setUnits} onNext={next} onSkip={skip} onBack={back} />
         )}
 
-        {step === 'tags' && <TagsStep onNext={next} onSkip={skip} locale={locale} />}
+        {step === 'tags' && (
+          <TagsStep
+            value={tagSelection}
+            onSaved={setTagSelection}
+            onNext={next}
+            onSkip={skip}
+            onBack={back}
+            locale={locale}
+          />
+        )}
 
         {step === 'shopping_categories' && (
           <StepFrame
@@ -134,25 +157,27 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
             help={t('onboarding.shoppingCategories.help')}
             onNext={next}
             onSkip={skip}
+            onBack={back}
             settingsNote
           >
-            <ShoppingCategoriesEditor initialCategories={categories} />
+            <ShoppingCategoriesEditor
+              initialCategories={shoppingCategories}
+              onCategoriesChange={setShoppingCategories}
+              confirmDelete={false}
+            />
           </StepFrame>
         )}
 
-        {step === 'shopping_rules' && (
+        {step === 'invite' && (
           <StepFrame
-            title={t('onboarding.shoppingRules.title')}
-            help={t('onboarding.shoppingRules.help')}
+            title={t('onboarding.invite.title')}
+            help={t('onboarding.invite.help')}
             onNext={next}
             onSkip={skip}
+            onBack={back}
             settingsNote
           >
-            <ShoppingRulesEditor
-              initialRules={rules}
-              suggestions={SHOPPING_RULE_EXAMPLES.map((rule) => rule[locale])}
-              suggestionsLabel={t('onboarding.shoppingRules.examplesLabel')}
-            />
+            <InviteLink url={inviteUrl} shareText={t('onboarding.invite.shareText')} />
           </StepFrame>
         )}
 

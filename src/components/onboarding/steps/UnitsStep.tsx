@@ -5,23 +5,27 @@ import { useTranslations } from 'next-intl'
 import { StepFrame } from '../StepFrame'
 import { sendJson } from '../send-json'
 
-type Units = 'metric' | 'imperial'
+export type Units = 'metric' | 'imperial'
 
 interface Props {
+  /** The last saved answer, shown again when the step is revisited. */
+  value: Units
+  onSaved: (value: Units) => void
   onNext: () => Promise<void>
   onSkip: () => Promise<void>
-  initialUnits: Units
+  onBack: () => void
 }
 
-export function UnitsStep({ onNext, onSkip, initialUnits }: Props) {
+export function UnitsStep({ value, onSaved, onNext, onSkip, onBack }: Props) {
   const t = useTranslations('auth')
-  const [units, setUnits] = useState<Units>(initialUnits)
+  const [units, setUnits] = useState<Units>(value)
   const [failed, setFailed] = useState(false)
 
   async function save() {
     setFailed(false)
     const ok = await sendJson('PATCH', '/api/household', { preferred_units: units })
     if (!ok) return setFailed(true)
+    onSaved(units)
     await onNext()
   }
 
@@ -37,6 +41,7 @@ export function UnitsStep({ onNext, onSkip, initialUnits }: Props) {
       error={failed ? t('onboarding.saveError') : null}
       onNext={save}
       onSkip={onSkip}
+      onBack={onBack}
       settingsNote
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -55,7 +60,6 @@ export function UnitsStep({ onNext, onSkip, initialUnits }: Props) {
           </button>
         ))}
       </div>
-      <p className="text-xs text-gray-500">{t('onboarding.units.spoons')}</p>
     </StepFrame>
   )
 }

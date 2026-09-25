@@ -15,3 +15,7 @@ export function extractInviteToken(input: string): string | null {
   const match = trimmed.match(/\/join\/([a-f0-9]{32})(?:[/?#]|$)/)
   return match ? match[1] : null
 }
+
+export function inviteUrl(token: string): string {
+  return `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/join/${token}`
+}

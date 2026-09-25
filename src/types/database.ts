@@ -13,7 +13,8 @@ export interface Database {
           translation_enabled: boolean
           created_at: string
           last_sign_in_at: string | null
-          onboarding_step: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'shopping_rules' | null
+          onboarding_step: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'invite' | null
+          created_by: string | null
         }
         Insert: {
           id?: string
@@ -24,7 +25,8 @@ export interface Database {
           translation_enabled?: boolean
           created_at?: string
           last_sign_in_at?: string | null
-          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'shopping_rules' | null
+          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'invite' | null
+          created_by?: string | null
         }
         Update: {
           id?: string
@@ -35,7 +37,8 @@ export interface Database {
           translation_enabled?: boolean
           created_at?: string
           last_sign_in_at?: string | null
-          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'shopping_rules' | null
+          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'invite' | null
+          created_by?: string | null
         }
         Relationships: []
       }

@@ -2,9 +2,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
+type TagRow = { name: string; group_id: string | null }
+type GroupRow = { id: string; name: string }
+
+// A tiny in-memory model of the household's tags, so tests assert what is left
+// afterwards rather than the exact queries.
 const mocks = vi.hoisted(() => ({
   groupUpserts: [] as unknown[],
   tagUpserts: [] as unknown[],
+  rpc: vi.fn(),
+  household: { onboarding_step: 'tags', created_by: 'user-1' } as { onboarding_step: string | null; created_by: string | null },
+  groups: [] as GroupRow[],
+  tags: [] as TagRow[],
   user: { id: 'user-1', email: null } as { id: string; email: null } | null,
 }))
 
@@ -14,13 +23,42 @@ vi.mock('@/lib/auth/household', async () => ({
 }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
+    rpc: async (name: string, args: { p_name: string }) => {
+      const result = await mocks.rpc(name, args)
+      if (name === 'delete_tag' && !result?.error) mocks.tags = mocks.tags.filter((t) => t.name !== args.p_name)
+      return result
+    },
     from: (table: string) => ({
-      upsert: (rows: { name?: string }) => {
+      select: () => ({
+        eq: () => {
+          if (table === 'households') return { single: async () => ({ data: mocks.household, error: null }) }
+          return {
+            in: async (column: string, values: string[]) => {
+              if (table === 'tag_groups') return { data: mocks.groups.filter((g) => values.includes(g.name)), error: null }
+              return { data: mocks.tags.filter((t) => values.includes(t[column as 'group_id'] ?? '')), error: null }
+            },
+          }
+        },
+      }),
+      delete: () => ({
+        eq: () => ({
+          in: async (_column: string, ids: string[]) => {
+            mocks.groups = mocks.groups.filter((g) => !ids.includes(g.id))
+            return { error: null }
+          },
+        }),
+      }),
+      upsert: (rows: GroupRow | TagRow[]) => {
         if (table === 'tag_groups') {
+          const row = rows as GroupRow
           mocks.groupUpserts.push(rows)
-          return { select: () => ({ single: async () => ({ data: { id: `g-${rows.name}` }, error: null }) }) }
+          if (!mocks.groups.some((g) => g.name === row.name)) mocks.groups.push({ id: `g-${row.name}`, name: row.name })
+          return { select: () => ({ single: async () => ({ data: { id: `g-${row.name}` }, error: null }) }) }
         }
         mocks.tagUpserts.push(rows)
+        for (const row of rows as TagRow[]) {
+          mocks.tags = [...mocks.tags.filter((t) => t.name !== row.name), { name: row.name, group_id: row.group_id }]
+        }
         return Promise.resolve({ error: null })
       },
     }),
@@ -38,6 +76,10 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.groupUpserts = []
   mocks.tagUpserts = []
+  mocks.rpc.mockResolvedValue({ error: null })
+  mocks.household = { onboarding_step: 'tags', created_by: 'user-1' }
+  mocks.groups = []
+  mocks.tags = []
   mocks.user = { id: 'user-1', email: null }
   householdIdMock.mockResolvedValue('hh-1')
 })
@@ -123,6 +165,109 @@ describe('POST /api/onboarding/tags', () => {
     ]
     const res = await post({ groups })
     expect(res.status).toBe(201)
+  })
+
+  it('removes only previously saved tags and groups that were deselected', async () => {
+    mocks.groups = [{ id: 'g-Course', name: 'Course' }, { id: 'g-Diet', name: 'Diet' }]
+    mocks.tags = [
+      { name: 'Soup', group_id: 'g-Course' },
+      { name: 'Dessert', group_id: 'g-Course' },
+      { name: 'Vegan', group_id: 'g-Diet' },
+    ]
+
+    const res = await post({
+      groups: [{ name: 'Course', tags: ['Soup'] }],
+      previous: [{ name: 'Course', tags: ['Soup', 'Dessert'] }, { name: 'Diet', tags: ['Vegan'] }],
+    })
+
+    expect(res.status).toBe(201)
+    expect(mocks.rpc.mock.calls).toEqual([
+      ['delete_tag', { p_household_id: 'hh-1', p_name: 'Dessert' }],
+      ['delete_tag', { p_household_id: 'hh-1', p_name: 'Vegan' }],
+    ])
+    expect(mocks.tags.map((t) => t.name)).toEqual(['Soup'])
+    expect(mocks.groups.map((g) => g.name)).toEqual(['Course'])
+  })
+
+  it('keeps tags not created by the wizard', async () => {
+    mocks.groups = [{ id: 'g-Course', name: 'Course' }, { id: 'g-Mine', name: 'Mine' }]
+    mocks.tags = [
+      { name: 'Soup', group_id: 'g-Course' },
+      { name: 'grandma', group_id: 'g-Mine' },
+      { name: 'loose', group_id: null },
+    ]
+
+    const res = await post({ groups: [], previous: [{ name: 'Course', tags: ['Soup'] }] })
+
+    expect(res.status).toBe(201)
+    expect(mocks.rpc).toHaveBeenCalledTimes(1)
+    expect(mocks.tags.map((t) => t.name)).toEqual(['grandma', 'loose'])
+    expect(mocks.groups.map((g) => g.name)).toEqual(['Mine'])
+  })
+
+  it('keeps a deselected group that still holds someone else\'s tags', async () => {
+    mocks.groups = [{ id: 'g-Diet', name: 'Diet' }]
+    mocks.tags = [{ name: 'Vegan', group_id: 'g-Diet' }, { name: 'Paleo', group_id: 'g-Diet' }]
+
+    await post({ groups: [], previous: [{ name: 'Diet', tags: ['Vegan'] }] })
+
+    expect(mocks.tags.map((t) => t.name)).toEqual(['Paleo'])
+    expect(mocks.groups.map((g) => g.name)).toEqual(['Diet'])
+  })
+
+  it('removes a deselected group once a tag moved out of it', async () => {
+    mocks.groups = [{ id: 'g-Diet', name: 'Diet' }]
+    mocks.tags = [{ name: 'Paleo', group_id: 'g-Diet' }]
+
+    await post({ groups: [{ name: 'Course', tags: ['Paleo'] }], previous: [{ name: 'Diet', tags: ['Paleo'] }] })
+
+    expect(mocks.rpc).not.toHaveBeenCalled()
+    expect(mocks.tags).toEqual([{ name: 'Paleo', group_id: 'g-Course' }])
+    expect(mocks.groups.map((g) => g.name)).toEqual(['Course'])
+  })
+
+  it('deletes nothing without a previous selection', async () => {
+    mocks.groups = [{ id: 'g-Course', name: 'Course' }]
+    mocks.tags = [{ name: 'Dessert', group_id: 'g-Course' }]
+
+    await post({ groups: [{ name: 'Course', tags: ['Soup'] }] })
+
+    expect(mocks.rpc).not.toHaveBeenCalled()
+    expect(mocks.tags.map((t) => t.name)).toEqual(['Dessert', 'Soup'])
+  })
+
+  it('validates the previous selection like the new one', async () => {
+    expect((await post({ groups: [], previous: 'nope' })).status).toBe(400)
+    expect((await post({ groups: [], previous: [{ name: 'x'.repeat(51), tags: ['Soup'] }] })).status).toBe(400)
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+
+  it('fails when a tag cannot be removed', async () => {
+    mocks.tags = [{ name: 'Soup', group_id: null }]
+    mocks.rpc.mockResolvedValue({ error: { message: 'boom' } })
+
+    expect((await post({ groups: [], previous: [{ name: 'Course', tags: ['Soup'] }] })).status).toBe(500)
+  })
+
+  it('refuses once onboarding is finished', async () => {
+    mocks.household = { onboarding_step: null, created_by: 'user-1' }
+    mocks.tags = [{ name: 'Soup', group_id: null }]
+
+    const res = await post({ groups: [], previous: [{ name: 'Course', tags: ['Soup'] }] })
+
+    expect(res.status).toBe(409)
+    expect(mocks.rpc).not.toHaveBeenCalled()
+    expect(mocks.groupUpserts).toHaveLength(0)
+  })
+
+  it('only lets the household creator sync tags', async () => {
+    mocks.household = { onboarding_step: 'tags', created_by: 'someone-else' }
+    mocks.tags = [{ name: 'Soup', group_id: null }]
+
+    const res = await post({ groups: [], previous: [{ name: 'Course', tags: ['Soup'] }] })
+
+    expect(res.status).toBe(403)
+    expect(mocks.rpc).not.toHaveBeenCalled()
   })
 
   it('requires a signed-in user with a household', async () => {

@@ -87,7 +87,13 @@ export async function createHousehold(name: string) {
 
   const { error: householdError } = await supabase
     .from('households')
-    .insert({ id: householdId, name: trimmedName, invite_token: inviteToken, onboarding_step: 'translation' })
+    .insert({
+      id: householdId,
+      name: trimmedName,
+      invite_token: inviteToken,
+      onboarding_step: 'translation',
+      created_by: user.id,
+    })
 
   if (householdError) {
     return { error: t('createHouseholdFailed') }
