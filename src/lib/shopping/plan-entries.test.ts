@@ -241,6 +241,48 @@ describe('buildPlanEntries', () => {
     expect(entry.kind === 'recipe' && entry.ingredients).toEqual([])
   })
 
+  it('skips malformed ingredient entries and keeps ids at their original index', () => {
+    const [entry] = buildPlanEntries(
+      [
+        recipeSlot({
+          id: 'r1',
+          day: 1,
+          title: 'Pasta',
+          servings: 1,
+          ingredients: [null, 'salt', { quantity: 1 }, { name: '  ' }, { name: 42 }, { name: 'pasta', quantity: 100, unit: 'g' }],
+        }),
+      ],
+      dayLabel,
+    )
+    expect(entry.kind === 'recipe' && entry.ingredients).toEqual([
+      { id: 'r1:5', name: 'pasta', unit: 'g', quantityPerPortion: 100, checked: false },
+    ])
+  })
+
+  it('treats a non-numeric quantity and a non-string unit as missing', () => {
+    const [entry] = buildPlanEntries(
+      [
+        recipeSlot({
+          id: 'r1',
+          day: 1,
+          title: 'Pasta',
+          servings: 2,
+          ingredients: [
+            { name: 'a', quantity: '200', unit: 5 },
+            { name: 'b', quantity: NaN, unit: null },
+            { name: 'c', quantity: Infinity, unit: {} },
+          ],
+        }),
+      ],
+      dayLabel,
+    )
+    expect(entry.kind === 'recipe' && entry.ingredients.map((i) => [i.name, i.quantityPerPortion, i.unit])).toEqual([
+      ['a', null, null],
+      ['b', null, null],
+      ['c', null, null],
+    ])
+  })
+
   it('adds typed custom meals once, skips preset labels, keeps recipes first', () => {
     const entries = buildPlanEntries(
       [

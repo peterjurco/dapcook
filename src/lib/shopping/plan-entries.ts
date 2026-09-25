@@ -53,15 +53,25 @@ export const MAX_INGREDIENTS = 300
 
 const PRESET_LABELS = new Set<string>(CUSTOM_LABELS)
 
+/** Recipe ingredients are raw JSON — anything without a usable name is dropped. */
 function toPlanIngredients(recipeId: string, raw: unknown, servings: number | null): PlanIngredient[] {
-  const ingredients = Array.isArray(raw) ? (raw as Ingredient[]) : []
-  return ingredients.map((ing, i) => ({
-    id: `${recipeId}:${i}`,
-    name: ing.name,
-    unit: ing.unit || null,
-    quantityPerPortion: ing.quantity != null ? ing.quantity / (servings || 1) : null,
-    checked: false,
-  }))
+  if (!Array.isArray(raw)) return []
+  const result: PlanIngredient[] = []
+  raw.forEach((entry: unknown, i) => {
+    if (typeof entry !== 'object' || entry === null) return
+    const ing = entry as Partial<Record<keyof Ingredient, unknown>>
+    if (typeof ing.name !== 'string' || !ing.name.trim()) return
+    const quantity = typeof ing.quantity === 'number' && Number.isFinite(ing.quantity) ? ing.quantity : null
+    result.push({
+      // Original index, so ids stay stable regardless of skipped entries
+      id: `${recipeId}:${i}`,
+      name: ing.name,
+      unit: typeof ing.unit === 'string' && ing.unit ? ing.unit : null,
+      quantityPerPortion: quantity != null ? quantity / (servings || 1) : null,
+      checked: false,
+    })
+  })
+  return result
 }
 
 /**
