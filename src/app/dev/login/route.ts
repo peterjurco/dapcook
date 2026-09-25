@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { forgetHouseholdId } from '@/lib/auth/household'
+import { safeNextPath } from '@/lib/auth/safe-next-path'
 
 const DEV_EMAIL = 'dev@dapcook.local'
 
@@ -21,11 +22,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams, origin } = new URL(request.url)
   const fresh = searchParams.get('fresh') === '1'
-  const requested = searchParams.get('next')
-  const next =
-    requested?.startsWith('/') && !requested.startsWith('//')
-      ? requested
-      : fresh ? '/onboarding' : '/recipes'
+  const next = safeNextPath(searchParams.get('next'), fresh ? '/onboarding' : '/recipes')
 
   const admin = createAdminClient()
 
