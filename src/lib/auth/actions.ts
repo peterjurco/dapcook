@@ -34,7 +34,6 @@ export async function signInWithGoogle(redirectTo?: string) {
 }
 
 export async function signInWithGoogleForJoin(token: string) {
-  console.log('[signInWithGoogleForJoin] setting cookie for token:', token)
   const cookieStore = cookies()
   cookieStore.set('pending_invite_token', token, {
     httpOnly: true,
