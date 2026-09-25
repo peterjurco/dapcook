@@ -84,7 +84,7 @@ export function ShoppingPlanBox({
             )
           )}
 
-          <div className="flex items-center justify-between gap-3 px-3 py-2 border-t border-gray-100">
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-100">
             {entry.kind === 'recipe' && entry.servings == null ? (
               // Icon pinned to the first line (16px line-height, 11px icon) when the text wraps
               <p className="flex items-start gap-1 text-xs text-amber-600">
@@ -94,8 +94,8 @@ export function ShoppingPlanBox({
             ) : (
               <span />
             )}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs text-gray-400">{t('generate.portions')}</span>
+            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+              <span className="text-xs font-semibold text-gray-700">{t('generate.portions')}</span>
               <Stepper
                 value={entry.portions}
                 min={1}

@@ -13,9 +13,10 @@ interface Props {
   increaseLabel: string
 }
 
-// 40px round buttons — comfortable tap targets without a keyboard popping up on mobile.
+// 40px filled round buttons — comfortable tap targets without a keyboard popping up on mobile.
+// Disabled keeps its filled shape (lighter) instead of fading out, so the pair stays balanced.
 const buttonClass =
-  'w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors'
+  'w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 disabled:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors'
 
 export function Stepper({ value, min, max, onChange, label, decreaseLabel, increaseLabel }: Props) {
   return (
@@ -27,9 +28,9 @@ export function Stepper({ value, min, max, onChange, label, decreaseLabel, incre
         aria-label={decreaseLabel}
         className={buttonClass}
       >
-        <Minus size={16} />
+        <Minus size={18} strokeWidth={2.5} />
       </button>
-      <span aria-live="polite" className="w-8 text-center text-base font-medium text-gray-900 tabular-nums">
+      <span aria-live="polite" className="w-8 text-center text-lg font-semibold text-gray-900 tabular-nums">
         {value}
       </span>
       <button
@@ -39,7 +40,7 @@ export function Stepper({ value, min, max, onChange, label, decreaseLabel, incre
         aria-label={increaseLabel}
         className={buttonClass}
       >
-        <Plus size={16} />
+        <Plus size={18} strokeWidth={2.5} />
       </button>
     </div>
   )
