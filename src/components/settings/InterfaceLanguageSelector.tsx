@@ -4,12 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ChevronDown } from 'lucide-react'
-import { locales, type Locale } from '@/i18n/config'
-
-const LOCALE_LABELS: Record<Locale, string> = {
-  en: 'English',
-  sk: 'Slovenčina',
-}
+import { locales, LOCALE_LABELS, type Locale } from '@/i18n/config'
 
 export function InterfaceLanguageSelector({ initialValue }: { initialValue: Locale }) {
   const t = useTranslations('settings')
