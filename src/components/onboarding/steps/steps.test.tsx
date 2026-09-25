@@ -121,7 +121,11 @@ describe('UnitsStep', () => {
     const onNext = vi.fn(async () => {})
     const onSaved = vi.fn()
     render(<UnitsStep value="metric" onSaved={onSaved} onNext={onNext} onSkip={vi.fn()} onBack={vi.fn()} />)
-    expect(screen.getByText('500 g flour · 250 ml milk · 180 °C')).toBeInTheDocument()
+    // Non-breaking spaces keep a number and its unit on one line; the default
+    // normalizer would turn them into plain spaces.
+    const raw = { normalizer: (text: string) => text }
+    expect(screen.getByText('500\u00a0g flour · 250\u00a0ml milk · 180\u00a0°C', raw)).toBeInTheDocument()
+    expect(screen.getByText('1\u00a0lb flour · 1\u00a0cup milk · 350\u00a0°F', raw)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Imperial/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     await waitFor(() => expect(onNext).toHaveBeenCalled())

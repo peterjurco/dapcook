@@ -60,7 +60,6 @@ export function UnitsStep({ value, onSaved, onNext, onSkip, onBack }: Props) {
           </button>
         ))}
       </div>
-      <p className="text-xs text-gray-500">{t('onboarding.units.spoons')}</p>
     </StepFrame>
   )
 }
