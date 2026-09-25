@@ -31,7 +31,11 @@ export function InviteLink({ url, shareText }: Props) {
       await navigator.share({ title: 'dapcook', text: shareText, url })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
-      await handleCopy()
+      try {
+        await handleCopy()
+      } catch {
+        // Clipboard blocked too; the link is still visible in the field to copy by hand.
+      }
     }
   }
 
