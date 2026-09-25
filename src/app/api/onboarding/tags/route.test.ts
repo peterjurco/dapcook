@@ -76,6 +76,55 @@ describe('POST /api/onboarding/tags', () => {
     expect((await post({ groups: [{ name: '', tags: ['x'] }] })).status).toBe(400)
   })
 
+  it('rejects a group name longer than 50 characters', async () => {
+    const res = await post({ groups: [{ name: 'x'.repeat(51), tags: ['Soup'] }] })
+    expect(res.status).toBe(400)
+    expect(mocks.groupUpserts).toHaveLength(0)
+  })
+
+  it('rejects a tag name longer than 50 characters', async () => {
+    const res = await post({ groups: [{ name: 'Course', tags: ['x'.repeat(51)] }] })
+    expect(res.status).toBe(400)
+    expect(mocks.groupUpserts).toHaveLength(0)
+  })
+
+  it('accepts names at exactly 50 characters', async () => {
+    const res = await post({ groups: [{ name: 'x'.repeat(50), tags: ['y'.repeat(50)] }] })
+    expect(res.status).toBe(201)
+  })
+
+  it('rejects more than 10 groups', async () => {
+    const groups = Array.from({ length: 11 }, (_, i) => ({ name: `Group ${i}`, tags: ['Soup'] }))
+    const res = await post({ groups })
+    expect(res.status).toBe(400)
+    expect(mocks.groupUpserts).toHaveLength(0)
+  })
+
+  it('accepts exactly 10 groups', async () => {
+    const groups = Array.from({ length: 10 }, (_, i) => ({ name: `Group ${i}`, tags: ['Soup'] }))
+    const res = await post({ groups })
+    expect(res.status).toBe(201)
+  })
+
+  it('rejects more than 100 tags in total', async () => {
+    const groups = [
+      { name: 'A', tags: Array.from({ length: 60 }, (_, i) => `a${i}`) },
+      { name: 'B', tags: Array.from({ length: 41 }, (_, i) => `b${i}`) },
+    ]
+    const res = await post({ groups })
+    expect(res.status).toBe(400)
+    expect(mocks.groupUpserts).toHaveLength(0)
+  })
+
+  it('accepts exactly 100 tags in total', async () => {
+    const groups = [
+      { name: 'A', tags: Array.from({ length: 60 }, (_, i) => `a${i}`) },
+      { name: 'B', tags: Array.from({ length: 40 }, (_, i) => `b${i}`) },
+    ]
+    const res = await post({ groups })
+    expect(res.status).toBe(201)
+  })
+
   it('requires a signed-in user with a household', async () => {
     mocks.user = null
     expect((await post({ groups: [] })).status).toBe(401)

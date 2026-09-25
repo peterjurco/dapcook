@@ -4,25 +4,42 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
 import type { TagGroupPayload } from '@/lib/onboarding/tag-catalog'
 
+const MAX_NAME_LENGTH = 50
+const MAX_GROUPS = 10
+const MAX_TAGS = 100
+
 /**
  * Validates the wizard's payload. Empty groups are dropped, and since tag names
  * are unique per household a name claimed by an earlier group is not repeated.
+ * Names are capped at 50 characters, and the payload at 10 groups / 100 tags
+ * total, to keep a malicious or buggy client from writing unbounded rows.
  */
 function parseGroups(value: unknown): TagGroupPayload[] | null {
   if (!Array.isArray(value)) return null
+  if (value.length > MAX_GROUPS) return null
+
   const seen = new Set<string>()
   const groups: TagGroupPayload[] = []
+  let tagCount = 0
   for (const raw of value) {
     const group = raw as { name?: unknown; tags?: unknown }
-    if (typeof group?.name !== 'string' || !group.name.trim() || !Array.isArray(group.tags)) return null
+    if (typeof group?.name !== 'string' || !Array.isArray(group.tags)) return null
+    const groupName = group.name.trim()
+    if (!groupName || groupName.length > MAX_NAME_LENGTH) return null
+
     const tags: string[] = []
     for (const tag of group.tags) {
-      const name = typeof tag === 'string' ? tag.trim() : ''
-      if (!name || seen.has(name)) continue
+      if (typeof tag !== 'string') continue
+      const name = tag.trim()
+      if (!name) continue
+      if (name.length > MAX_NAME_LENGTH) return null
+      if (seen.has(name)) continue
       seen.add(name)
       tags.push(name)
     }
-    if (tags.length > 0) groups.push({ name: group.name.trim(), tags })
+    tagCount += tags.length
+    if (tagCount > MAX_TAGS) return null
+    if (tags.length > 0) groups.push({ name: groupName, tags })
   }
   return groups
 }
