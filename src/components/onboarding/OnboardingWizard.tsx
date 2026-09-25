@@ -161,7 +161,11 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
             onBack={back}
             settingsNote
           >
-            <ShoppingCategoriesEditor initialCategories={shoppingCategories} onCategoriesChange={setShoppingCategories} />
+            <ShoppingCategoriesEditor
+              initialCategories={shoppingCategories}
+              onCategoriesChange={setShoppingCategories}
+              confirmDelete={false}
+            />
           </StepFrame>
         )}
 

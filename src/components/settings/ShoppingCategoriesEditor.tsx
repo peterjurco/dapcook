@@ -16,10 +16,14 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { X, Check, Pencil, Plus, GripVertical } from 'lucide-react'
+import { X, Check, Pencil, Plus, GripVertical, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { ShoppingCategory } from '@/types/database'
+
+// Row actions appear on hover, except on touch screens, which cannot hover.
+const ROW_ACTION_VISIBILITY =
+  'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity'
 
 const PALETTE = [
   '#ef4444', '#f87171', '#dc2626', '#f43f5e', '#fb7185', '#be185d', '#ec4899', '#f9a8d4',
@@ -34,6 +38,8 @@ interface Props {
   initialCategories: ShoppingCategory[]
   /** Reports every change, so a parent that unmounts the editor can show it again as it was left. */
   onCategoriesChange?: (categories: ShoppingCategory[]) => void
+  /** Ask before deleting; onboarding turns this off since nothing uses the categories yet. */
+  confirmDelete?: boolean
 }
 
 interface RowProps {
@@ -139,28 +145,26 @@ function SortableCategoryRow({ t, cat, ...rowProps }: RowProps) {
           <button
             type="button"
             onClick={() => onRenameStart(cat.id, cat.name)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-700"
+            className={`${ROW_ACTION_VISIBILITY} text-gray-400 hover:text-gray-700`}
             title={t('shoppingCategories.renameTitle')}
           >
             <Pencil size={12} />
           </button>
+          <button
+            type="button"
+            onClick={() => onDeleteRequest(cat.id)}
+            className={`${ROW_ACTION_VISIBILITY} text-gray-400 hover:text-red-500 flex-shrink-0`}
+            title={t('shoppingCategories.deleteTitle')}
+          >
+            <Trash2 size={12} />
+          </button>
         </div>
       )}
-
-      {/* Delete */}
-      <button
-        type="button"
-        onClick={() => onDeleteRequest(cat.id)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 flex-shrink-0"
-        title={t('shoppingCategories.deleteTitle')}
-      >
-        <X size={14} />
-      </button>
     </div>
   )
 }
 
-export function ShoppingCategoriesEditor({ initialCategories, onCategoriesChange }: Props) {
+export function ShoppingCategoriesEditor({ initialCategories, onCategoriesChange, confirmDelete = true }: Props) {
   const t = useTranslations('settings')
   const [categories, setCategories] = useState<ShoppingCategory[]>(initialCategories)
 
@@ -281,7 +285,7 @@ export function ShoppingCategoriesEditor({ initialCategories, onCategoriesChange
                 onRenameCancel={() => setEditingId(null)}
                 onColorPickerToggle={(id) => setColorPickerFor(colorPickerFor === id ? null : id)}
                 onColorChange={handleColorChange}
-                onDeleteRequest={setDeleteTarget}
+                onDeleteRequest={confirmDelete ? setDeleteTarget : handleDelete}
               />
             ))}
           </div>

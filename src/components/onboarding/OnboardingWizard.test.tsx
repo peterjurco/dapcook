@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { TranslationValues } from 'use-intl'
 import { mockTranslate } from '@/test/mockMessages'
+import type { ShoppingCategory } from '@/types/database'
 import { OnboardingWizard } from './OnboardingWizard'
 
 const capture = vi.fn()
@@ -131,6 +132,14 @@ describe('OnboardingWizard', () => {
       />
     )
     expect(screen.getByRole('button', { name: 'Vegan' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('deletes shopping categories without asking', async () => {
+    const categories = [{ id: 'c1', household_id: 'hh-1', name: 'Bakery', color: null, sort_order: 0 }] as ShoppingCategory[]
+    render(<OnboardingWizard initialStep="shopping_categories" locale="en" household={household} categories={categories} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(screen.queryByText('Bakery')).not.toBeInTheDocument())
+    expect(fetch).toHaveBeenCalledWith('/api/shopping/categories/c1', { method: 'DELETE' })
   })
 
   it('finishes onboarding from the done screen and lands on recipes', async () => {
