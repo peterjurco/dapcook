@@ -210,6 +210,15 @@ describe('GenerateShoppingPage', () => {
     expect(JSON.parse(localStorage.getItem('recipe_portions')!)).toEqual({ r1: 2 })
   })
 
+  it('disables adding and explains why when there are too many ingredients', () => {
+    const ingredients = Array.from({ length: 301 }, (_, i) => ing({ name: `item ${i}` }))
+    renderPage([recipeSlot({ id: 'r1', day_of_week: 1, title: 'Feast', servings: 1, ingredients })])
+    expect(screen.getByRole('button', { name: 'Add 301 items to shopping list' })).toBeDisabled()
+    expect(
+      screen.getByText('Too many ingredients (300 max). Remove some recipes or tick off what you already have.'),
+    ).toBeInTheDocument()
+  })
+
   // Slovak has a distinct "few" plural category (2-4) that English doesn't —
   // check it against the real catalog so the one/few/other forms aren't collapsed.
   it('uses the Slovak "few" plural category for counts 2-4', () => {

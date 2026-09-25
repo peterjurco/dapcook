@@ -4,6 +4,7 @@ import { makeShoppingListSmart } from '@/lib/ai/make-shopping-list'
 import type { ShoppingItem } from '@/types/database'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
+import { MAX_INGREDIENTS } from '@/lib/shopping/plan-entries'
 
 interface ListItem {
   name: string
@@ -13,8 +14,7 @@ interface ListItem {
 }
 
 // The AI merge is paid per call, so a malicious or buggy client can't be
-// allowed to force an arbitrarily large/expensive request.
-const MAX_INGREDIENTS = 300
+// allowed to force an arbitrarily large/expensive request (see MAX_INGREDIENTS).
 const MAX_NAME_LENGTH = 200
 
 type RawEntry = Record<string, unknown>

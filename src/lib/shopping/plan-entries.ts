@@ -45,6 +45,12 @@ export interface PlanPayload {
   customItems: { name: string; portions: number }[]
 }
 
+/**
+ * Cap on ingredients per add-from-plan request. The AI merge is paid per call,
+ * so the route refuses anything larger; the page blocks it up front.
+ */
+export const MAX_INGREDIENTS = 300
+
 const PRESET_LABELS = new Set<string>(CUSTOM_LABELS)
 
 function toPlanIngredients(recipeId: string, raw: unknown, servings: number | null): PlanIngredient[] {

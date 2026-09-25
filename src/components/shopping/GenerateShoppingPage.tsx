@@ -9,6 +9,7 @@ import {
   applyIngredientEdit,
   buildPlanEntries,
   buildSubmitPayload,
+  MAX_INGREDIENTS,
   type PlanEntry,
   type PlanIngredient,
   type PlanSlot,
@@ -41,6 +42,7 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
 
   const payload = buildSubmitPayload(entries)
   const itemCount = payload.ingredients.length + payload.customItems.length
+  const tooManyIngredients = payload.ingredients.length > MAX_INGREDIENTS
 
   function updateEntry(key: string, update: (entry: PlanEntry) => PlanEntry) {
     setEntries((prev) => prev.map((e) => (e.key === key ? update(e) : e)))
@@ -149,11 +151,14 @@ export function GenerateShoppingPage({ slots, weekStart }: Props) {
       {/* Sticky footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4">
         <div className="max-w-xl mx-auto space-y-2">
+          {tooManyIngredients && (
+            <p className="text-sm text-red-500">{t('generate.tooManyItems', { max: MAX_INGREDIENTS })}</p>
+          )}
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button
             type="button"
             onClick={handleAdd}
-            disabled={isAdding || itemCount === 0}
+            disabled={isAdding || itemCount === 0 || tooManyIngredients}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isAdding ? (
