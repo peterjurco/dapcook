@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { usePostHog } from 'posthog-js/react'
 import type { Locale } from '@/i18n/config'
-import type { ShoppingCategory, ShoppingRule } from '@/types/database'
+import type { ShoppingCategory } from '@/types/database'
 import {
   isPersistedStep,
   nextStep,
@@ -15,10 +15,9 @@ import {
   TOTAL_STEPS,
   type OnboardingStep,
 } from '@/lib/onboarding/steps'
-import { SHOPPING_RULE_EXAMPLES } from '@/lib/onboarding/defaults'
 import type { TagSelection } from '@/lib/onboarding/tag-catalog'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
-import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
+import { InviteLink } from '@/components/settings/InviteLink'
 import { StepFrame } from './StepFrame'
 import { sendJson } from './send-json'
 import { LanguageStep } from './steps/LanguageStep'
@@ -39,14 +38,14 @@ interface Props {
   /** Present once the household exists (steps from `translation` on). */
   household?: OnboardingHousehold
   categories?: ShoppingCategory[]
-  rules?: ShoppingRule[]
+  inviteUrl?: string
   /** Tags already saved for the household, mapped onto the catalog. */
   tags?: TagSelection
 }
 
 const NO_TAGS: TagSelection = { selected: {}, custom: {} }
 
-export function OnboardingWizard({ initialStep, locale, household, categories = [], rules = [], tags = NO_TAGS }: Props) {
+export function OnboardingWizard({ initialStep, locale, household, categories = [], inviteUrl = '', tags = NO_TAGS }: Props) {
   const t = useTranslations('auth')
   const router = useRouter()
   const posthog = usePostHog()
@@ -171,18 +170,14 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
 
         {step === 'invite' && (
           <StepFrame
-            title={t('onboarding.shoppingRules.title')}
-            help={t('onboarding.shoppingRules.help')}
+            title={t('onboarding.invite.title')}
+            help={t('onboarding.invite.help')}
             onNext={next}
             onSkip={skip}
             onBack={back}
             settingsNote
           >
-            <ShoppingRulesEditor
-              initialRules={rules}
-              suggestions={SHOPPING_RULE_EXAMPLES.map((rule) => rule[locale])}
-              suggestionsLabel={t('onboarding.shoppingRules.examplesLabel')}
-            />
+            <InviteLink url={inviteUrl} shareText={t('onboarding.invite.shareText')} />
           </StepFrame>
         )}
 

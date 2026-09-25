@@ -33,7 +33,8 @@
   },
   "inviteLink": {
     "copied": "Copied",
-    "copy": "Copy"
+    "copy": "Copy",
+    "share": "Share"
   },
   "plannerRules": {
     "disableTitle": "Disable rule",

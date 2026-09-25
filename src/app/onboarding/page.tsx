@@ -5,6 +5,7 @@ import { defaultLocale, isLocale } from '@/i18n/config'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import { isPersistedStep } from '@/lib/onboarding/steps'
 import { selectionFromSavedTags } from '@/lib/onboarding/tag-catalog'
+import { inviteUrl } from '@/lib/utils/invite'
 
 export default async function OnboardingPage() {
   const profile = await getCurrentProfile()
@@ -15,14 +16,13 @@ export default async function OnboardingPage() {
   }
 
   const supabase = createClient()
-  const [{ data: household }, { data: categories }, { data: rules }, { data: tagGroups }, { data: tags }] = await Promise.all([
+  const [{ data: household }, { data: categories }, { data: tagGroups }, { data: tags }] = await Promise.all([
     supabase
       .from('households')
       .select('onboarding_step, created_by, invite_token, translation_enabled, preferred_language, preferred_units')
       .eq('id', profile.household_id)
       .single(),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
-    supabase.from('shopping_rules').select('*').eq('household_id', profile.household_id).order('created_at'),
     supabase.from('tag_groups').select('id, name').eq('household_id', profile.household_id).order('position'),
     supabase.from('tags').select('name, group_id').eq('household_id', profile.household_id).order('created_at'),
   ])
@@ -47,7 +47,7 @@ export default async function OnboardingPage() {
         preferredUnits: household.preferred_units,
       }}
       categories={categories ?? []}
-      rules={rules ?? []}
+      inviteUrl={inviteUrl(household.invite_token)}
       tags={selectionFromSavedTags(savedTags, locale)}
     />
   )

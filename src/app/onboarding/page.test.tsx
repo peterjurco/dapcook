@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
   }),
   household: null as Record<string, unknown> | null,
   categories: [] as unknown[],
-  rules: [] as unknown[],
   tagGroups: [] as unknown[],
   tags: [] as unknown[],
 }))
@@ -30,7 +29,6 @@ vi.mock('@/lib/supabase/server', () => ({
     from: (table: string) => {
       if (table === 'households') return chain(async () => ({ data: mocks.household }))
       if (table === 'shopping_categories') return chain(async () => ({ data: mocks.categories }))
-      if (table === 'shopping_rules') return chain(async () => ({ data: mocks.rules }))
       if (table === 'tag_groups') return chain(async () => ({ data: mocks.tagGroups }))
       if (table === 'tags') return chain(async () => ({ data: mocks.tags }))
       throw new Error(`unexpected table ${table}`)
@@ -47,7 +45,6 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.household = null
   mocks.categories = []
-  mocks.rules = []
   mocks.tagGroups = []
   mocks.tags = []
 })
@@ -68,14 +65,16 @@ describe('OnboardingPage', () => {
     mocks.household = {
       onboarding_step: 'tags',
       created_by: 'user-1',
+      invite_token: 'abc',
       translation_enabled: true,
       preferred_language: 'sk',
       preferred_units: 'metric',
     }
     mocks.categories = [{ id: 'cat-1' }]
-    mocks.rules = [{ id: 'rule-1' }]
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://dapcook.test')
 
     const result = await OnboardingPage()
+    vi.unstubAllEnvs()
 
     expect(result.props.initialStep).toBe('tags')
     expect(result.props.locale).toBe('sk')
@@ -85,7 +84,7 @@ describe('OnboardingPage', () => {
       preferredUnits: 'metric',
     })
     expect(result.props.categories).toEqual([{ id: 'cat-1' }])
-    expect(result.props.rules).toEqual([{ id: 'rule-1' }])
+    expect(result.props.inviteUrl).toBe('https://dapcook.test/join/abc')
   })
 
   it('passes the saved tags in, mapped onto the catalog', async () => {

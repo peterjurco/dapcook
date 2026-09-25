@@ -33,7 +33,8 @@
   },
   "inviteLink": {
     "copied": "Skopírované",
-    "copy": "Kopírovať"
+    "copy": "Kopírovať",
+    "share": "Zdieľať"
   },
   "plannerRules": {
     "disableTitle": "Vypnúť pravidlo",

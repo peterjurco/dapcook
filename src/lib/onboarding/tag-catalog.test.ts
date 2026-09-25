@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { TAG_CATALOG, buildTagGroupsPayload, selectionFromSavedTags } from './tag-catalog'
-import { DEFAULT_SHOPPING_CATEGORIES, SHOPPING_RULE_EXAMPLES } from './defaults'
+import { DEFAULT_SHOPPING_CATEGORIES } from './defaults'
 import { locales } from '@/i18n/config'
 
 describe('TAG_CATALOG', () => {
@@ -77,9 +77,8 @@ describe('selectionFromSavedTags', () => {
 })
 
 describe('onboarding defaults', () => {
-  it.each(locales)('has the 9 default shopping categories and rule examples in %s', (locale) => {
+  it.each(locales)('has the 9 default shopping categories in %s', (locale) => {
     expect(DEFAULT_SHOPPING_CATEGORIES).toHaveLength(9)
-    expect(DEFAULT_SHOPPING_CATEGORIES[0][locale]).toBeTruthy()
-    expect(SHOPPING_RULE_EXAMPLES.every((r) => r[locale].trim().length > 0)).toBe(true)
+    expect(DEFAULT_SHOPPING_CATEGORIES.every((c) => c[locale].trim().length > 0)).toBe(true)
   })
 })

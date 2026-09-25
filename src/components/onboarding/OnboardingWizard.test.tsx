@@ -17,6 +17,7 @@ vi.mock('@/lib/auth/actions', () => ({ createHousehold: vi.fn(), joinHousehold: 
 
 global.fetch = vi.fn()
 
+const invite = 'http://localhost:3000/join/abc'
 const household = { translationEnabled: false, preferredLanguage: 'en', preferredUnits: 'metric' as const }
 
 function bodies() {
@@ -72,9 +73,24 @@ describe('OnboardingWizard', () => {
     expect(screen.getByText('Translate recipes?')).toBeInTheDocument()
   })
 
-  it('finishing the last step does not save progress, only tracks it', async () => {
-    render(<OnboardingWizard initialStep="invite" locale="en" household={household} rules={[]} />)
-    expect(screen.getByRole('button', { name: '+ Count eggs in pieces, not grams' })).toBeInTheDocument()
+  it('leaving shopping categories stores the invite step', async () => {
+    render(<OnboardingWizard initialStep="shopping_categories" locale="en" household={household} inviteUrl={invite} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(await screen.findByText('Cook together')).toBeInTheDocument()
+    expect(bodies()).toEqual([['/api/household', JSON.stringify({ onboarding_step: 'invite' })]])
+  })
+
+  it('shows the household invite link on the invite step', () => {
+    render(<OnboardingWizard initialStep="invite" locale="en" household={household} inviteUrl={invite} />)
+    expect(screen.getByDisplayValue(invite)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument()
+    expect(screen.getByText('You can change this anytime in Settings.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('Shopping categories')).toBeInTheDocument()
+  })
+
+  it('finishing the invite step does not save progress, only tracks it', async () => {
+    render(<OnboardingWizard initialStep="invite" locale="en" household={household} inviteUrl={invite} />)
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByRole('button', { name: 'Go to recipes' })).toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
