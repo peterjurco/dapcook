@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   '/onboarding',
   '/robots.txt',
   '/s',
+  '/dev',
 ]
 
 export function isPublicPath(pathname: string): boolean {
