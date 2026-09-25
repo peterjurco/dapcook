@@ -37,11 +37,11 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/robots.txt')).toBe(true)
   })
 
-  it.each(['/s', '/s/public-token', '/robots.txt'])('bypasses Supabase Auth for %s', (pathname) => {
+  it.each(['/s', '/s/public-token', '/robots.txt', '/manifest.webmanifest'])('bypasses Supabase Auth for %s', (pathname) => {
     expect(canBypassAuth(pathname)).toBe(true)
   })
 
-  it.each(['/s', '/s/public-token', '/robots.txt'])('does not initialize Supabase Auth for %s', async (pathname) => {
+  it.each(['/s', '/s/public-token', '/robots.txt', '/manifest.webmanifest'])('does not initialize Supabase Auth for %s', async (pathname) => {
     mocks.createServerClient.mockClear()
 
     const response = await middleware(new NextRequest(`https://dapcook.test${pathname}`))
