@@ -5,6 +5,7 @@ import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagOrganizer } from '@/components/settings/TagOrganizer'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
+import { HouseholdNameEditor } from '@/components/settings/HouseholdNameEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
 import { TranslationSettings } from '@/components/settings/TranslationSettings'
 import { InterfaceLanguageSelector } from '@/components/settings/InterfaceLanguageSelector'
@@ -89,7 +90,7 @@ export default async function SettingsPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
           <div>
             <p className="text-xs text-gray-500 mb-1">{t('page.name')}</p>
-            <p className="text-sm font-medium text-gray-900">{household?.name}</p>
+            <HouseholdNameEditor initialName={household?.name ?? ''} />
           </div>
 
           <div>
