@@ -18,7 +18,12 @@ export function isPublicPath(pathname: string): boolean {
 }
 
 export function canBypassAuth(pathname: string): boolean {
-  return pathname === '/robots.txt' || pathname === '/s' || pathname.startsWith('/s/')
+  return (
+    pathname === '/robots.txt' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/s' ||
+    pathname.startsWith('/s/')
+  )
 }
 
 export async function middleware(request: NextRequest) {
