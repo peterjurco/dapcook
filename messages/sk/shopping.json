@@ -8,9 +8,12 @@
     "portions": "Porcie",
     "genericError": "Niečo sa pokazilo. Skúste to znova.",
     "networkError": "Chyba siete. Skúste to znova.",
-    "generating": "Vytváram…",
-    "generate": "Vytvoriť nákupný zoznam",
-    "undo": "Späť"
+    "undo": "Späť",
+    "addToList": "{count, plural, one {Pridať # položku do zoznamu} few {Pridať # položky do zoznamu} other {Pridať # položiek do zoznamu}}",
+    "adding": "Pridávam…",
+    "noIngredients": "Tento recept nemá žiadne ingrediencie.",
+    "removeAria": "Odstrániť z nákupného zoznamu",
+    "tooManyItems": "Príliš veľa ingrediencií (max. {max}). Odstráňte niektoré recepty alebo odškrtnite, čo už máte doma."
   },
   "client": {
     "headingS": "N",
@@ -37,16 +40,5 @@
     "unknownRecipe": "Neznámy recept",
     "saveFailed": "Uloženie zlyhalo",
     "retry": "Skúsiť znova"
-  },
-  "review": {
-    "plannerLink": "Plánovač",
-    "emptyHeading": "Nie je čo skontrolovať.",
-    "backToPlanner": "Späť na plánovač",
-    "emptyTrailing": "a vytvorte zoznam.",
-    "heading": "Skontrolovať nákupný zoznam",
-    "body": "Upravte alebo odškrtnite položky a potom ich pridajte do zoznamu.",
-    "itemCount": "{count, plural, one {# položka} few {# položky} other {# položiek}}",
-    "otherCategory": "Ostatné",
-    "addToList": "{count, plural, one {Pridať # položku do zoznamu} few {Pridať # položky do zoznamu} other {Pridať # položiek do zoznamu}}"
   }
 }

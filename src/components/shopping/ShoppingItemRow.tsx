@@ -29,6 +29,14 @@ interface Props {
 // idle → crossed (strikethrough, 350ms pause) → collapsing (height→0, 250ms) → onCheck fires
 type ExitState = 'idle' | 'crossed' | 'collapsing'
 
+/** Text the editor is pre-filled with, e.g. "200g rice". */
+function itemEditText(item: ShoppingItem): string {
+  const prefix = item.quantity != null
+    ? formatQtyUnit(item.quantity, item.unit ?? '')
+    : (item.unit ?? '')
+  return (prefix ? `${prefix} ${item.name}` : item.name).trim()
+}
+
 export function ShoppingItemRow({
   item, recipeNames,
   onCheck, onUpdate, onDelete,
@@ -37,13 +45,9 @@ export function ShoppingItemRow({
 }: Props) {
   const t = useTranslations('shopping')
   const [editing, setEditing] = useState(isNewItem ?? false)
-  const [editText, setEditText] = useState(() => {
-    if (isNewItem) return ''
-    const prefix = item.quantity != null
-      ? formatQtyUnit(item.quantity, item.unit ?? '')
-      : (item.unit ?? '')
-    return (prefix ? `${prefix} ${item.name}` : item.name).trim()
-  })
+  const [editText, setEditText] = useState(() => (isNewItem ? '' : itemEditText(item)))
+  // What startEdit pre-filled — saving it back unchanged is not an edit
+  const prefilledRef = useRef('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const saveRef = useRef(false)
@@ -70,10 +74,9 @@ export function ShoppingItemRow({
       setEditing(true)
       return
     }
-    const prefix = item.quantity != null
-      ? formatQtyUnit(item.quantity, item.unit ?? '')
-      : (item.unit ?? '')
-    setEditText((prefix ? `${prefix} ${item.name}` : item.name).trim())
+    const text = itemEditText(item)
+    prefilledRef.current = text
+    setEditText(text)
     setSaveError(null)
     setEditing(true)
   }
@@ -108,8 +111,11 @@ export function ShoppingItemRow({
         setSaveError(t('itemRow.saveFailed'))
       }
     } else {
-      // Regular item: optimistic update
-      onUpdate(item.id, { name: trimmed || item.name, quantity: null, unit: null })
+      // Regular item: optimistic update. Empty or untouched text is not an edit —
+      // saving it would fold the quantity into the name (or wipe it).
+      if (trimmed && trimmed !== prefilledRef.current) {
+        onUpdate(item.id, { name: trimmed, quantity: null, unit: null })
+      }
       setEditing(false)
       if (createBelow) onCreateBelow?.(item.id)
     }
