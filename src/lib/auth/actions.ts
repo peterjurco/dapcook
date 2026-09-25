@@ -8,13 +8,15 @@ import { getUserTranslations } from '@/i18n/server-utils'
 import { getOrigin } from './getOrigin'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { forgetHouseholdId } from './household'
+import { safeNextPath } from './safe-next-path'
 
 export async function signInWithGoogle(redirectTo?: string) {
   const supabase = createClient()
   const origin = getOrigin()
 
-  const callbackUrl = redirectTo
-    ? `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+  const next = safeNextPath(redirectTo, '')
+  const callbackUrl = next
+    ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
     : `${origin}/auth/callback`
 
   const { data, error } = await supabase.auth.signInWithOAuth({
