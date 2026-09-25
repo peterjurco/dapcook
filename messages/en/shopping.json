@@ -10,7 +10,11 @@
     "networkError": "Network error. Please try again.",
     "generating": "Generating…",
     "generate": "Generate shopping list",
-    "undo": "Undo"
+    "undo": "Undo",
+    "addToList": "{count, plural, one {Add # item to shopping list} other {Add # items to shopping list}}",
+    "adding": "Adding…",
+    "noIngredients": "This recipe has no ingredients.",
+    "removeAria": "Remove from shopping list"
   },
   "client": {
     "headingS": "S",

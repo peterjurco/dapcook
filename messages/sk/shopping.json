@@ -10,7 +10,11 @@
     "networkError": "Chyba siete. Skúste to znova.",
     "generating": "Vytváram…",
     "generate": "Vytvoriť nákupný zoznam",
-    "undo": "Späť"
+    "undo": "Späť",
+    "addToList": "{count, plural, one {Pridať # položku do zoznamu} few {Pridať # položky do zoznamu} other {Pridať # položiek do zoznamu}}",
+    "adding": "Pridávam…",
+    "noIngredients": "Tento recept nemá žiadne ingrediencie.",
+    "removeAria": "Odstrániť z nákupného zoznamu"
   },
   "client": {
     "headingS": "N",
