@@ -65,7 +65,8 @@ export function TranslationSettings({ initialEnabled, initialLanguage, currentPr
     }
   }
 
-  const targetLangLabel = SUPPORTED_LANGUAGES.find((l) => l.code === (pendingLanguage ?? language))?.label ?? pendingLanguage ?? ''
+  const targetLang = pendingLanguage ?? language
+  const targetLangLabel = SUPPORTED_LANGUAGES.find((l) => l.code === targetLang)?.label ?? targetLang
 
   function handleConfirm() { setPhase('bulk') }
   function handleCancel() { setPhase('idle'); setPendingLanguage(null) }
@@ -117,7 +118,7 @@ export function TranslationSettings({ initialEnabled, initialLanguage, currentPr
       {phase === 'confirm' && pendingLanguage && (
         <ConfirmTransformModal
           recipeCount={recipeIds.length}
-          message={t('translation.confirmMessage', { language: targetLangLabel })}
+          message={t('translation.confirmMessage', { language: targetLang, languageName: targetLangLabel })}
           confirmLabel={t('translation.confirmLabel')}
           onConfirm={handleConfirm}
           onCancel={handleCancel}

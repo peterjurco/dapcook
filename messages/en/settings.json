@@ -82,7 +82,7 @@
   },
   "translation": {
     "toggleLabel": "Translate imported recipes",
-    "confirmMessage": "Translate your recipes to {language}?",
+    "confirmMessage": "Translate your recipes to {languageName}?",
     "confirmLabel": "Translate all"
   },
   "units": {
