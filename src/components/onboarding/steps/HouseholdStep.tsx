@@ -82,8 +82,9 @@ export function HouseholdStep({ onSubmit }: Props) {
 
       <button
         type="button"
+        disabled={pending}
         onClick={() => { setMode(mode === 'create' ? 'join' : 'create'); setError(null) }}
-        className="block mx-auto text-sm text-gray-500 underline hover:text-gray-900"
+        className="block mx-auto text-sm text-gray-500 underline hover:text-gray-900 disabled:opacity-50"
       >
         {mode === 'create' ? t('onboarding.household.haveInvite') : t('onboarding.household.createInstead')}
       </button>
