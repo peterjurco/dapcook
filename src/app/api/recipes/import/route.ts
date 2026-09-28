@@ -106,8 +106,9 @@ export async function POST(request: NextRequest) {
 
       // Step 3: Transform (translate and/or convert units)
       if (needsTranslation) {
-        const langName = LANGUAGE_NAMES[household!.preferred_language] ?? household!.preferred_language
-        send({ type: 'step', key: 'translating', message: tRecipes('import.stepTranslating', { language: langName }) })
+        const language = household!.preferred_language
+        const languageName = LANGUAGE_NAMES[language] ?? language
+        send({ type: 'step', key: 'translating', message: tRecipes('import.stepTranslating', { language, languageName }) })
       } else {
         send({ type: 'step', key: 'converting', message: tRecipes('import.stepConverting') })
       }

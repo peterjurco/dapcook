@@ -178,7 +178,7 @@
     "stepScraping": "Načítavam stránku s receptom...",
     "stepExtracting": "Čítam celú stránku pomocou AI...",
     "stepParsing": "Čítam suroviny a postup...",
-    "stepTranslating": "Prekladám do jazyka {language}...",
+    "stepTranslating": "Prekladám do {language, select, en {angličtiny} es {španielčiny} fr {francúzštiny} de {nemčiny} it {taliančiny} pt {portugalčiny} nl {holandčiny} pl {poľštiny} uk {ukrajinčiny} cs {češtiny} sk {slovenčiny} other {jazyka {languageName}}}...",
     "stepConverting": "Prevádzam jednotky...",
     "idleSubtitle": "Vložte odkaz z ľubovoľnej stránky s receptami",
     "urlPlaceholder": "https://www.bbcgoodfood.com/recipes/...",
