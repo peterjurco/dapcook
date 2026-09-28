@@ -79,6 +79,11 @@ const parsedParts = {
   steps: [{ id: 's1', order: 1, text: 'Boil pasta' }],
 }
 
+const imperialParts = {
+  ingredients: [{ id: 'i1', quantity: 2, unit: 'cups', name: 'pasta', notes: '' }],
+  steps: parsedParts.steps,
+}
+
 function req(body: unknown) {
   return new NextRequest('http://localhost/api/recipes/import', {
     method: 'POST',
@@ -185,10 +190,22 @@ describe('POST /api/recipes/import', () => {
     )
   })
 
-  it('calls transformRecipe with only targetUnits when translation_enabled is false', async () => {
-    // default household: translation_enabled: false, preferred_units: 'metric'
+  it('skips transformRecipe when ingredient units already match preferred_units', async () => {
+    // default household: translation_enabled: false, preferred_units: 'metric'; parsed units are grams
     const res = await POST(req({ url: 'https://example.com/pasta' }))
-    await collectEvents(res)
+    const events = await collectEvents(res)
+    const steps = events.filter(e => e.type === 'step').map(e => (e as Extract<ImportEvent, { type: 'step' }>).key)
+    expect(steps).not.toContain('converting')
+    expect(vi.mocked(transformRecipe)).not.toHaveBeenCalled()
+    expect(getDoneEvent(events)!.draft.ingredients).toEqual(parsedParts.ingredients)
+  })
+
+  it('calls transformRecipe with only targetUnits when units differ and translation_enabled is false', async () => {
+    vi.mocked(parseRecipeData).mockResolvedValue(imperialParts)
+    const res = await POST(req({ url: 'https://example.com/pasta' }))
+    const events = await collectEvents(res)
+    const steps = events.filter(e => e.type === 'step').map(e => (e as Extract<ImportEvent, { type: 'step' }>).key)
+    expect(steps).toContain('converting')
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Pasta' }),
       { targetUnits: 'metric' },
@@ -216,12 +233,26 @@ describe('POST /api/recipes/import', () => {
     expect(translating.message).toBe('Translating to Slovak...')
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Pasta' }),
+      { targetLanguage: 'sk' },
+      'hh-1'
+    )
+  })
+
+  it('passes targetUnits alongside targetLanguage when units differ', async () => {
+    vi.mocked(parseRecipeData).mockResolvedValue(imperialParts)
+    vi.mocked(createClient).mockReturnValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    )
+    await collectEvents(await POST(req({ url: 'https://example.com/pasta' })))
+    expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Pasta' }),
       { targetLanguage: 'sk', targetUnits: 'metric' },
       'hh-1'
     )
   })
 
   it('calls transformRecipe with only targetUnits when recipe is already in preferred language', async () => {
+    vi.mocked(parseRecipeData).mockResolvedValue(imperialParts)
     vi.mocked(createClient).mockReturnValue(
       makeSupabase(mockUser, { preferred_language: 'en', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
     )

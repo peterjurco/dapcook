@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { scrapeRecipe } from '@/lib/scraper'
 import { parseRecipeData } from '@/lib/ai/parse-recipe'
 import { transformRecipe } from '@/lib/ai/transform-recipe'
+import { needsUnitConversion } from '@/lib/units/unit-system'
 import { categorizeTranslationError } from '@/lib/ai/translation-error'
 import { categorizeScrapeError } from '@/lib/scraper/scrape-error'
 import { LANGUAGE_NAMES } from '@/lib/constants/languages'
@@ -96,9 +97,10 @@ export async function POST(request: NextRequest) {
       const alreadyInTargetLanguage = !!pageLanguage && pageLanguage === household?.preferred_language
 
       const needsTranslation = !!household?.translation_enabled && !alreadyInTargetLanguage
-      const needsUnitConversion = !!household?.preferred_units
+      // Only pay for an AI round-trip when an ingredient is actually in the other system
+      const convertUnits = needsUnitConversion(ingredients, household?.preferred_units)
 
-      if (!needsTranslation && !needsUnitConversion) {
+      if (!needsTranslation && !convertUnits) {
         send({ type: 'done', draft: baseDraft })
         controller.close()
         return
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
           { title: meta.title, description: meta.description ?? null, ingredients, steps, notes: null },
           {
             targetLanguage: needsTranslation ? household!.preferred_language : undefined,
-            targetUnits: household?.preferred_units,
+            targetUnits: convertUnits ? household!.preferred_units : undefined,
           },
           profile?.household_id ?? undefined
         )
