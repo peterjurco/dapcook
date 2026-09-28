@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddToPlanButton } from './AddToPlanButton'
+import { WeekStartProvider } from '@/components/providers/WeekStartProvider'
 import { mockTranslate } from '@/test/mockMessages'
 import type { TranslationValues } from 'use-intl'
 
@@ -48,7 +49,7 @@ describe('AddToPlanButton', () => {
     expect(await screen.findByText(/added to/i)).toBeInTheDocument()
   })
 
-  it('defaults next week to Monday', async () => {
+  it('defaults a later week to its first day', async () => {
     render(<AddToPlanButton recipeId="recipe-1" />)
 
     await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
@@ -99,5 +100,26 @@ describe('AddToPlanButton', () => {
     await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
 
     expect(onCardClick).not.toHaveBeenCalled()
+  })
+})
+
+describe('AddToPlanButton with a Sunday week', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 8, 30, 12)) // Wednesday 2026-09-30, local
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('uses the household week and preselects today', async () => {
+    render(
+      <WeekStartProvider value="sunday">
+        <AddToPlanButton recipeId="recipe-1" />
+      </WeekStartProvider>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
+    await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled())
+    expect(lastFetchBody()).toMatchObject({ week_start: '2026-09-27', day_of_week: 4 })
   })
 })

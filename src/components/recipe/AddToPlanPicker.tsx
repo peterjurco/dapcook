@@ -15,8 +15,10 @@ import {
   toDateString,
   isCurrentWeek,
   isNextWeek,
-  dayOfWeekNumber,
+  dayIndexInWeek,
+  parseDateString,
 } from '@/lib/utils/week'
+import { useWeekStartDay } from '@/components/providers/WeekStartProvider'
 import { addSlotToCachedWeek, removeSlotFromCachedWeek } from '@/components/planner/plannerWeekCache'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
@@ -31,15 +33,16 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   const router = useRouter()
   const t = useTranslations('recipes')
   const locale = useLocale()
+  const startDay = useWeekStartDay()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const thisWeek = getWeekStart(today)
+  const thisWeek = getWeekStart(today, startDay)
 
   const [weekStart, setWeekStart] = useState<Date>(() => {
     try {
       const saved = localStorage.getItem(LAST_WEEK_KEY)
       if (saved) {
-        const parsed = getWeekStart(new Date(saved))
+        const parsed = getWeekStart(parseDateString(saved) ?? today, startDay)
         if (parsed.getTime() >= thisWeek.getTime()) return parsed
       }
     } catch {
@@ -48,7 +51,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
     return thisWeek
   })
   const [selectedDay, setSelectedDay] = useState<number>(() =>
-    isCurrentWeek(weekStart) ? dayOfWeekNumber(today) : 1,
+    isCurrentWeek(weekStart) ? dayIndexInWeek(today, weekStart) : 1,
   )
   const [submitting, setSubmitting] = useState(false)
   const [confirmedDay, setConfirmedDay] = useState<number | null>(null)
@@ -61,7 +64,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
 
   function changeWeek(next: Date) {
     setWeekStart(next)
-    setSelectedDay(isCurrentWeek(next) ? dayOfWeekNumber(today) : 1)
+    setSelectedDay(isCurrentWeek(next) ? dayIndexInWeek(today, next) : 1)
   }
 
   function weekDescriptor(w: Date): string {

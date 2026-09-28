@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseWeekParam, toDateString } from '@/lib/utils/week'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { getCurrentHouseholdId } from '@/lib/auth/household'
+import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 export async function GET(request: NextRequest) {
   const supabase = createClient()
@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
   const householdId = await getCurrentHouseholdId()
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
+  const startDay = await getHouseholdWeekStartDay()
   const weekParam = new URL(request.url).searchParams.get('week') ?? undefined
-  const weekStart = parseWeekParam(weekParam)
+  const weekStart = parseWeekParam(weekParam, startDay)
   const weekStartStr = toDateString(weekStart)
 
   // Get or create week_plan

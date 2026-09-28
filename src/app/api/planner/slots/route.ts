@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseWeekParam, toDateString } from '@/lib/utils/week'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { getCurrentHouseholdId } from '@/lib/auth/household'
+import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'recipe_id or custom_label is required' }, { status: 400 })
   }
 
-  const weekStartStr = toDateString(parseWeekParam(body.week_start))
+  const startDay = await getHouseholdWeekStartDay()
+  const weekStartStr = toDateString(parseWeekParam(body.week_start, startDay))
 
   // Get or create week_plan
   let { data: weekPlan } = await supabase

@@ -1,17 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
-import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
+import { parseWeekParam, getWeekStart, toDateString, type WeekStartDay } from '@/lib/utils/week'
 import { PlannerClient } from '@/components/planner/PlannerClient'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { getCurrentHouseholdId } from '@/lib/auth/household'
+import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 interface PlannerPageProps {
   searchParams: { week?: string }
 }
 
 export default async function PlannerPage({ searchParams }: PlannerPageProps) {
+  const startDay = await getHouseholdWeekStartDay()
   const weekStart = searchParams.week
-    ? parseWeekParam(searchParams.week)
-    : await getDefaultWeek()
+    ? parseWeekParam(searchParams.week, startDay)
+    : await getDefaultWeek(startDay)
 
   return (
     <div className="px-6 pt-6 pb-8 max-w-6xl mx-auto">
@@ -24,8 +25,8 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
  * Returns the latest week >= current week that has at least one meal slot.
  * Falls back to the current week if none found.
  */
-async function getDefaultWeek(): Promise<Date> {
-  const currentWeekStart = getWeekStart()
+async function getDefaultWeek(startDay: WeekStartDay): Promise<Date> {
+  const currentWeekStart = getWeekStart(new Date(), startDay)
   const currentWeekStr = toDateString(currentWeekStart)
 
   const supabase = createClient()
@@ -48,5 +49,5 @@ async function getDefaultWeek(): Promise<Date> {
     (wp) => Array.isArray(wp.meal_slots) && wp.meal_slots.length > 0
   )
 
-  return latestWithMeals ? parseWeekParam(latestWithMeals.week_start) : currentWeekStart
+  return latestWithMeals ? parseWeekParam(latestWithMeals.week_start, startDay) : currentWeekStart
 }

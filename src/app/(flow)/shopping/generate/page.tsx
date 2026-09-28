@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
+import { parseWeekParam, toDateString } from '@/lib/utils/week'
 import { GenerateShoppingPage } from '@/components/shopping/GenerateShoppingPage'
 import type { PlanSlot } from '@/lib/shopping/plan-entries'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { getCurrentHouseholdId } from '@/lib/auth/household'
+import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 interface Props {
   searchParams: { week?: string }
@@ -18,7 +18,8 @@ export default async function ShoppingGeneratePage({ searchParams }: Props) {
   const householdId = await getCurrentHouseholdId()
   if (!householdId) redirect('/planner')
 
-  const weekStart = searchParams.week ? parseWeekParam(searchParams.week) : getWeekStart()
+  const startDay = await getHouseholdWeekStartDay()
+  const weekStart = parseWeekParam(searchParams.week, startDay)
   const weekStartStr = toDateString(weekStart)
 
   const { data: weekPlan } = await supabase
