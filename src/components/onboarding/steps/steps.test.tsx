@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { TranslationValues } from 'use-intl'
 import { mockTranslate } from '@/test/mockMessages'
+import userEvent from '@testing-library/user-event'
 import { LanguageStep } from './LanguageStep'
 import { HouseholdStep } from './HouseholdStep'
 import { TranslationStep } from './TranslationStep'
 import { UnitsStep } from './UnitsStep'
+import { WeekStartStep } from './WeekStartStep'
 import { TagsStep } from './TagsStep'
 
 const refreshMock = vi.fn()
@@ -142,6 +144,24 @@ describe('UnitsStep', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(onBack).toHaveBeenCalled()
     expect(fetch).not.toHaveBeenCalled()
+  })
+})
+
+describe('WeekStartStep', () => {
+  it('preselects the saved day and saves the chosen one before moving on', async () => {
+    const onSaved = vi.fn()
+    const onNext = vi.fn(async () => {})
+    render(<WeekStartStep value="monday" onSaved={onSaved} onNext={onNext} onSkip={vi.fn()} onBack={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: /monday/i })).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(screen.getByRole('button', { name: /sunday/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/household', expect.objectContaining({
+      body: JSON.stringify({ week_start_day: 'sunday' }),
+    }))
+    expect(onSaved).toHaveBeenCalledWith('sunday')
+    expect(onNext).toHaveBeenCalled()
   })
 })
 
