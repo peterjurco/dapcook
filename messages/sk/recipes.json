@@ -92,6 +92,7 @@
     "cancel": "Zrušiť",
     "rowPlaceholder": "Popíšte tento krok...",
     "removeAria": "Odstrániť krok",
+    "dragAria": "Presunúť krok {n}",
     "add": "Pridať krok",
     "pasteText": "Vložiť text"
   },

@@ -92,6 +92,7 @@
     "cancel": "Cancel",
     "rowPlaceholder": "Describe this step...",
     "removeAria": "Remove step",
+    "dragAria": "Drag to reorder step {n}",
     "add": "Add step",
     "pasteText": "Paste text"
   },
