@@ -161,6 +161,16 @@ describe('OnboardingPage', () => {
     const result = await OnboardingPage({ searchParams: { joined: '1' } })
 
     expect(result.props.householdName).toBe('The Jurcos')
+    expect(result.props.initialStep).toBe('language')
+  })
+
+  it('reopens a member on the welcome once the language was chosen', async () => {
+    mocks.getCurrentProfile.mockResolvedValue({ id: 'user-2', household_id: 'hh-1', ui_language: 'sk' })
+    mocks.household = { name: 'The Jurcos', onboarding_step: null, created_by: 'user-1' }
+
+    const result = await OnboardingPage({ searchParams: { joined: '1', welcome: '1' } })
+
+    expect(result.props.initialStep).toBe('done')
   })
 
   it('ignores the joined flag for a user without a household', async () => {

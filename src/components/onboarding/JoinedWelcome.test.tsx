@@ -45,6 +45,20 @@ describe('JoinedWelcome', () => {
     scrollTo.mockRestore()
   })
 
+  it('remembers in the URL that the language was chosen, so a reload stays on the welcome', async () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState')
+    render(<JoinedWelcome householdName="The Jurcos" />)
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+    expect(await screen.findByText("You're in The Jurcos!")).toBeInTheDocument()
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/onboarding?joined=1&welcome=1')
+    replaceState.mockRestore()
+  })
+
+  it('opens straight on the welcome when the language was already chosen', () => {
+    render(<JoinedWelcome householdName="The Jurcos" initialStep="done" />)
+    expect(screen.getByText("You're in The Jurcos!")).toBeInTheDocument()
+  })
+
   it('lands on recipes reporting a completed join', async () => {
     render(<JoinedWelcome householdName="The Jurcos" />)
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
