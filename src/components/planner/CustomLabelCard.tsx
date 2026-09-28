@@ -8,6 +8,7 @@ import { GripVertical, X, UtensilsCrossed, ShoppingBag, Soup } from 'lucide-reac
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import { ResizeHandle } from './ResizeHandle'
+import { ContinuedCue } from './ContinuedCue'
 import { useSpanResize } from './useSpanResize'
 import type { MealSlotWithRecipe } from '@/types/planner'
 
@@ -133,13 +134,7 @@ export function CustomLabelCard({
         {/* Resize handle — desktop only, drag right to extend / left to shrink.
             A meal continuing from last week gets a cue instead. */}
         {continued ? (
-          <span
-            aria-label={t('slotCard.continues')}
-            title={t('slotCard.continues')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white border border-gray-200 px-1 text-[10px] text-gray-400"
-          >
-            ↤
-          </span>
+          <ContinuedCue label={t('slotCard.continues')} />
         ) : (
           <ResizeHandle
             show={showResizeHandle}

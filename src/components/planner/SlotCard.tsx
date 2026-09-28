@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { GripVertical, X } from 'lucide-react'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { ResizeHandle } from './ResizeHandle'
+import { ContinuedCue } from './ContinuedCue'
 import { useSpanResize } from './useSpanResize'
 import type { MealSlotWithRecipe } from '@/types/planner'
 import Image from 'next/image'
@@ -140,13 +141,7 @@ export function SlotCard({
         {/* Resize handle — desktop only, drag right to extend / left to shrink.
             A meal continuing from last week gets a cue instead. */}
         {continued ? (
-          <span
-            aria-label={t('slotCard.continues')}
-            title={t('slotCard.continues')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white border border-gray-200 px-1 text-[10px] text-gray-400"
-          >
-            ↤
-          </span>
+          <ContinuedCue label={t('slotCard.continues')} />
         ) : (
           <ResizeHandle
             show={showResizeHandle}

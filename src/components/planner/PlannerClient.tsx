@@ -115,19 +115,25 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   // Move a meal to another start day. Overlaps are allowed — no other slot is touched.
   function handleMove(slotId: string, newDay: number) {
+    const p = placed.find((s) => s.id === slotId)
+    if (!p) return
+    if (newDay === p.day) return
     const slot = slots.find((s) => s.id === slotId)
     if (!slot) return
     const date = dateOf(Math.max(1, Math.min(8 - slot.span_days, newDay)))
     if (date === slot.date) return
     const prevDate = slot.date
+    const revert = () => {
+      setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, date: prevDate } : s)))
+    }
     setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, date } : s)))
     fetch(`/api/planner/slots/${slotId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date }),
-    }).catch(() => {
-      setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, date: prevDate } : s)))
-    })
+    }).then((res) => {
+      if (!res.ok) revert()
+    }).catch(revert)
   }
 
   // Live span change during desktop resize drag — state only, no API.
@@ -141,12 +147,21 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     const p = placed.find((s) => s.id === slotId)
     if (!p || p.continued) return
     const span = Math.max(1, Math.min(maxSpanForStart(p.day), newSpan))
+    const prevSpan = p.span_days
+    const revert = () => {
+      setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, span_days: prevSpan } : s)))
+    }
     setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, span_days: span } : s)))
-    await fetch(`/api/planner/slots/${slotId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ span_days: span }),
-    })
+    try {
+      const res = await fetch(`/api/planner/slots/${slotId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ span_days: span }),
+      })
+      if (!res.ok) revert()
+    } catch {
+      revert()
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -160,7 +175,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   }
 
   const isWeekEmpty = slots.length === 0
-  const hasRecipeSlots = slots.some((s) => s.recipe_id)
+  const hasRecipeSlots = placed.some((p) => p.recipe_id && !p.continued)
 
   return (
     <div>

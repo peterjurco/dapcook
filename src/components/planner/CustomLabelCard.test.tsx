@@ -117,7 +117,7 @@ describe('CustomLabelCard continuing from last week', () => {
         />
       </DndContext>,
     )
-    expect(screen.getByLabelText('Continues from last week')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Drag to extend or shrink across days')).toBeNull()
+    expect(screen.getByRole('img', { name: 'Continues from last week' })).toBeInTheDocument()
+    expect(screen.queryByTitle('Drag to extend or shrink across days')).toBeNull()
   })
 })
