@@ -23,6 +23,7 @@ function chain(resolve: () => Promise<{ data: unknown }>) {
 }
 
 vi.mock('next/navigation', () => ({ redirect: mocks.redirect }))
+vi.mock('@/lib/auth/getOrigin', () => ({ getOrigin: () => 'https://dapcook-staging.vercel.app' }))
 vi.mock('@/lib/auth/current-user', () => ({ getCurrentProfile: mocks.getCurrentProfile }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
@@ -74,10 +75,8 @@ describe('OnboardingPage', () => {
       preferred_units: 'metric',
     }
     mocks.categories = [{ id: 'cat-1' }]
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://dapcook.test')
 
     const result = await OnboardingPage({ searchParams: {} })
-    vi.unstubAllEnvs()
 
     expect(result.props.initialStep).toBe('tags')
     expect(result.props.locale).toBe('sk')
@@ -87,7 +86,7 @@ describe('OnboardingPage', () => {
       preferredUnits: 'metric',
     })
     expect(result.props.categories).toEqual([{ id: 'cat-1' }])
-    expect(result.props.inviteUrl).toBe('https://dapcook.test/join/abc')
+    expect(result.props.inviteUrl).toBe('https://dapcook-staging.vercel.app/join/abc')
   })
 
   it('passes the saved tags in, mapped onto the catalog', async () => {

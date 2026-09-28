@@ -7,6 +7,7 @@ import { JoinedWelcome } from '@/components/onboarding/JoinedWelcome'
 import { isPersistedStep } from '@/lib/onboarding/steps'
 import { selectionFromSavedTags } from '@/lib/onboarding/tag-catalog'
 import { inviteUrl } from '@/lib/utils/invite'
+import { getOrigin } from '@/lib/auth/getOrigin'
 
 export default async function OnboardingPage({ searchParams }: { searchParams: { joined?: string } }) {
   const profile = await getCurrentProfile()
@@ -59,7 +60,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
         preferredUnits: household.preferred_units,
       }}
       categories={categories ?? []}
-      inviteUrl={inviteUrl(household.invite_token)}
+      inviteUrl={inviteUrl(getOrigin(), household.invite_token)}
       tags={selectionFromSavedTags(savedTags, locale)}
     />
   )

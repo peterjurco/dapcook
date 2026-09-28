@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { generateInviteToken, isValidInviteToken, extractInviteToken, inviteUrl } from './invite'
 
 describe('generateInviteToken', () => {
@@ -53,17 +53,7 @@ describe('extractInviteToken', () => {
 })
 
 describe('inviteUrl', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs()
-  })
-
-  it('builds the join link on the configured site', () => {
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://dapcook.vercel.app')
-    expect(inviteUrl('abc')).toBe('https://dapcook.vercel.app/join/abc')
-  })
-
-  it('falls back to localhost', () => {
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', undefined)
-    expect(inviteUrl('abc')).toBe('http://localhost:3000/join/abc')
+  it('builds the join link on the deployment the user is on', () => {
+    expect(inviteUrl('https://dapcook-staging.vercel.app', 'abc')).toBe('https://dapcook-staging.vercel.app/join/abc')
   })
 })
