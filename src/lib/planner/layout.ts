@@ -1,4 +1,4 @@
-import type { MealSlotWithRecipe } from '@/types/planner'
+import type { PlacedSlot } from './placement'
 
 /**
  * Deterministic within-day order: earliest start, then longest span, then
@@ -6,9 +6,9 @@ import type { MealSlotWithRecipe } from '@/types/planner'
  * final stable tiebreaker. created_at is read defensively in case a slot
  * predates the column being populated.
  */
-export function compareInDay(a: MealSlotWithRecipe, b: MealSlotWithRecipe): number {
-  if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
-  if (a.span_days !== b.span_days) return b.span_days - a.span_days
+export function compareInDay(a: PlacedSlot, b: PlacedSlot): number {
+  if (a.day !== b.day) return a.day - b.day
+  if (a.span !== b.span) return b.span - a.span
   const ca = a.created_at ?? ''
   const cb = b.created_at ?? ''
   if (ca !== cb) return ca < cb ? -1 : 1
@@ -22,29 +22,29 @@ export function maxSpanForStart(startDay: number): number {
 
 export interface EditDay {
   dayOfWeek: number // 1–7
-  slots: MealSlotWithRecipe[] // meals STARTING this day, ordered
+  slots: PlacedSlot[] // meals STARTING this day, ordered
 }
 
 /** One entry per weekday; each lists the meals whose start day is that day. */
-export function buildEditDays(slots: MealSlotWithRecipe[]): EditDay[] {
+export function buildEditDays(slots: PlacedSlot[]): EditDay[] {
   const days: EditDay[] = []
   for (let d = 1; d <= 7; d++) {
     days.push({
       dayOfWeek: d,
-      slots: slots.filter((s) => s.day_of_week === d).sort(compareInDay),
+      slots: slots.filter((s) => s.day === d).sort(compareInDay),
     })
   }
   return days
 }
 
 /** Greedy lane assignment for the desktop calendar: returns slotId → lane index (0-based). */
-export function packLanes(slots: MealSlotWithRecipe[]): Map<string, number> {
+export function packLanes(slots: PlacedSlot[]): Map<string, number> {
   const sorted = [...slots].sort(compareInDay)
   const laneFreeFrom: number[] = [] // lane → first day (1–8) the lane is free again
   const result = new Map<string, number>()
   for (const s of sorted) {
-    const start = s.day_of_week
-    const end = s.day_of_week + s.span_days // exclusive
+    const start = s.day
+    const end = s.day + s.span // exclusive
     let lane = laneFreeFrom.findIndex((freeFrom) => freeFrom <= start)
     if (lane === -1) {
       lane = laneFreeFrom.length
@@ -58,7 +58,7 @@ export function packLanes(slots: MealSlotWithRecipe[]): Map<string, number> {
 }
 
 export interface AgendaCard {
-  slot: MealSlotWithRecipe
+  slot: PlacedSlot
   dayIndex: number // 1-based position within the meal's span
   span: number
 }
@@ -68,15 +68,13 @@ export interface AgendaDay {
 }
 
 /** For mobile View: each weekday lists every meal active that day (multi-day meals repeat). */
-export function buildMobileAgenda(slots: MealSlotWithRecipe[]): AgendaDay[] {
+export function buildMobileAgenda(slots: PlacedSlot[]): AgendaDay[] {
   const days: AgendaDay[] = []
   for (let d = 1; d <= 7; d++) {
-    const active = slots
-      .filter((s) => s.day_of_week <= d && d < s.day_of_week + s.span_days)
-      .sort(compareInDay)
+    const active = slots.filter((s) => s.day <= d && d < s.day + s.span).sort(compareInDay)
     days.push({
       dayOfWeek: d,
-      cards: active.map((s) => ({ slot: s, dayIndex: d - s.day_of_week + 1, span: s.span_days })),
+      cards: active.map((s) => ({ slot: s, dayIndex: s.hiddenBefore + d - s.day + 1, span: s.span_days })),
     })
   }
   return days
