@@ -11,11 +11,11 @@ vi.mock('next-intl', () => ({
     mockTranslate(namespace, key, values),
 }))
 
-function customSlot(p: { id: string; day_of_week: number; span_days: number; label: string }): MealSlotWithRecipe {
+function customSlot(p: { id: string; date: string; span_days: number; label: string }): MealSlotWithRecipe {
   return {
     id: p.id,
-    week_plan_id: 'w',
-    day_of_week: p.day_of_week,
+    household_id: 'household-1',
+    date: p.date,
     meal_type: 'lunch',
     recipe_id: null,
     custom_label: p.label,
@@ -48,7 +48,7 @@ describe('CustomLabelCard resize', () => {
     render(
       <DndContext>
         <CustomLabelCard
-          slot={customSlot({ id: 's1', day_of_week: 1, span_days: 1, label: 'Takeaway' })}
+          slot={customSlot({ id: 's1', date: '2026-06-08', span_days: 1, label: 'Takeaway' })}
           onDelete={() => {}}
           startDay={1}
           lane={0}
@@ -76,7 +76,7 @@ describe('CustomLabelCard label translation', () => {
     render(
       <DndContext>
         <CustomLabelCard
-          slot={customSlot({ id: 's1', day_of_week: 1, span_days: 1, label })}
+          slot={customSlot({ id: 's1', date: '2026-06-08', span_days: 1, label })}
           onDelete={vi.fn()}
           onSpanPreview={vi.fn()}
           onSpanCommit={vi.fn()}
@@ -97,5 +97,27 @@ describe('CustomLabelCard label translation', () => {
   it('renders a user-typed label verbatim', () => {
     renderLabel('Babkine halušky')
     expect(screen.getByText('Babkine halušky')).toBeInTheDocument()
+  })
+})
+
+describe('CustomLabelCard continuing from last week', () => {
+  it('shows the continuation cue and no resize handle', () => {
+    render(
+      <DndContext>
+        <CustomLabelCard
+          slot={customSlot({ id: 's1', date: '2026-06-06', span_days: 3, label: 'Takeaway' })}
+          onDelete={() => {}}
+          startDay={1}
+          lane={0}
+          span={1}
+          maxSpanDays={7}
+          continued
+          onSpanPreview={() => {}}
+          onSpanCommit={() => {}}
+        />
+      </DndContext>,
+    )
+    expect(screen.getByLabelText('Continues from last week')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Drag to extend or shrink across days')).toBeNull()
   })
 })

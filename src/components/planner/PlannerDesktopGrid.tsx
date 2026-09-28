@@ -9,13 +9,13 @@ import { CustomLabelCard } from './CustomLabelCard'
 import { RecipeSearch } from './RecipeSearch'
 import { packLanes, maxSpanForStart } from '@/lib/planner/layout'
 import { formatDayLabel, toDateString } from '@/lib/utils/week'
-import type { MealSlotWithRecipe } from '@/types/planner'
+import type { PlacedSlot } from '@/lib/planner/placement'
 import type { RecipeListItem } from '@/lib/recipes/list-columns'
 
 interface PlannerDesktopGridProps {
   weekDays: Date[]
   today: Date
-  slots: MealSlotWithRecipe[]
+  slots: PlacedSlot[]
   openSearchDay: number | null
   addingToDay: number | null
   onOpenSearch: (day: number) => void
@@ -62,7 +62,7 @@ export function PlannerDesktopGrid({
   function maxCoveringLane(day: number): number {
     let max = -1
     for (const s of slots) {
-      if (s.day_of_week <= day && day < s.day_of_week + s.span_days) {
+      if (s.day <= day && day < s.day + s.span) {
         max = Math.max(max, lanes.get(s.id) ?? 0)
       }
     }
@@ -101,15 +101,15 @@ export function PlannerDesktopGrid({
         <div className="relative grid grid-cols-7 gap-3" style={{ gridAutoRows: 'auto' }}>
           {slots.map((slot) => {
             const lane = lanes.get(slot.id) ?? 0
-            const span = slot.span_days
             return slot.recipe_id ? (
               <SlotCard
                 key={slot.id}
                 slot={slot}
-                startDay={slot.day_of_week}
+                startDay={slot.day}
                 lane={lane}
-                span={span}
-                maxSpanDays={maxSpanForStart(slot.day_of_week)}
+                span={slot.span}
+                maxSpanDays={maxSpanForStart(slot.day)}
+                continued={slot.continued}
                 onDelete={() => onDelete(slot.id)}
                 onSpanPreview={(newSpan) => onSpanPreview(slot.id, newSpan)}
                 onSpanCommit={(newSpan) => onSpanCommit(slot.id, newSpan)}
@@ -118,10 +118,11 @@ export function PlannerDesktopGrid({
               <CustomLabelCard
                 key={slot.id}
                 slot={slot}
-                startDay={slot.day_of_week}
+                startDay={slot.day}
                 lane={lane}
-                span={span}
-                maxSpanDays={maxSpanForStart(slot.day_of_week)}
+                span={slot.span}
+                maxSpanDays={maxSpanForStart(slot.day)}
+                continued={slot.continued}
                 onDelete={() => onDelete(slot.id)}
                 onSpanPreview={(newSpan) => onSpanPreview(slot.id, newSpan)}
                 onSpanCommit={(newSpan) => onSpanCommit(slot.id, newSpan)}

@@ -44,11 +44,20 @@ vi.mock('./MobileEditList', () => ({
 }))
 
 vi.mock('./PlannerDesktopGrid', () => ({
-  PlannerDesktopGrid: ({ slots }: { slots: WeekData['slots'] }) => (
+  PlannerDesktopGrid: ({
+    slots,
+    onAddCustom,
+  }: {
+    slots: Array<WeekData['slots'][number] & { day: number; span: number; continued: boolean }>
+    onAddCustom: (day: number, label: string) => void
+  }) => (
     <div data-testid="planner-grid">
       {slots.map((s) => (
-        <div key={s.id}>{s.recipe?.title ?? s.custom_label}</div>
+        <div key={s.id} data-day={s.day} data-span={s.span} data-continued={String(s.continued)}>
+          {s.recipe?.title ?? s.custom_label}
+        </div>
       ))}
+      <button type="button" onClick={() => onAddCustom(3, 'Leftovers')}>add on day 3</button>
     </div>
   ),
 }))
@@ -64,7 +73,7 @@ function response(data: WeekData) {
   } as Response
 }
 
-function weekData(recipeTitle: string): WeekData {
+function weekData(recipeTitle: string, date = '2026-06-01'): WeekData {
   return {
     weekPlan: {
       id: 'week-plan-1',
@@ -76,8 +85,8 @@ function weekData(recipeTitle: string): WeekData {
     },
     slots: [{
       id: 'slot-1',
-      week_plan_id: 'week-plan-1',
-      day_of_week: 1,
+      household_id: 'household-1',
+      date,
       meal_type: 'lunch',
       recipe_id: 'recipe-1',
       servings_scale: 1,
@@ -156,7 +165,7 @@ describe('PlannerClient', () => {
   })
 
   it('keeps the planner grid when the week has a planned slot', async () => {
-    global.fetch = vi.fn().mockResolvedValue(response(weekData('Planned Soup')))
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Planned Soup', '2026-06-15')))
 
     render(<PlannerClient weekStart={new Date('2026-06-15T00:00:00.000Z')} />)
 
@@ -165,7 +174,7 @@ describe('PlannerClient', () => {
   })
 
   it('places mobile planner actions in one row directly under the week picker', async () => {
-    global.fetch = vi.fn().mockResolvedValue(response(weekData('Action Pasta')))
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Action Pasta', '2026-06-22')))
 
     render(<PlannerClient weekStart={new Date('2026-06-22T00:00:00.000Z')} />)
 
@@ -184,7 +193,7 @@ describe('PlannerClient', () => {
   })
 
   it('keeps the desktop shopping list action below the planner grid', async () => {
-    global.fetch = vi.fn().mockResolvedValue(response(weekData('Desktop Pasta')))
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Desktop Pasta', '2026-06-29')))
 
     render(<PlannerClient weekStart={new Date('2026-06-29T00:00:00.000Z')} />)
 
@@ -200,11 +209,11 @@ describe('PlannerClient', () => {
   })
 
   it('renders multiple meals planned on the same day', async () => {
-    const data = weekData('First Meal')
+    const data = weekData('First Meal', '2026-08-03')
     data.slots.push({
       id: 'slot-2',
-      week_plan_id: 'week-plan-1',
-      day_of_week: 1,
+      household_id: 'household-1',
+      date: '2026-08-03',
       meal_type: 'lunch',
       recipe_id: 'recipe-2',
       servings_scale: 1,
@@ -229,7 +238,7 @@ describe('PlannerClient', () => {
   })
 
   it('shows only Done in the mobile planner actions while editing', async () => {
-    global.fetch = vi.fn().mockResolvedValue(response(weekData('Edit Pasta')))
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Edit Pasta', '2026-07-06')))
 
     render(<PlannerClient weekStart={new Date('2026-07-06T00:00:00.000Z')} />)
 
@@ -244,5 +253,44 @@ describe('PlannerClient', () => {
     expect(screen.getByText('Mobile edit')).toBeInTheDocument()
     expect(within(actions).getByRole('button', { name: /done/i })).toBeInTheDocument()
     expect(within(actions).queryByRole('button', { name: /generate shopping list/i })).toBeNull()
+  })
+
+  it('places a meal continuing from the previous week at the first column', async () => {
+    const data = emptyWeekData('2026-06-08')
+    data.slots = [{
+      id: 'straddle',
+      household_id: 'household-1',
+      date: '2026-06-06', // Saturday before the week, 3 days → visible on 06-08 only
+      meal_type: 'lunch',
+      recipe_id: null,
+      servings_scale: 1,
+      custom_label: 'Leftovers',
+      span_days: 3,
+      created_at: '2026-01-01T00:00:00.000Z',
+      recipe: null,
+    }]
+    global.fetch = vi.fn().mockResolvedValue(response(data))
+
+    render(<PlannerClient weekStart={new Date(2026, 5, 8)} />)
+
+    const card = await within(await screen.findByTestId('planner-grid')).findByText('Leftovers')
+    expect(card).toHaveAttribute('data-day', '1')
+    expect(card).toHaveAttribute('data-span', '1')
+    expect(card).toHaveAttribute('data-continued', 'true')
+  })
+
+  it('adds a meal by date', async () => {
+    const data = emptyWeekData('2026-06-08')
+    data.slots = weekData('Something').slots.map((s) => ({ ...s, date: '2026-06-08' }))
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response(data))
+      .mockResolvedValue({ ok: true, json: async () => ({ id: 'new' }) } as Response)
+    global.fetch = fetchMock
+
+    render(<PlannerClient weekStart={new Date(2026, 5, 8)} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'add on day 3' }))
+
+    const post = fetchMock.mock.calls.find(([url, init]) => url === '/api/planner/slots' && (init as RequestInit)?.method === 'POST')
+    expect(JSON.parse((post![1] as RequestInit).body as string)).toEqual({ date: '2026-06-10', custom_label: 'Leftovers' })
   })
 })

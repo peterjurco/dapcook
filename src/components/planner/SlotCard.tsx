@@ -24,6 +24,8 @@ interface SlotCardProps {
   startDay?: number
   lane?: number
   span?: number
+  /** The meal began in an earlier week: show a cue, no resizing from here. */
+  continued?: boolean
 }
 
 export function SlotCard({
@@ -35,6 +37,7 @@ export function SlotCard({
   startDay,
   lane,
   span,
+  continued,
 }: SlotCardProps) {
   const t = useTranslations('planner')
   const [confirming, setConfirming] = useState(false)
@@ -69,7 +72,7 @@ export function SlotCard({
     : placement
 
   const { isResizing, showResizeHandle, handleResizeMouseDown } = useSpanResize({
-    spanDays: slot.span_days,
+    spanDays: span ?? slot.span_days,
     maxSpanDays,
     onSpanPreview,
     onSpanCommit,
@@ -134,13 +137,24 @@ export function SlotCard({
           <X size={12} />
         </button>
 
-        {/* Resize handle — desktop only, drag right to extend / left to shrink */}
-        <ResizeHandle
-          show={showResizeHandle}
-          isResizing={isResizing}
-          title={t('slotCard.extendTitle')}
-          onMouseDown={handleResizeMouseDown}
-        />
+        {/* Resize handle — desktop only, drag right to extend / left to shrink.
+            A meal continuing from last week gets a cue instead. */}
+        {continued ? (
+          <span
+            aria-label={t('slotCard.continues')}
+            title={t('slotCard.continues')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white border border-gray-200 px-1 text-[10px] text-gray-400"
+          >
+            ↤
+          </span>
+        ) : (
+          <ResizeHandle
+            show={showResizeHandle}
+            isResizing={isResizing}
+            title={t('slotCard.extendTitle')}
+            onMouseDown={handleResizeMouseDown}
+          />
+        )}
 
       </div>
 
