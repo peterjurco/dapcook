@@ -256,8 +256,8 @@ export interface Database {
       meal_slots: {
         Row: {
           id: string
-          week_plan_id: string
-          day_of_week: number
+          household_id: string
+          date: string
           meal_type: string
           recipe_id: string | null
           servings_scale: number
@@ -267,8 +267,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          week_plan_id: string
-          day_of_week: number
+          household_id: string
+          date: string
           meal_type?: string
           recipe_id?: string | null
           servings_scale?: number
@@ -278,8 +278,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          week_plan_id?: string
-          day_of_week?: number
+          household_id?: string
+          date?: string
           meal_type?: string
           recipe_id?: string | null
           servings_scale?: number
