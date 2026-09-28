@@ -1,4 +1,9 @@
 {
+  "weekStart": {
+    "monday": "Monday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
   "account": {
     "heading": "Your account",
     "interfaceLanguage": "Interface language",
@@ -106,6 +111,8 @@
     "translationHelp": "When enabled, recipes are translated to your chosen language on import. Existing recipes can be updated via bulk translate.",
     "unitsLabel": "Preferred units",
     "unitsHelp": "Applied when importing new recipes.",
+    "weekStartLabel": "Week starts on",
+    "weekStartHelp": "The planner shows weeks from this day.",
     "inviteLinkLabel": "Invite link",
     "inviteLinkHelp": "Share this link with anyone you want to join this household.",
     "tags": "Tags",
