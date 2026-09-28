@@ -17,6 +17,7 @@ import {
   isNextWeek,
   dayIndexInWeek,
   parseDateString,
+  addDays,
 } from '@/lib/utils/week'
 import { useWeekStartDay } from '@/components/providers/WeekStartProvider'
 import { addSlotToCachedWeek, removeSlotFromCachedWeek } from '@/components/planner/plannerWeekCache'
@@ -86,8 +87,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        week_start: targetWeek,
-        day_of_week: selectedDay,
+        date: toDateString(addDays(weekStart, selectedDay - 1)),
         recipe_id: recipeId,
       }),
     })
