@@ -18,6 +18,7 @@ import {
 import type { TagSelection } from '@/lib/onboarding/tag-catalog'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { InviteLink } from '@/components/settings/InviteLink'
+import { OnboardingHeading } from './OnboardingHeading'
 import { StepFrame } from './StepFrame'
 import { sendJson } from './send-json'
 import { LanguageStep } from './steps/LanguageStep'
@@ -107,10 +108,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
     <div className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="max-w-lg mx-auto space-y-6">
         <div className="text-center space-y-3">
-          <h1 className="text-2xl font-semibold text-gray-900 font-fraunces">
-            <span className="text-emerald-700">{t('onboarding.headingW')}</span>
-            {t('onboarding.headingRest')}
-          </h1>
+          <OnboardingHeading />
           {number > 0 && (
             <div className="space-y-1.5">
               <p className="text-xs text-gray-500">{t('onboarding.progress', { current: number, total: TOTAL_STEPS })}</p>

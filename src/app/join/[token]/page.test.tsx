@@ -32,6 +32,10 @@ describe('JoinPage', () => {
     render(await JoinPage({ params: { token: 'token-1' } }))
 
     expect(screen.getByText('The Jurcos')).toBeInTheDocument()
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading).toHaveTextContent('Join dapcook')
+    expect(heading).toHaveClass('font-fraunces')
+    expect(heading.querySelector('span')).toHaveClass('text-emerald-700')
     expect(screen.getByRole('button', { name: /sign in with google to accept/i })).toBeInTheDocument()
   })
 

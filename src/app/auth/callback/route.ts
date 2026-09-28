@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
       // A dead invite (regenerated or mistyped) must not drop the invitee into
       // onboarding, where they would unknowingly create a second household.
-      const target = household ? '/recipes?ob=1&obm=join' : '/join-invalid'
+      const target = household ? '/onboarding?joined=1' : '/join-invalid'
 
       if (household) {
         await supabase

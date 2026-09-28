@@ -75,11 +75,11 @@ describe('GET /auth/callback', () => {
     expect(res.headers.get('location')).toBe('https://dapcook.vercel.app/onboarding')
   })
 
-  it('puts an invitee into the household and reports a join', async () => {
+  it('puts an invitee into the household and opens the short welcome flow', async () => {
     useSupabase(makeSupabase(null, [{ id: 'hh-1', name: 'Home' }]))
     const res = await callback({ cookie: 'pending_invite_token=tok' })
     expect(profileUpdate).toHaveBeenCalledWith({ household_id: 'hh-1' })
-    expect(res.headers.get('location')).toBe('https://dapcook.vercel.app/recipes?ob=1&obm=join')
+    expect(res.headers.get('location')).toBe('https://dapcook.vercel.app/onboarding?joined=1')
     expect(res.cookies.get('pending_invite_token')?.value).toBe('')
   })
 
