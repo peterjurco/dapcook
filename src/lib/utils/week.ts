@@ -7,37 +7,51 @@ export function isWeekStartDay(value: unknown): value is WeekStartDay {
   return WEEK_START_DAYS.includes(value as WeekStartDay)
 }
 
-/** Returns the Monday of the week containing the given date */
-export function getWeekStart(date: Date = new Date()): Date {
+/** `Date.getDay()` value of each start day. */
+const JS_DAY: Record<WeekStartDay, number> = { sunday: 0, monday: 1, saturday: 6 }
+
+/** Returns the first day (local midnight) of the week containing `date`. */
+export function getWeekStart(date: Date, startDay: WeekStartDay): Date {
   const d = new Date(date)
-  const day = d.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
-  const diff = day === 0 ? -6 : 1 - day // adjust to Monday
-  d.setDate(d.getDate() + diff)
   d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - ((d.getDay() - JS_DAY[startDay] + 7) % 7))
   return d
 }
 
-/** Returns an array of 7 Date objects Mon–Sun for the given week start */
+/** Returns a new Date `days` calendar days after `date`. */
+export function addDays(date: Date, days: number): Date {
+  const d = new Date(date)
+  d.setDate(d.getDate() + days)
+  return d
+}
+
+/** Whole calendar days from `a` to `b` (negative when `b` is earlier). DST-safe. */
+export function daysBetween(a: Date, b: Date): number {
+  const utc = (d: Date) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+  return Math.round((utc(b) - utc(a)) / 86_400_000)
+}
+
+/** Parses YYYY-MM-DD as local midnight; null when malformed or not a real date. */
+export function parseDateString(value: string | undefined | null): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const [y, m, d] = value.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return date.getMonth() === m - 1 && date.getDate() === d ? date : null
+}
+
+/** Returns an array of the 7 dates of the week starting at `weekStart` */
 export function getWeekDays(weekStart: Date): Date[] {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart)
-    d.setDate(d.getDate() + i)
-    return d
-  })
+  return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 }
 
-/** Returns Monday of the next week */
+/** Returns the start of the next week */
 export function nextWeekStart(weekStart: Date): Date {
-  const d = new Date(weekStart)
-  d.setDate(d.getDate() + 7)
-  return d
+  return addDays(weekStart, 7)
 }
 
-/** Returns Monday of the previous week */
+/** Returns the start of the previous week */
 export function prevWeekStart(weekStart: Date): Date {
-  const d = new Date(weekStart)
-  d.setDate(d.getDate() - 7)
-  return d
+  return addDays(weekStart, -7)
 }
 
 /** Formats a week as "17 – 23 March 2025" */
@@ -90,28 +104,36 @@ export function toDateString(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-/** Parses a YYYY-MM-DD string into the Monday of that week.
- *  Falls back to current week if invalid. */
-export function parseWeekParam(param: string | undefined): Date {
-  if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
-    const d = new Date(param + 'T00:00:00')
-    if (!isNaN(d.getTime())) return getWeekStart(d)
-  }
-  return getWeekStart()
+/** Parses a YYYY-MM-DD string into the start of its week; falls back to the current week. */
+export function parseWeekParam(param: string | undefined, startDay: WeekStartDay): Date {
+  return getWeekStart(parseDateString(param) ?? new Date(), startDay)
 }
 
-/** True if weekStart is the current week's Monday */
+function todayMidnight(): Date {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+/** True if today falls inside the week starting at `weekStart` */
 export function isCurrentWeek(weekStart: Date): boolean {
-  return toDateString(weekStart) === toDateString(getWeekStart())
+  const offset = daysBetween(weekStart, todayMidnight())
+  return offset >= 0 && offset < 7
 }
 
-/** True if weekStart is next week's Monday */
+/** True if today + 7 days falls inside the week starting at `weekStart` */
 export function isNextWeek(weekStart: Date): boolean {
-  return toDateString(weekStart) === toDateString(nextWeekStart(getWeekStart()))
+  return isCurrentWeek(prevWeekStart(weekStart))
 }
 
-/** day_of_week number (1=Mon … 7=Sun) from a Date */
-export function dayOfWeekNumber(date: Date): number {
-  const js = date.getDay() // 0=Sun
-  return js === 0 ? 7 : js
+/** 1-based position (1–7) of `date` in the week starting at `weekStart` */
+export function dayIndexInWeek(date: Date, weekStart: Date): number {
+  return daysBetween(weekStart, date) + 1
+}
+
+/** True if a meal starting on `date` and lasting `span` days ends inside the week it starts in. */
+export function spanFitsWeek(date: string, span: number, startDay: WeekStartDay): boolean {
+  const d = parseDateString(date)
+  if (!d) return false
+  return dayIndexInWeek(d, getWeekStart(d, startDay)) - 1 + span <= 7
 }
