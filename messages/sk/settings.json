@@ -111,7 +111,7 @@
     "translationHelp": "Ak je zapnuté, recepty sa pri importe preložia do zvoleného jazyka. Existujúce recepty možno aktualizovať hromadným prekladom.",
     "unitsLabel": "Preferované jednotky",
     "unitsHelp": "Použije sa pri importe nových receptov.",
-    "weekStartLabel": "Týždeň začína v",
+    "weekStartLabel": "Začiatok týždňa",
     "weekStartHelp": "Plánovač zobrazuje týždne od tohto dňa.",
     "inviteLinkLabel": "Pozývací odkaz",
     "inviteLinkHelp": "Zdieľajte tento odkaz s kýmkoľvek, koho chcete pozvať do tejto domácnosti.",

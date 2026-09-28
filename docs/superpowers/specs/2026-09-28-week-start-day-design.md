@@ -109,9 +109,9 @@ the whole meal. Moving it sends a new `date`, subject to the normal span rule.
 
 ### Add to plan picker
 
-`AddToPlanPicker` receives the household's `WeekStartDay` from `AddToPlanButton`, which gets it
-from its server parent (exact path traced in the plan). It builds weeks with it and preselects
-today via `dayIndexInWeek`. It posts `{ date }`.
+`AddToPlanPicker` reads the household's `WeekStartDay` from `WeekStartProvider` (mounted in
+`src/app/(app)/layout.tsx`, fed by `getHouseholdWeekStartDay()`). It builds weeks with it and
+preselects today via `dayIndexInWeek`. It posts `{ date }`.
 
 ### Settings
 
