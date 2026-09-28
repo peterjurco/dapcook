@@ -3,11 +3,12 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentProfile } from '@/lib/auth/current-user'
 import { defaultLocale, isLocale } from '@/i18n/config'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
+import { JoinedWelcome } from '@/components/onboarding/JoinedWelcome'
 import { isPersistedStep } from '@/lib/onboarding/steps'
 import { selectionFromSavedTags } from '@/lib/onboarding/tag-catalog'
 import { inviteUrl } from '@/lib/utils/invite'
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams: { joined?: string } }) {
   const profile = await getCurrentProfile()
   const locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
 
@@ -16,6 +17,17 @@ export default async function OnboardingPage() {
   }
 
   const supabase = createClient()
+
+  // Set by auth/callback after an invite is accepted.
+  if (searchParams.joined === '1') {
+    const { data: joined } = await supabase
+      .from('households')
+      .select('name')
+      .eq('id', profile.household_id)
+      .single()
+    return <JoinedWelcome householdName={joined?.name ?? ''} />
+  }
+
   const [{ data: household }, { data: categories }, { data: tagGroups }, { data: tags }] = await Promise.all([
     supabase
       .from('households')

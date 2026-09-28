@@ -14,7 +14,10 @@ export default async function JoinPage({ params }: { params: { token: string } }
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-sm w-full space-y-8 p-8 text-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('join.heading')}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 font-fraunces">
+            <span className="text-emerald-700">{t('join.headingJ')}</span>
+            {t('join.headingRest')}
+          </h1>
 
           {household ? (
             <div className="mt-4 space-y-3">
