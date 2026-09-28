@@ -4,6 +4,7 @@ export const ONBOARDING_STEPS = [
   'household',
   'translation',
   'units',
+  'week_start',
   'tags',
   'shopping_categories',
   'invite',
@@ -13,7 +14,7 @@ export const ONBOARDING_STEPS = [
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number]
 
 /** Steps that exist once the household does, stored in `households.onboarding_step`. */
-export const PERSISTED_STEPS = ['translation', 'units', 'tags', 'shopping_categories', 'invite'] as const
+export const PERSISTED_STEPS = ['translation', 'units', 'week_start', 'tags', 'shopping_categories', 'invite'] as const
 
 export type PersistedStep = (typeof PERSISTED_STEPS)[number]
 

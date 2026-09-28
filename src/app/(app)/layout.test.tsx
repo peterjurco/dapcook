@@ -14,6 +14,9 @@ vi.mock('@/lib/auth/current-user', () => ({
   getCurrentUser: mocks.getCurrentUser,
   getCurrentProfile: mocks.getCurrentProfile,
 }))
+vi.mock('@/lib/auth/household', () => ({
+  getHouseholdWeekStartDay: vi.fn(async () => 'monday'),
+}))
 vi.mock('@/lib/onboarding/status', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/onboarding/status')>()),
   readOnboardingStatus: mocks.readOnboardingStatus,

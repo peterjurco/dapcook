@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { ArrowLeft } from 'lucide-react'
-import { getWeekDays, formatDayLabel } from '@/lib/utils/week'
+import { formatDayLabel, parseDateString } from '@/lib/utils/week'
 import {
   applyIngredientEdit,
   buildPlanEntries,
@@ -18,21 +18,19 @@ import { ShoppingPlanBox } from './ShoppingPlanBox'
 
 interface Props {
   slots: PlanSlot[]
-  weekStart: Date
 }
 
-export function GenerateShoppingPage({ slots, weekStart }: Props) {
+export function GenerateShoppingPage({ slots }: Props) {
   const router = useRouter()
   const locale = useLocale()
   const t = useTranslations('shopping')
 
-  const [entries, setEntries] = useState<PlanEntry[]>(() => {
-    const weekDays = getWeekDays(weekStart)
-    return buildPlanEntries(slots, (slot) => {
-      const { weekday, day } = formatDayLabel(weekDays[slot.day_of_week - 1], locale)
+  const [entries, setEntries] = useState<PlanEntry[]>(() =>
+    buildPlanEntries(slots, (slot) => {
+      const { weekday, day } = formatDayLabel(parseDateString(slot.date)!, locale)
       return `${weekday} ${day}`
-    })
-  })
+    }),
+  )
   const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

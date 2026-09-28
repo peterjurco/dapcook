@@ -26,7 +26,7 @@ const ing = (p: Partial<Ingredient>): Ingredient => ({ id: 'x', quantity: null, 
 
 function recipeSlot(p: {
   id: string
-  day_of_week: number
+  date: string
   title: string
   servings: number | null
   ingredients?: Ingredient[]
@@ -34,8 +34,8 @@ function recipeSlot(p: {
 }): PlanSlot {
   return {
     id: `slot-${p.id}`,
-    week_plan_id: 'w',
-    day_of_week: p.day_of_week,
+    household_id: 'hh',
+    date: p.date,
     meal_type: 'lunch',
     recipe_id: p.id,
     custom_label: null,
@@ -54,11 +54,11 @@ function recipeSlot(p: {
   }
 }
 
-function customSlot(p: { id: string; day_of_week: number; label: string }): PlanSlot {
+function customSlot(p: { id: string; date: string; label: string }): PlanSlot {
   return {
     id: `slot-${p.id}`,
-    week_plan_id: 'w',
-    day_of_week: p.day_of_week,
+    household_id: 'hh',
+    date: p.date,
     meal_type: 'lunch',
     recipe_id: null,
     custom_label: p.label,
@@ -69,18 +69,16 @@ function customSlot(p: { id: string; day_of_week: number; label: string }): Plan
   }
 }
 
-const weekStart = new Date('2026-06-08T00:00:00.000Z')
-
 const carbonara = recipeSlot({
   id: 'r1',
-  day_of_week: 1,
+  date: '2026-06-08',
   title: 'Carbonara',
   servings: 2,
   ingredients: [ing({ quantity: 200, unit: 'g', name: 'spaghetti' }), ing({ quantity: 1, name: 'onion' })],
 })
 
-function renderPage(slots: PlanSlot[] = [carbonara, customSlot({ id: 'c1', day_of_week: 2, label: 'rice' })]) {
-  render(<GenerateShoppingPage weekStart={weekStart} slots={slots} />)
+function renderPage(slots: PlanSlot[] = [carbonara, customSlot({ id: 'c1', date: '2026-06-09', label: 'rice' })]) {
+  render(<GenerateShoppingPage slots={slots} />)
 }
 
 const box = (name: string) => within(screen.getByRole('region', { name }))
@@ -98,7 +96,7 @@ function lastFetchBody() {
 
 describe('GenerateShoppingPage', () => {
   it('shows a box per recipe with its scaled ingredients and a box per typed custom meal', () => {
-    renderPage([carbonara, customSlot({ id: 'c1', day_of_week: 2, label: 'rice' }), customSlot({ id: 'c2', day_of_week: 3, label: 'Eating out' })])
+    renderPage([carbonara, customSlot({ id: 'c1', date: '2026-06-09', label: 'rice' }), customSlot({ id: 'c2', date: '2026-06-10', label: 'Eating out' })])
 
     expect(box('Carbonara').getByText('spaghetti')).toBeInTheDocument()
     expect(box('Carbonara').getByText('200g')).toBeInTheDocument()
@@ -108,12 +106,12 @@ describe('GenerateShoppingPage', () => {
   })
 
   it('notes a recipe without ingredients', () => {
-    renderPage([recipeSlot({ id: 'r2', day_of_week: 1, title: 'Toast', servings: 1 })])
+    renderPage([recipeSlot({ id: 'r2', date: '2026-06-08', title: 'Toast', servings: 1 })])
     expect(box('Toast').getByText('This recipe has no ingredients.')).toBeInTheDocument()
   })
 
   it('collapses the same custom meal across days into one box', () => {
-    renderPage([customSlot({ id: 'c1', day_of_week: 1, label: 'rice' }), customSlot({ id: 'c2', day_of_week: 3, label: 'rice' })])
+    renderPage([customSlot({ id: 'c1', date: '2026-06-08', label: 'rice' }), customSlot({ id: 'c2', date: '2026-06-10', label: 'rice' })])
     expect(screen.getAllByText('rice')).toHaveLength(1)
   })
 
@@ -161,8 +159,8 @@ describe('GenerateShoppingPage', () => {
 
   it('shows the recipe image next to the title and a placeholder for custom meals', () => {
     renderPage([
-      recipeSlot({ id: 'r1', day_of_week: 1, title: 'Carbonara', servings: 2, imageUrl: 'https://images.test/carbonara.jpg' }),
-      customSlot({ id: 'c1', day_of_week: 2, label: 'rice' }),
+      recipeSlot({ id: 'r1', date: '2026-06-08', title: 'Carbonara', servings: 2, imageUrl: 'https://images.test/carbonara.jpg' }),
+      customSlot({ id: 'c1', date: '2026-06-09', label: 'rice' }),
     ])
     // Decorative (alt="") — the title right next to it already names the recipe.
     const image = screen.getByRole('region', { name: 'Carbonara' }).querySelector('img')
@@ -258,7 +256,7 @@ describe('GenerateShoppingPage', () => {
 
   it('disables adding and explains why when there are too many ingredients', () => {
     const ingredients = Array.from({ length: 301 }, (_, i) => ing({ name: `item ${i}` }))
-    renderPage([recipeSlot({ id: 'r1', day_of_week: 1, title: 'Feast', servings: 1, ingredients })])
+    renderPage([recipeSlot({ id: 'r1', date: '2026-06-08', title: 'Feast', servings: 1, ingredients })])
     expect(screen.getByRole('button', { name: 'Add 301 items to shopping list' })).toBeDisabled()
     expect(
       screen.getByText('Too many ingredients (300 max). Remove some recipes or tick off what you already have.'),

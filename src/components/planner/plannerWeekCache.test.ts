@@ -7,11 +7,11 @@ import {
 } from './plannerWeekCache'
 import type { WeekData, MealSlotWithRecipe } from '@/types/planner'
 
-function slot(id: string, day = 1): MealSlotWithRecipe {
+function slot(id: string, date = '2026-06-01'): MealSlotWithRecipe {
   return {
     id,
-    week_plan_id: 'wp',
-    day_of_week: day,
+    household_id: 'household-1',
+    date,
     meal_type: 'lunch',
     recipe_id: `r-${id}`,
     custom_label: null,

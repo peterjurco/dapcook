@@ -7,6 +7,7 @@ import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategori
 import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
 import { HouseholdNameEditor } from '@/components/settings/HouseholdNameEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
+import { WeekStartSelector } from '@/components/settings/WeekStartSelector'
 import { TranslationSettings } from '@/components/settings/TranslationSettings'
 import { InterfaceLanguageSelector } from '@/components/settings/InterfaceLanguageSelector'
 import { signOut } from '@/lib/auth/actions'
@@ -116,6 +117,12 @@ export default async function SettingsPage() {
               translationEnabled={household?.translation_enabled ?? false}
               recipeIds={recipeIds}
             />
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500 mb-2">{t('page.weekStartLabel')}</p>
+            <p className="text-xs text-gray-400 mb-2">{t('page.weekStartHelp')}</p>
+            <WeekStartSelector initialValue={household?.week_start_day ?? 'monday'} />
           </div>
 
           <div>

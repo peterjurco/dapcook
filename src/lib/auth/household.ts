@@ -1,5 +1,7 @@
 import { unstable_cache, revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { isWeekStartDay, type WeekStartDay } from '@/lib/utils/week'
 import { getCurrentUser } from './current-user'
 import { perRequest } from './per-request'
 
@@ -47,3 +49,19 @@ export const getCurrentHouseholdId = perRequest(async (): Promise<string | null>
 export function forgetHouseholdId(userId: string): void {
   revalidateTag(householdCacheTag(userId))
 }
+
+/**
+ * The signed-in user's household week start. Read fresh on every request (not
+ * cross-request cached like the household id) so a change in Settings shows
+ * up on the next navigation.
+ */
+export const getHouseholdWeekStartDay = perRequest(async (): Promise<WeekStartDay> => {
+  const householdId = await getCurrentHouseholdId()
+  if (!householdId) return 'monday'
+  const { data } = await createClient()
+    .from('households')
+    .select('week_start_day')
+    .eq('id', householdId)
+    .single()
+  return isWeekStartDay(data?.week_start_day) ? data.week_start_day : 'monday'
+})

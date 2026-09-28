@@ -42,22 +42,17 @@ export async function POST(request: NextRequest) {
     await supabase.from('shopping_lists').delete().eq('id', existing.id)
   }
 
-  // Find week_plans whose week range overlaps with [date_from, date_to]
-  // A week starting on week_start covers week_start..week_start+6
-  // Overlap: week_start <= date_to AND week_start >= date_from - 6 days
-  const dateFromMinus6 = new Date(date_from + 'T00:00:00')
-  dateFromMinus6.setDate(dateFromMinus6.getDate() - 6)
-  const dateFromMinus6Str = dateFromMinus6.toISOString().slice(0, 10)
-
-  const { data: weekPlans } = await supabase
-    .from('week_plans')
-    .select('id, week_start')
+  const { data: slots } = await supabase
+    .from('meal_slots')
+    .select('*, recipe:recipes(id, title, servings, ingredients)')
     .eq('household_id', householdId)
-    .gte('week_start', dateFromMinus6Str)
-    .lte('week_start', date_to)
+    .gte('date', date_from)
+    .lte('date', date_to)
+    .not('recipe_id', 'is', null)
+  const relevantSlots = slots ?? []
 
-  if (!weekPlans?.length) {
-    // No plans in range — create empty list
+  if (!relevantSlots.length) {
+    // Nothing planned in range — create empty list
     const { data: newList, error } = await supabase
       .from('shopping_lists')
       .insert({ household_id: householdId, name: formatListName(date_from, date_to, locale), date_from, date_to })
@@ -66,26 +61,6 @@ export async function POST(request: NextRequest) {
     if (error || !newList) return NextResponse.json({ error: 'Failed to create list' }, { status: 500 })
     return NextResponse.json({ list: newList, items: [] })
   }
-
-  const weekPlanIds = weekPlans.map((w) => w.id)
-  const weekPlanStartMap = new Map(weekPlans.map((w) => [w.id, w.week_start]))
-
-  // Fetch all slots with recipes in those week plans
-  const { data: slots } = await supabase
-    .from('meal_slots')
-    .select('*, recipe:recipes(id, title, servings, ingredients)')
-    .in('week_plan_id', weekPlanIds)
-    .not('recipe_id', 'is', null)
-
-  // Filter slots to those whose date falls within [date_from, date_to]
-  const relevantSlots = (slots ?? []).filter((slot) => {
-    const weekStart = weekPlanStartMap.get(slot.week_plan_id)
-    if (!weekStart) return false
-    const slotDate = new Date(weekStart + 'T00:00:00')
-    slotDate.setDate(slotDate.getDate() + slot.day_of_week - 1)
-    const slotDateStr = slotDate.toISOString().slice(0, 10)
-    return slotDateStr >= date_from && slotDateStr <= date_to
-  })
 
   // Build shopping items from ingredients
   const rawItems: Array<{

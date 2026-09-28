@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { parseWeekParam, toDateString } from '@/lib/utils/week'
+import { parseDateString, spanFitsWeek } from '@/lib/utils/week'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { getCurrentHouseholdId } from '@/lib/auth/household'
+import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
@@ -13,68 +13,35 @@ export async function POST(request: NextRequest) {
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const body = await request.json() as {
-    week_start: string
-    day_of_week: number
-    recipe_id?: string | null
-    custom_label?: string | null
+    date?: string
+    recipe_id?: string
+    custom_label?: string
     span_days?: number
   }
 
-  if (!body.week_start || !body.day_of_week) {
-    return NextResponse.json({ error: 'week_start and day_of_week are required' }, { status: 400 })
+  const span = body.span_days ?? 1
+  if (!parseDateString(body.date)) {
+    return NextResponse.json({ error: 'date is required (YYYY-MM-DD)' }, { status: 400 })
   }
-  if (body.day_of_week < 1 || body.day_of_week > 7) {
-    return NextResponse.json({ error: 'day_of_week must be 1–7' }, { status: 400 })
+  if (!Number.isInteger(span) || span < 1 || span > 7) {
+    return NextResponse.json({ error: 'span_days must be 1–7' }, { status: 400 })
   }
   if (!body.recipe_id && !body.custom_label) {
     return NextResponse.json({ error: 'recipe_id or custom_label is required' }, { status: 400 })
   }
-
-  const weekStartStr = toDateString(parseWeekParam(body.week_start))
-
-  // Get or create week_plan
-  let { data: weekPlan } = await supabase
-    .from('week_plans')
-    .select('id')
-    .eq('household_id', householdId)
-    .eq('week_start', weekStartStr)
-    .maybeSingle()
-
-  if (!weekPlan) {
-    const { data: created, error } = await supabase
-      .from('week_plans')
-      .insert({ household_id: householdId, week_start: weekStartStr })
-      .select('id')
-      .single()
-    if (error || !created) return NextResponse.json({ error: 'Failed to create week plan' }, { status: 500 })
-    weekPlan = created
-
-    const { data: generalRules } = await supabase
-      .from('planner_rules')
-      .select('*')
-      .eq('household_id', householdId)
-      .eq('is_active', true)
-    if (generalRules?.length) {
-      await supabase.from('week_plan_rules').insert(
-        generalRules.map((r) => ({
-          week_plan_id: weekPlan!.id,
-          rule_type: r.rule_type,
-          label: r.label,
-          config: r.config,
-        }))
-      )
-    }
+  if (!spanFitsWeek(body.date!, span, await getHouseholdWeekStartDay())) {
+    return NextResponse.json({ error: 'Meal must end within its week' }, { status: 400 })
   }
 
   const { data: slot, error } = await supabase
     .from('meal_slots')
     .insert({
-      week_plan_id: weekPlan.id,
-      day_of_week: body.day_of_week,
+      household_id: householdId,
+      date: body.date!,
       meal_type: 'lunch',
       recipe_id: body.recipe_id ?? null,
       custom_label: body.custom_label ?? null,
-      span_days: body.span_days ?? 1,
+      span_days: span,
     })
     .select('*, recipe:recipes(id, title, image_url, cook_time_min, prep_time_min)')
     .single()
