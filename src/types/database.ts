@@ -11,9 +11,10 @@ export interface Database {
           preferred_units: 'metric' | 'imperial'
           preferred_language: string
           translation_enabled: boolean
+          week_start_day: 'monday' | 'saturday' | 'sunday'
           created_at: string
           last_sign_in_at: string | null
-          onboarding_step: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'invite' | null
+          onboarding_step: 'translation' | 'units' | 'week_start' | 'tags' | 'shopping_categories' | 'invite' | null
           created_by: string | null
         }
         Insert: {
@@ -23,9 +24,10 @@ export interface Database {
           preferred_units?: 'metric' | 'imperial'
           preferred_language?: string
           translation_enabled?: boolean
+          week_start_day?: 'monday' | 'saturday' | 'sunday'
           created_at?: string
           last_sign_in_at?: string | null
-          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'invite' | null
+          onboarding_step?: 'translation' | 'units' | 'week_start' | 'tags' | 'shopping_categories' | 'invite' | null
           created_by?: string | null
         }
         Update: {
@@ -35,9 +37,10 @@ export interface Database {
           preferred_units?: 'metric' | 'imperial'
           preferred_language?: string
           translation_enabled?: boolean
+          week_start_day?: 'monday' | 'saturday' | 'sunday'
           created_at?: string
           last_sign_in_at?: string | null
-          onboarding_step?: 'translation' | 'units' | 'tags' | 'shopping_categories' | 'invite' | null
+          onboarding_step?: 'translation' | 'units' | 'week_start' | 'tags' | 'shopping_categories' | 'invite' | null
           created_by?: string | null
         }
         Relationships: []

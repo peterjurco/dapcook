@@ -1,5 +1,12 @@
 import { toIntlLocale, type Locale } from '@/i18n/config'
 
+export const WEEK_START_DAYS = ['monday', 'saturday', 'sunday'] as const
+export type WeekStartDay = (typeof WEEK_START_DAYS)[number]
+
+export function isWeekStartDay(value: unknown): value is WeekStartDay {
+  return WEEK_START_DAYS.includes(value as WeekStartDay)
+}
+
 /** Returns the Monday of the week containing the given date */
 export function getWeekStart(date: Date = new Date()): Date {
   const d = new Date(date)

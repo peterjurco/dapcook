@@ -74,4 +74,19 @@ describe('PATCH /api/household', () => {
   it('rejects an empty update', async () => {
     expect((await patch({})).status).toBe(400)
   })
+
+  it('stores a supported week start day', async () => {
+    const res = await patch({ week_start_day: 'sunday' })
+    expect(res.status).toBe(200)
+    expect(mocks.update).toHaveBeenCalledWith({ week_start_day: 'sunday' })
+  })
+
+  it('rejects an unsupported week start day', async () => {
+    expect((await patch({ week_start_day: 'wednesday' })).status).toBe(400)
+    expect(mocks.update).not.toHaveBeenCalled()
+  })
+
+  it('accepts the week_start onboarding step', async () => {
+    expect((await patch({ onboarding_step: 'week_start' })).status).toBe(200)
+  })
 })

@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
 import { isPersistedStep } from '@/lib/onboarding/steps'
 import { forgetOnboardingStep } from '@/lib/onboarding/status'
+import { isWeekStartDay } from '@/lib/utils/week'
 
 export async function PATCH(request: NextRequest) {
   const supabase = createClient()
@@ -20,6 +21,7 @@ export async function PATCH(request: NextRequest) {
     translation_enabled?: boolean
     name?: unknown
     onboarding_step?: unknown
+    week_start_day?: unknown
   }
 
   const updates: Record<string, unknown> = {}
@@ -28,6 +30,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid preferred_units' }, { status: 400 })
     }
     updates.preferred_units = body.preferred_units
+  }
+
+  if (body.week_start_day !== undefined) {
+    if (!isWeekStartDay(body.week_start_day)) {
+      return NextResponse.json({ error: 'Invalid week_start_day' }, { status: 400 })
+    }
+    updates.week_start_day = body.week_start_day
   }
 
   if (body.preferred_language !== undefined) {
