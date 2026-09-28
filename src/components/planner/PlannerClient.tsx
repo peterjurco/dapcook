@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowRight, CalendarDays, ChefHat, Pencil, ShoppingCart, X } from 'lucide-react'
@@ -37,6 +37,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
   const [addingToDay, setAddingToDay] = useState<number | null>(null)
   const [isMobileEditMode, setIsMobileEditMode] = useState(false)
+  // Span each meal had before a desktop resize drag began, so a rejected commit can restore it.
+  const spanBeforeResize = useRef(new Map<string, number>())
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -138,6 +140,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   // Live span change during desktop resize drag — state only, no API.
   function handleSpanPreview(slotId: string, newSpan: number) {
+    const slot = slots.find((s) => s.id === slotId)
+    if (slot && !spanBeforeResize.current.has(slotId)) spanBeforeResize.current.set(slotId, slot.span_days)
     setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, span_days: newSpan } : s)))
   }
 
@@ -147,7 +151,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     const p = placed.find((s) => s.id === slotId)
     if (!p || p.continued) return
     const span = Math.max(1, Math.min(maxSpanForStart(p.day), newSpan))
-    const prevSpan = p.span_days
+    const prevSpan = spanBeforeResize.current.get(slotId) ?? p.span_days
+    spanBeforeResize.current.delete(slotId)
     const revert = () => {
       setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, span_days: prevSpan } : s)))
     }

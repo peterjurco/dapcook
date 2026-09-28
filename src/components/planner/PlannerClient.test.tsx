@@ -57,9 +57,13 @@ vi.mock('./PlannerDesktopGrid', () => ({
   PlannerDesktopGrid: ({
     slots,
     onAddCustom,
+    onSpanPreview,
+    onSpanCommit,
   }: {
     slots: Array<WeekData['slots'][number] & { day: number; span: number; continued: boolean }>
     onAddCustom: (day: number, label: string) => void
+    onSpanPreview: (slotId: string, newSpan: number) => void
+    onSpanCommit: (slotId: string, newSpan: number) => void
   }) => (
     <div data-testid="planner-grid">
       {slots.map((s) => (
@@ -68,6 +72,8 @@ vi.mock('./PlannerDesktopGrid', () => ({
         </div>
       ))}
       <button type="button" onClick={() => onAddCustom(3, 'Leftovers')}>add on day 3</button>
+      <button type="button" onClick={() => { onSpanPreview('slot-1', 2); onSpanPreview('slot-1', 3) }}>drag slot-1 to 3 days</button>
+      <button type="button" onClick={() => onSpanCommit('slot-1', 3)}>release slot-1 at 3 days</button>
     </div>
   ),
 }))
@@ -363,6 +369,25 @@ describe('PlannerClient', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('planner-grid').querySelector('[data-id="slot-1"]')).toHaveAttribute('data-day', '1')
+    })
+  })
+
+  it('rolls a resize back to the span before dragging when the server rejects it', async () => {
+    const data = weekData('Something', '2026-06-08')
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response(data))
+      .mockResolvedValue({ ok: false, json: async () => ({}) } as Response)
+    global.fetch = fetchMock
+
+    render(<PlannerClient weekStart={new Date(2026, 5, 8)} />)
+    const grid = await screen.findByTestId('planner-grid')
+
+    await userEvent.click(within(grid).getByRole('button', { name: 'drag slot-1 to 3 days' }))
+    expect(grid.querySelector('[data-id="slot-1"]')).toHaveAttribute('data-span', '3')
+    await userEvent.click(within(grid).getByRole('button', { name: 'release slot-1 at 3 days' }))
+
+    await waitFor(() => {
+      expect(grid.querySelector('[data-id="slot-1"]')).toHaveAttribute('data-span', '1')
     })
   })
 
