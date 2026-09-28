@@ -13,15 +13,22 @@ import { LanguageStep } from './steps/LanguageStep'
  * Onboarding for someone who joined an existing household: the household is
  * already set up, so the only personal choice left is the interface language.
  */
-export function JoinedWelcome({ householdName }: { householdName: string }) {
+interface Props {
+  householdName: string
+  /** `done` once the language was chosen (`&welcome=1`), so a reload doesn't ask again. */
+  initialStep?: 'language' | 'done'
+}
+
+export function JoinedWelcome({ householdName, initialStep = 'language' }: Props) {
   const t = useTranslations('auth')
   const router = useRouter()
   const posthog = usePostHog()
-  const [step, setStep] = useState<'language' | 'done'>('language')
+  const [step, setStep] = useState<'language' | 'done'>(initialStep)
   useScrollToTop(step)
 
   async function languageChosen() {
     posthog?.capture('onboarding_step_completed', { step: 'language', skipped: false })
+    window.history.replaceState(null, '', '/onboarding?joined=1&welcome=1')
     setStep('done')
   }
 

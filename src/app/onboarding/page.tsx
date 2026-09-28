@@ -9,7 +9,7 @@ import { selectionFromSavedTags } from '@/lib/onboarding/tag-catalog'
 import { inviteUrl } from '@/lib/utils/invite'
 import { getOrigin } from '@/lib/auth/getOrigin'
 
-export default async function OnboardingPage({ searchParams }: { searchParams: { joined?: string } }) {
+export default async function OnboardingPage({ searchParams }: { searchParams: { joined?: string; welcome?: string } }) {
   const profile = await getCurrentProfile()
   const locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
 
@@ -26,7 +26,12 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
       .select('name')
       .eq('id', profile.household_id)
       .single()
-    return <JoinedWelcome householdName={joined?.name ?? ''} />
+    return (
+      <JoinedWelcome
+        householdName={joined?.name ?? ''}
+        initialStep={searchParams.welcome === '1' ? 'done' : 'language'}
+      />
+    )
   }
 
   const [{ data: household }, { data: categories }, { data: tagGroups }, { data: tags }] = await Promise.all([

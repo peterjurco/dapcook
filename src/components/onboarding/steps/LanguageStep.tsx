@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { locales, LOCALE_LABELS, type Locale } from '@/i18n/config'
@@ -11,6 +11,17 @@ export function LanguageStep({ onNext }: { onNext: () => Promise<void> }) {
   const router = useRouter()
   const [saving, setSaving] = useState<Locale | null>(null)
   const [failed, setFailed] = useState(false)
+  const [refreshing, startRefresh] = useTransition()
+  const [saved, setSaved] = useState(false)
+
+  // Move on only once the refresh has delivered the messages in the new
+  // language; advancing straight away flashes the next step in the old one.
+  useEffect(() => {
+    if (saved && !refreshing) {
+      setSaved(false)
+      void onNext()
+    }
+  }, [saved, refreshing, onNext])
 
   async function choose(locale: Locale) {
     setSaving(locale)
@@ -22,8 +33,8 @@ export function LanguageStep({ onNext }: { onNext: () => Promise<void> }) {
       return
     }
     // Re-renders the server layout so every later step is already in this language.
-    router.refresh()
-    await onNext()
+    startRefresh(() => router.refresh())
+    setSaved(true)
   }
 
   return (
