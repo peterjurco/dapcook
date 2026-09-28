@@ -20,6 +20,7 @@ import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategori
 import { InviteLink } from '@/components/settings/InviteLink'
 import { OnboardingHeading } from './OnboardingHeading'
 import { StepFrame } from './StepFrame'
+import { useScrollToTop } from './use-scroll-to-top'
 import { sendJson } from './send-json'
 import { LanguageStep } from './steps/LanguageStep'
 import { HouseholdStep } from './steps/HouseholdStep'
@@ -51,6 +52,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
   const router = useRouter()
   const posthog = usePostHog()
   const [step, setStep] = useState<OnboardingStep>(initialStep)
+  useScrollToTop(step)
   const [error, setError] = useState<string | null>(null)
   // Answers live here, not in the steps, so they survive going back and forth.
   const [translation, setTranslation] = useState<TranslationAnswer>(() => ({

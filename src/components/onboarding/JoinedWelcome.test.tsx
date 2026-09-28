@@ -35,6 +35,16 @@ describe('JoinedWelcome', () => {
     expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'language', skipped: false })
   })
 
+  it('scrolls back to the top when the welcome screen replaces the language step', async () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    render(<JoinedWelcome householdName="The Jurcos" />)
+    scrollTo.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+    expect(await screen.findByText("You're in The Jurcos!")).toBeInTheDocument()
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
+    scrollTo.mockRestore()
+  })
+
   it('lands on recipes reporting a completed join', async () => {
     render(<JoinedWelcome householdName="The Jurcos" />)
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
