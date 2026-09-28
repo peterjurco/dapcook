@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { parseWeekParam, toDateString } from '@/lib/utils/week'
+import { parseWeekParam, toDateString, addDays, daysBetween, parseDateString } from '@/lib/utils/week'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
@@ -52,12 +52,20 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Fetch slots with recipe data
-  const { data: slots } = await supabase
+  // Slots that touch the week. A meal lasts at most 7 days, so anything that
+  // reaches into the week started no more than 6 days before it.
+  const weekEndStr = toDateString(addDays(weekStart, 6))
+  const { data: candidates } = await supabase
     .from('meal_slots')
     .select('*, recipe:recipes(id, title, image_url, cook_time_min, prep_time_min, servings)')
-    .eq('week_plan_id', weekPlan.id)
-    .order('day_of_week')
+    .eq('household_id', householdId)
+    .gte('date', toDateString(addDays(weekStart, -6)))
+    .lte('date', weekEndStr)
+    .order('date')
+  const slots = (candidates ?? []).filter((s) => {
+    const date = parseDateString(s.date)
+    return date != null && daysBetween(weekStart, date) + s.span_days - 1 >= 0
+  })
 
   // Fetch week rules
   const { data: weekRules } = await supabase
@@ -66,5 +74,5 @@ export async function GET(request: NextRequest) {
     .eq('week_plan_id', weekPlan.id)
     .order('created_at')
 
-  return NextResponse.json({ weekPlan, slots: slots ?? [], weekRules: weekRules ?? [] })
+  return NextResponse.json({ weekPlan, slots, weekRules: weekRules ?? [] })
 }
