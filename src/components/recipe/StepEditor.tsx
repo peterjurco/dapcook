@@ -3,6 +3,23 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Trash2, Plus, ClipboardPaste, X } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { Step } from '@/types/recipe'
 
 interface StepEditorProps {
@@ -17,11 +34,69 @@ function autoResizeTextarea(el: HTMLTextAreaElement | null) {
   el.style.height = `${el.scrollHeight + borderY}px`
 }
 
+interface SortableStepRowProps {
+  step: Step
+  index: number
+  onUpdate: (id: string, text: string) => void
+  onRemove: (id: string) => void
+  t: ReturnType<typeof useTranslations>
+}
+
+function SortableStepRow({ step, index, onUpdate, onRemove, t }: SortableStepRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: step.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex gap-3 group">
+      <button
+        type="button"
+        className="flex-shrink-0 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500 mt-1.5 cursor-grab active:cursor-grabbing touch-none transition-colors"
+        aria-label={t('stepEditor.dragAria', { n: index + 1 })}
+        {...attributes}
+        {...listeners}
+      >
+        {index + 1}
+      </button>
+
+      <textarea
+        ref={autoResizeTextarea}
+        value={step.text}
+        onChange={(e) => onUpdate(step.id, e.target.value)}
+        placeholder={t('stepEditor.rowPlaceholder')}
+        rows={2}
+        className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none overflow-hidden leading-relaxed"
+        onInput={(e) => autoResizeTextarea(e.currentTarget)}
+      />
+
+      <button
+        type="button"
+        onClick={() => onRemove(step.id)}
+        className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 mt-2 flex-shrink-0"
+        aria-label={t('stepEditor.removeAria')}
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  )
+}
+
 export function StepEditor({ steps, onChange }: StepEditorProps) {
   const t = useTranslations('recipes')
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [isParsing, setIsParsing] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   function update(id: string, text: string) {
     onChange(steps.map((s) => (s.id === id ? { ...s, text } : s)))
@@ -32,6 +107,14 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
       .filter((s) => s.id !== id)
       .map((s, i) => ({ ...s, order: i + 1 }))
     onChange(updated)
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = steps.findIndex((s) => s.id === active.id)
+    const newIndex = steps.findIndex((s) => s.id === over.id)
+    onChange(arrayMove(steps, oldIndex, newIndex).map((s, i) => ({ ...s, order: i + 1 })))
   }
 
   function add() {
@@ -98,32 +181,13 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
 
   return (
     <div className="space-y-3">
-      {steps.map((step, index) => (
-        <div key={step.id} className="flex gap-3 group">
-          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-500 mt-1.5">
-            {index + 1}
-          </div>
-
-          <textarea
-            ref={autoResizeTextarea}
-            value={step.text}
-            onChange={(e) => update(step.id, e.target.value)}
-            placeholder={t('stepEditor.rowPlaceholder')}
-            rows={2}
-            className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none overflow-hidden leading-relaxed"
-            onInput={(e) => autoResizeTextarea(e.currentTarget)}
-          />
-
-          <button
-            type="button"
-            onClick={() => remove(step.id)}
-            className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 mt-2 flex-shrink-0"
-            aria-label={t('stepEditor.removeAria')}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+          {steps.map((step, index) => (
+            <SortableStepRow key={step.id} step={step} index={index} onUpdate={update} onRemove={remove} t={t} />
+          ))}
+        </SortableContext>
+      </DndContext>
 
       <div className="flex items-center gap-3">
         <button
