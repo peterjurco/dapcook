@@ -47,6 +47,22 @@ describe('OnboardingWizard', () => {
     expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'intro', skipped: false })
   })
 
+  it('scrolls back to the top whenever the step changes, forwards or back', async () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    render(<OnboardingWizard initialStep="translation" locale="en" household={household} />)
+    scrollTo.mockClear()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(await screen.findByText('Which units do you use?')).toBeInTheDocument()
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
+
+    scrollTo.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByText('Translate recipes?')).toBeInTheDocument()
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
+    scrollTo.mockRestore()
+  })
+
   it('skipping a step stores the next one without saving anything else', async () => {
     render(<OnboardingWizard initialStep="translation" locale="en" household={household} />)
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }))

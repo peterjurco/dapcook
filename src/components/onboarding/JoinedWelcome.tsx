@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { usePostHog } from 'posthog-js/react'
 import { OnboardingHeading } from './OnboardingHeading'
 import { StepFrame } from './StepFrame'
+import { useScrollToTop } from './use-scroll-to-top'
 import { LanguageStep } from './steps/LanguageStep'
 
 /**
@@ -17,6 +18,7 @@ export function JoinedWelcome({ householdName }: { householdName: string }) {
   const router = useRouter()
   const posthog = usePostHog()
   const [step, setStep] = useState<'language' | 'done'>('language')
+  useScrollToTop(step)
 
   async function languageChosen() {
     posthog?.capture('onboarding_step_completed', { step: 'language', skipped: false })
