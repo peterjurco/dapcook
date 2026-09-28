@@ -145,8 +145,8 @@ function recipeSlot(p: {
 }): PlanSlot {
   return {
     id: `slot-${p.id}-${p.day}`,
-    week_plan_id: 'w',
-    day_of_week: p.day,
+    household_id: 'hh',
+    date: `2026-06-0${p.day}`,
     meal_type: 'lunch',
     recipe_id: p.id,
     custom_label: null,
@@ -168,8 +168,8 @@ function recipeSlot(p: {
 function customSlot(p: { id: string; day: number; label: string }): PlanSlot {
   return {
     id: `slot-${p.id}`,
-    week_plan_id: 'w',
-    day_of_week: p.day,
+    household_id: 'hh',
+    date: `2026-06-0${p.day}`,
     meal_type: 'lunch',
     recipe_id: null,
     custom_label: p.label,
@@ -181,7 +181,7 @@ function customSlot(p: { id: string; day: number; label: string }): PlanSlot {
 }
 
 const ing = (p: Partial<Ingredient>): Ingredient => ({ id: 'x', quantity: null, unit: '', name: '', notes: '', ...p })
-const dayLabel = (slot: PlanSlot) => `D${slot.day_of_week}`
+const dayLabel = (slot: PlanSlot) => `D${slot.date}`
 
 describe('buildPlanEntries', () => {
   it('makes one recipe entry per recipe and collects its days', () => {
@@ -193,7 +193,7 @@ describe('buildPlanEntries', () => {
       dayLabel,
     )
     expect(entries).toHaveLength(1)
-    expect(entries[0]).toMatchObject({ kind: 'recipe', key: 'r1', title: 'Pasta', days: ['D1', 'D3'], portions: 2 })
+    expect(entries[0]).toMatchObject({ kind: 'recipe', key: 'r1', title: 'Pasta', days: ['D2026-06-01', 'D2026-06-03'], portions: 2 })
   })
 
   it('carries the recipe image; custom meals have none', () => {
@@ -306,7 +306,7 @@ describe('buildPlanEntries', () => {
       dayLabel,
     )
     expect(entries.map((e) => e.key)).toEqual(['r1', 'custom:rice'])
-    expect(entries[1]).toMatchObject({ kind: 'custom', name: 'rice', days: ['D1', 'D2'], portions: 1 })
+    expect(entries[1]).toMatchObject({ kind: 'custom', name: 'rice', days: ['D2026-06-01', 'D2026-06-02'], portions: 1 })
   })
 })
 
