@@ -14,6 +14,6 @@
   "scrapeGeneric": "Recept sa nepodarilo automaticky importovať. Skúste ho pridať ručne.",
   "createHouseholdFailed": "Nepodarilo sa vytvoriť domácnosť",
   "linkHouseholdFailed": "Nepodarilo sa prepojiť domácnosť s profilom",
-  "invalidInviteCode": "Neplatný pozývací kód",
+  "invalidInviteCode": "Neplatný pozývací odkaz",
   "joinHouseholdFailed": "Nepodarilo sa pripojiť k domácnosti"
 }

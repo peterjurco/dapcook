@@ -33,7 +33,9 @@
   },
   "inviteLink": {
     "copied": "Skopírované",
-    "copy": "Kopírovať"
+    "copy": "Kopírovať",
+    "share": "Zdieľať",
+    "shareText": "Pridaj sa k našej domácnosti v dapcooku"
   },
   "plannerRules": {
     "disableTitle": "Vypnúť pravidlo",
@@ -96,6 +98,10 @@
     "headingRest": "astavenia",
     "household": "Domácnosť",
     "name": "Názov",
+    "rename": "Premenovať",
+    "save": "Uložiť",
+    "cancel": "Zrušiť",
+    "nameSaveError": "Názov sa nepodarilo uložiť.",
     "translationLabel": "Preklad",
     "translationHelp": "Ak je zapnuté, recepty sa pri importe preložia do zvoleného jazyka. Existujúce recepty možno aktualizovať hromadným prekladom.",
     "unitsLabel": "Preferované jednotky",

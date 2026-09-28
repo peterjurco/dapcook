@@ -27,9 +27,12 @@ function PostHogIdentifierInner({ userId, email, optOut }: Props) {
 
   useEffect(() => {
     if (searchParams.get('ob') !== '1') return
-    posthog.capture('onboarding_completed')
+    posthog.capture('onboarding_completed', {
+      method: searchParams.get('obm') === 'join' ? 'join' : 'create',
+    })
     const params = new URLSearchParams(searchParams.toString())
     params.delete('ob')
+    params.delete('obm')
     router.replace(pathname + (params.toString() ? `?${params.toString()}` : ''))
   }, [posthog, searchParams, pathname, router])
 

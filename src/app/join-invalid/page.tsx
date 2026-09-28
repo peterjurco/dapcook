@@ -10,7 +10,7 @@ export default async function JoinInvalidPage() {
         <h1 className="text-xl font-semibold text-gray-900">{t('joinInvalid.heading')}</h1>
         <p className="text-gray-500">{t('joinInvalid.body')}</p>
         <Link href="/onboarding" className="text-sm text-gray-700 underline">
-          {t('joinInvalid.backToOnboarding')}
+          {t('joinInvalid.setUpHousehold')}
         </Link>
       </div>
     </div>

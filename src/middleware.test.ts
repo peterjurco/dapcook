@@ -37,6 +37,10 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/robots.txt')).toBe(true)
   })
 
+  it('lets the dev login through without a session', () => {
+    expect(isPublicPath('/dev/login')).toBe(true)
+  })
+
   it.each(['/s', '/s/public-token', '/robots.txt', '/manifest.webmanifest'])('bypasses Supabase Auth for %s', (pathname) => {
     expect(canBypassAuth(pathname)).toBe(true)
   })

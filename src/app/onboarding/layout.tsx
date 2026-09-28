@@ -1,16 +1,26 @@
+import { redirect } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
-import { getMessages } from 'next-intl/server'
-import { defaultLocale } from '@/i18n/config'
+import { getMessages, setRequestLocale } from 'next-intl/server'
+import { defaultLocale, isLocale } from '@/i18n/config'
+import { getCurrentProfile, getCurrentUser } from '@/lib/auth/current-user'
+import { PostHogIdentifier } from '@/components/providers/PostHogIdentifier'
 
-// The profile row already exists at this point (upserted in
-// auth/callback), but this layout/page never fetches it, so there's no
-// `ui_language` on hand here — this route renders in the default locale
-// until that's worth adding.
 export default async function OnboardingLayout({ children }: { children: React.ReactNode }) {
-  const messages = await getMessages({ locale: defaultLocale })
+  const user = await getCurrentUser()
+  if (!user) redirect('/login')
+
+  // The profile row exists by now (upserted in auth/callback); the language step
+  // writes `ui_language` and refreshes, so later steps render in that language.
+  const profile = await getCurrentProfile()
+  const locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
+  setRequestLocale(locale)
+  const messages = await getMessages({ locale })
 
   return (
-    <NextIntlClientProvider locale={defaultLocale} messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {user.email && (
+        <PostHogIdentifier userId={user.id} email={user.email} optOut={user.email === process.env.ADMIN_EMAIL} />
+      )}
       {children}
     </NextIntlClientProvider>
   )

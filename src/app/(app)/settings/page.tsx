@@ -5,6 +5,7 @@ import { PlannerRulesEditor } from '@/components/settings/PlannerRulesEditor'
 import { TagOrganizer } from '@/components/settings/TagOrganizer'
 import { ShoppingCategoriesEditor } from '@/components/settings/ShoppingCategoriesEditor'
 import { ShoppingRulesEditor } from '@/components/settings/ShoppingRulesEditor'
+import { HouseholdNameEditor } from '@/components/settings/HouseholdNameEditor'
 import { UnitPreferenceSelector } from '@/components/settings/UnitPreferenceSelector'
 import { TranslationSettings } from '@/components/settings/TranslationSettings'
 import { InterfaceLanguageSelector } from '@/components/settings/InterfaceLanguageSelector'
@@ -14,6 +15,8 @@ import { buildTagMeta } from '@/lib/tags/taxonomy'
 import { getTranslations } from 'next-intl/server'
 import { isLocale, defaultLocale } from '@/i18n/config'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { inviteUrl } from '@/lib/utils/invite'
+import { getOrigin } from '@/lib/auth/getOrigin'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -64,9 +67,6 @@ export default async function SettingsPage() {
 
   const recipeIds = (recipes ?? []).map((r) => r.id)
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const inviteUrl = `${origin}/join/${household?.invite_token}`
-
   return (
     <div className="max-w-xl mx-auto px-6 pt-6 pb-10 space-y-8">
       <h1 className="text-xl font-semibold text-gray-900 font-fraunces">
@@ -89,7 +89,7 @@ export default async function SettingsPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
           <div>
             <p className="text-xs text-gray-500 mb-1">{t('page.name')}</p>
-            <p className="text-sm font-medium text-gray-900">{household?.name}</p>
+            <HouseholdNameEditor initialName={household?.name ?? ''} />
           </div>
 
           <div>
@@ -123,7 +123,7 @@ export default async function SettingsPage() {
             <p className="text-xs text-gray-400 mb-2">
               {t('page.inviteLinkHelp')}
             </p>
-            <InviteLink url={inviteUrl} />
+            <InviteLink url={inviteUrl(getOrigin(), household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
           </div>
         </div>
       </section>

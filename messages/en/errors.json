@@ -14,6 +14,6 @@
   "scrapeGeneric": "Could not import this recipe automatically. Try adding it manually instead.",
   "createHouseholdFailed": "Failed to create household",
   "linkHouseholdFailed": "Failed to link household to profile",
-  "invalidInviteCode": "Invalid invite code",
+  "invalidInviteCode": "Invalid invite link",
   "joinHouseholdFailed": "Failed to join household"
 }

@@ -41,19 +41,27 @@ describe('PostHogIdentifier', () => {
 
   it('does not fire onboarding_completed without ?ob=1', () => {
     render(<PostHogIdentifier userId="user-123" email="test@example.com" />)
-    expect(mockCapture).not.toHaveBeenCalledWith('onboarding_completed')
+    expect(mockCapture).not.toHaveBeenCalled()
     expect(mockReplace).not.toHaveBeenCalled()
   })
 
   it('fires onboarding_completed when ?ob=1 is present', () => {
     mockSearchParams.set('ob', '1')
     render(<PostHogIdentifier userId="user-123" email="test@example.com" />)
-    expect(mockCapture).toHaveBeenCalledWith('onboarding_completed')
+    expect(mockCapture).toHaveBeenCalledWith('onboarding_completed', { method: 'create' })
   })
 
   it('cleans up ?ob=1 from the URL after firing onboarding_completed', () => {
     mockSearchParams.set('ob', '1')
     render(<PostHogIdentifier userId="user-123" email="test@example.com" />)
+    expect(mockReplace).toHaveBeenCalledWith('/recipes')
+  })
+
+  it('reports a join when ?obm=join accompanies ?ob=1, and strips both params', () => {
+    mockSearchParams.set('ob', '1')
+    mockSearchParams.set('obm', 'join')
+    render(<PostHogIdentifier userId="user-123" email="test@example.com" />)
+    expect(mockCapture).toHaveBeenCalledWith('onboarding_completed', { method: 'join' })
     expect(mockReplace).toHaveBeenCalledWith('/recipes')
   })
 

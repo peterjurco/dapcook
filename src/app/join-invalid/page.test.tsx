@@ -24,6 +24,9 @@ describe('JoinInvalidPage', () => {
     render(await JoinInvalidPage())
 
     expect(screen.getByRole('heading', { name: /invalid invite link/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /back to onboarding/i })).toHaveAttribute('href', '/onboarding')
+    expect(screen.getByRole('link', { name: /set up a household or paste a new invite link/i })).toHaveAttribute(
+      'href',
+      '/onboarding',
+    )
   })
 })
