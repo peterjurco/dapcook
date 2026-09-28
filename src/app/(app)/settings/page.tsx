@@ -16,6 +16,7 @@ import { getTranslations } from 'next-intl/server'
 import { isLocale, defaultLocale } from '@/i18n/config'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { inviteUrl } from '@/lib/utils/invite'
+import { getOrigin } from '@/lib/auth/getOrigin'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -122,7 +123,7 @@ export default async function SettingsPage() {
             <p className="text-xs text-gray-400 mb-2">
               {t('page.inviteLinkHelp')}
             </p>
-            <InviteLink url={inviteUrl(household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
+            <InviteLink url={inviteUrl(getOrigin(), household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
           </div>
         </div>
       </section>

@@ -173,7 +173,6 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
             title={t('onboarding.invite.title')}
             help={t('onboarding.invite.help')}
             onNext={next}
-            onSkip={skip}
             onBack={back}
             settingsNote
           >

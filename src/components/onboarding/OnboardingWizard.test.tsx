@@ -101,6 +101,8 @@ describe('OnboardingWizard', () => {
     expect(screen.getByDisplayValue(invite)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument()
     expect(screen.getByText('You can change this anytime in Settings.')).toBeInTheDocument()
+    // Leaving the invite step saves nothing, so Skip would just duplicate Next.
+    expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByText('Shopping categories')).toBeInTheDocument()
   })
