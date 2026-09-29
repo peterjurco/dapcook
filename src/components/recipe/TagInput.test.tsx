@@ -2,10 +2,11 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { TagInput } from './TagInput'
 import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 import type { TagData } from '@/app/api/tags/route'
 
 vi.mock('next-intl', () => ({
-  useTranslations: (namespace: string) => (key: string) => mockTranslate(namespace, key),
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) => mockTranslate(namespace, key, values),
 }))
 
 const ALL_TAGS: TagData[] = [
@@ -73,5 +74,49 @@ describe('TagInput suggestions', () => {
     const { onChange } = renderInput({ tags: ['quick'], suggestions: { existing: ['pasta'], new: null } })
     fireEvent.click(screen.getByRole('button', { name: 'pasta' }))
     expect(onChange).toHaveBeenCalledWith(['quick', 'pasta'])
+  })
+})
+
+describe('TagInput layout', () => {
+  const PLACEHOLDER = 'Type a tag and press Enter'
+
+  it('renders selected tags inside the input box', () => {
+    renderInput({ tags: ['pasta', 'quick'] })
+    const box = screen.getByTestId('tag-input-box')
+    expect(box).toContainElement(screen.getByPlaceholderText(PLACEHOLDER))
+    expect(box).toHaveTextContent('pasta')
+    expect(box).toHaveTextContent('quick')
+  })
+
+  it('focuses the text input when the box is clicked', () => {
+    renderInput({ tags: ['pasta'] })
+    fireEvent.click(screen.getByTestId('tag-input-box'))
+    expect(screen.getByPlaceholderText(PLACEHOLDER)).toHaveFocus()
+  })
+
+  it('removes a selected tag via its remove button', () => {
+    const { onChange } = renderInput({ tags: ['pasta', 'quick'] })
+    fireEvent.click(screen.getByRole('button', { name: 'Remove pasta' }))
+    expect(onChange).toHaveBeenCalledWith(['quick'])
+  })
+
+  it('has no separate helper line', () => {
+    renderInput()
+    expect(screen.queryByText('Press Enter or comma to add')).not.toBeInTheDocument()
+  })
+
+  it('shows the suggestion label on the same row as the chips', () => {
+    renderInput({ suggestions: { existing: ['pasta'], new: 'italian' } })
+    const row = screen.getByTestId('tag-suggestions')
+    expect(row).toHaveTextContent('Suggested')
+    expect(row).toContainElement(screen.getByRole('button', { name: 'pasta' }))
+    expect(row).toContainElement(screen.getByRole('button', { name: /italian/ }))
+  })
+
+  it('shows the most-used label on the same row as the chips', () => {
+    renderInput()
+    const row = screen.getByTestId('tag-suggestions')
+    expect(row).toHaveTextContent('Most used')
+    expect(row).toContainElement(screen.getByRole('button', { name: 'dinner' }))
   })
 })
