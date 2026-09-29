@@ -3,7 +3,7 @@ import { TOURS } from './tours'
 
 // Controls that open or replace themselves when clicked: without advanceOnTargetClick the
 // click would make the target vanish and the tour would dismiss and later restart.
-const SELF_REPLACING_TARGETS = ['grid-add', 'edit-add', 'shopping-add', 'plan-button', 'planner-edit', 'planner-done']
+const SELF_REPLACING_TARGETS = ['grid-add', 'edit-add', 'shopping-add', 'plan-button', 'planner-edit', 'planner-done', 'item-delete', 'generate-remove']
 
 describe('TOURS', () => {
   it('advances on click for every step targeting a self-replacing control', () => {

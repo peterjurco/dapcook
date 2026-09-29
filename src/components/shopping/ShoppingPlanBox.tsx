@@ -51,6 +51,7 @@ export function ShoppingPlanBox({
         <button
           type="button"
           onClick={onToggleRemove}
+          data-tour="generate-remove"
           aria-label={entry.removed ? undefined : t('generate.removeAria')}
           className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 transition-colors"
         >
@@ -94,7 +95,7 @@ export function ShoppingPlanBox({
             ) : (
               <span />
             )}
-            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+            <div data-tour="generate-portions" className="flex flex-col items-center gap-1 flex-shrink-0">
               <span className="text-sm text-gray-700">{t('generate.portions')}</span>
               <Stepper
                 value={entry.portions}

@@ -110,6 +110,14 @@ describe('GenerateShoppingPage', () => {
     expect(screen.queryByText('Eating out')).toBeNull()
   })
 
+  it('marks ingredient name, delete, portions and remove as tour targets', () => {
+    renderPage()
+    expect(document.querySelector('[data-tour="item-name"]')).not.toBeNull()
+    expect(document.querySelector('[data-tour="item-delete"]')).not.toBeNull()
+    expect(document.querySelector('[data-tour="generate-portions"]')).not.toBeNull()
+    expect(document.querySelector('[data-tour="generate-remove"]')).not.toBeNull()
+  })
+
   it('notes a recipe without ingredients', () => {
     renderPage([recipeSlot({ id: 'r2', date: '2026-06-08', title: 'Toast', servings: 1 })])
     expect(box('Toast').getByText('This recipe has no ingredients.')).toBeInTheDocument()

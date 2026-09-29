@@ -32,9 +32,9 @@ export const TOURS: Record<TourId, TourStep[]> = {
   ],
   'shopping-generate': [
     { target: 'item-name', key: 'shoppingGenerate.itemName', placement: 'bottom' },
-    { target: 'item-delete', key: 'shoppingGenerate.itemDelete', placement: 'left' },
+    { target: 'item-delete', key: 'shoppingGenerate.itemDelete', placement: 'left', advanceOnTargetClick: true },
     { target: 'generate-portions', key: 'shoppingGenerate.portions', placement: 'top' },
-    { target: 'generate-remove', key: 'shoppingGenerate.remove', placement: 'bottom' },
+    { target: 'generate-remove', key: 'shoppingGenerate.remove', placement: 'bottom', advanceOnTargetClick: true },
   ],
   'shopping-list': [
     { target: 'shopping-add', key: 'shoppingList.add', placement: 'top', advanceOnTargetClick: true },
