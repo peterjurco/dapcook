@@ -117,6 +117,7 @@ export async function createHousehold(name: string) {
       DEFAULT_SHOPPING_CATEGORIES.map((category, index) => ({
         household_id: householdId,
         name: category[locale],
+        color: category.color,
         sort_order: index,
       }))
     ),
