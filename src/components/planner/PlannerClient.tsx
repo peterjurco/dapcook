@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowRight, CalendarDays, ChefHat, Pencil, ShoppingCart, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
+import { trackMilestone } from '@/lib/analytics/milestones'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { SlotCard } from './SlotCard'
 import { CustomLabelCard } from './CustomLabelCard'
@@ -89,7 +90,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     if (res.ok) {
       const slot = await res.json() as MealSlotWithRecipe
       setSlotsAndCache((prev) => [...prev, slot])
-      posthog.capture('meal_planned')
+      trackMilestone(posthog, 'meal_planned', { source: 'planner', kind: 'recipe' })
       if (!weekPlan) loadWeek() // refresh to get weekPlan
     }
     setAddingToDay(null)
@@ -105,6 +106,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     if (res.ok) {
       const slot = await res.json() as MealSlotWithRecipe
       setSlotsAndCache((prev) => [...prev, slot])
+      trackMilestone(posthog, 'meal_planned', { source: 'planner', kind: 'custom' })
       if (!weekPlan) loadWeek()
     }
     setAddingToDay(null)

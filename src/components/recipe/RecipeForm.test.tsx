@@ -299,12 +299,14 @@ describe('RecipeForm — cancel', () => {
 // ── PostHog events ────────────────────────────────────────────────────────────
 
 describe('PostHog events', () => {
-  it('captures recipe_created after saving a new recipe', async () => {
+  it('captures recipe_created with source manual after saving a new recipe', async () => {
     mockFetchSuccess('recipe-456')
     render(<RecipeForm />)
     await userEvent.type(screen.getByLabelText(/title/i), 'New Recipe')
     await userEvent.click(screen.getByRole('button', { name: /save recipe/i }))
-    await waitFor(() => expect(mockCapture).toHaveBeenCalledWith('recipe_created'))
+    await waitFor(() =>
+      expect(mockCapture).toHaveBeenCalledWith('recipe_created', expect.objectContaining({ source: 'manual' })),
+    )
   })
 
   it('does not capture recipe_created when editing an existing recipe', async () => {
@@ -312,6 +314,6 @@ describe('PostHog events', () => {
     render(<RecipeForm recipe={sampleRecipe} />)
     await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
     await waitFor(() => expect(mockPush).toHaveBeenCalled())
-    expect(mockCapture).not.toHaveBeenCalledWith('recipe_created')
+    expect(mockCapture).not.toHaveBeenCalledWith('recipe_created', expect.anything())
   })
 })

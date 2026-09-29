@@ -17,6 +17,11 @@ vi.mock('next-intl', () => ({
     mockTranslate(namespace, key, values),
 }))
 
+const mockCapture = vi.fn()
+vi.mock('posthog-js/react', () => ({
+  usePostHog: () => ({ capture: mockCapture }),
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   global.fetch = vi.fn().mockResolvedValue({ ok: true } as Response)
@@ -29,6 +34,21 @@ function lastFetchBody() {
 }
 
 describe('AddToPlanButton', () => {
+  it('captures meal_planned with source recipe after adding from the picker', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'slot-1' }) } as Response)
+    render(<AddToPlanButton recipeId="recipe-1" />)
+
+    await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /add to \w+ \d+/i }))
+
+    await waitFor(() =>
+      expect(mockCapture).toHaveBeenCalledWith(
+        'meal_planned',
+        expect.objectContaining({ source: 'recipe', kind: 'recipe' }),
+      ),
+    )
+  })
+
   it('opens a destination picker and adds the recipe to the chosen day', async () => {
     render(<AddToPlanButton recipeId="recipe-1" />)
 

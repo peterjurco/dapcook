@@ -17,8 +17,9 @@ vi.mock('next-intl', () => ({
     mockTranslate(namespace, key, values),
 }))
 
+const mockCapture = vi.fn()
 vi.mock('posthog-js/react', () => ({
-  usePostHog: () => ({ capture: vi.fn() }),
+  usePostHog: () => ({ capture: mockCapture }),
 }))
 
 vi.mock('@dnd-kit/core', () => ({
@@ -308,6 +309,12 @@ describe('PlannerClient', () => {
 
     const post = fetchMock.mock.calls.find(([url, init]) => url === '/api/planner/slots' && (init as RequestInit)?.method === 'POST')
     expect(JSON.parse((post![1] as RequestInit).body as string)).toEqual({ date: '2026-06-10', custom_label: 'Leftovers' })
+    await waitFor(() =>
+      expect(mockCapture).toHaveBeenCalledWith(
+        'meal_planned',
+        expect.objectContaining({ source: 'planner', kind: 'custom' }),
+      ),
+    )
   })
 
   it('is a no-op when a continued meal is dropped on the column it is drawn in', async () => {
