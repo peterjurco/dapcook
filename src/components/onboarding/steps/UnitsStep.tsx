@@ -12,11 +12,10 @@ interface Props {
   value: Units
   onSaved: (value: Units) => void
   onNext: () => Promise<void>
-  onSkip: () => Promise<void>
   onBack: () => void
 }
 
-export function UnitsStep({ value, onSaved, onNext, onSkip, onBack }: Props) {
+export function UnitsStep({ value, onSaved, onNext, onBack }: Props) {
   const t = useTranslations('auth')
   const [units, setUnits] = useState<Units>(value)
   const [failed, setFailed] = useState(false)
@@ -40,7 +39,6 @@ export function UnitsStep({ value, onSaved, onNext, onSkip, onBack }: Props) {
       help={t('onboarding.units.help')}
       error={failed ? t('onboarding.saveError') : null}
       onNext={save}
-      onSkip={onSkip}
       onBack={onBack}
       settingsNote
     >

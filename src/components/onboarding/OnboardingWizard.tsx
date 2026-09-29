@@ -68,8 +68,8 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
   const [tagSelection, setTagSelection] = useState<TagSelection>(tags)
   const [shoppingCategories, setShoppingCategories] = useState<ShoppingCategory[]>(categories)
 
-  function track(completed: OnboardingStep, skipped: boolean) {
-    posthog?.capture('onboarding_step_completed', { step: completed, skipped })
+  function track(completed: OnboardingStep) {
+    posthog?.capture('onboarding_step_completed', { step: completed })
   }
 
   /**
@@ -77,7 +77,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
    * `invite`: its stored step stays put until the Done screen's own PATCH, so
    * closing/refreshing on Done still lands back on Done instead of skipping it.
    */
-  async function advance(current: OnboardingStep, skipped = false) {
+  async function advance(current: OnboardingStep) {
     setError(null)
     if (isPersistedStep(current) && current !== 'invite') {
       const ok = await sendJson('PATCH', '/api/household', { onboarding_step: persistedStepAfter(current) })
@@ -86,7 +86,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
         return
       }
     }
-    track(current, skipped)
+    track(current)
     setStep(nextStep(current))
   }
 
@@ -107,7 +107,6 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
   }
 
   const next = () => advance(step)
-  const skip = () => advance(step, true)
   const number = stepNumber(step)
 
   return (
@@ -134,18 +133,18 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
           </StepFrame>
         )}
 
-        {step === 'household' && <HouseholdStep onSubmit={() => track('household', false)} onBack={back} />}
+        {step === 'household' && <HouseholdStep onSubmit={() => track('household')} onBack={back} />}
 
         {step === 'translation' && household && (
-          <TranslationStep value={translation} onSaved={setTranslation} onNext={next} onSkip={skip} />
+          <TranslationStep value={translation} onSaved={setTranslation} onNext={next} />
         )}
 
         {step === 'units' && household && (
-          <UnitsStep value={units} onSaved={setUnits} onNext={next} onSkip={skip} onBack={back} />
+          <UnitsStep value={units} onSaved={setUnits} onNext={next} onBack={back} />
         )}
 
         {step === 'week_start' && household && (
-          <WeekStartStep value={weekStart} onSaved={setWeekStart} onNext={next} onSkip={skip} onBack={back} />
+          <WeekStartStep value={weekStart} onSaved={setWeekStart} onNext={next} onBack={back} />
         )}
 
         {step === 'tags' && (
@@ -153,7 +152,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
             value={tagSelection}
             onSaved={setTagSelection}
             onNext={next}
-            onSkip={skip}
+           
             onBack={back}
             locale={locale}
           />
@@ -164,7 +163,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
             title={t('onboarding.shoppingCategories.title')}
             help={t('onboarding.shoppingCategories.help')}
             onNext={next}
-            onSkip={skip}
+           
             onBack={back}
             settingsNote
           >
