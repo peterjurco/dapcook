@@ -1,0 +1,36 @@
+{
+  "controls": {
+    "next": "Ďalej",
+    "back": "Späť",
+    "done": "Hotovo",
+    "gotIt": "Rozumiem",
+    "skip": "Preskočiť",
+    "stepOf": "{current} / {total}"
+  },
+  "planRecipe": {
+    "planButton": { "title": "Naplánujte si tento recept", "body": "Pridajte ho na niektorý deň do týždenného plánu." }
+  },
+  "plannerMobileView": {
+    "edit": { "title": "Upravte si plán", "body": "Presúvajte jedlá, roztiahnite ich na viac dní alebo pridajte vlastné položky." }
+  },
+  "plannerMobileEdit": {
+    "grip": { "title": "Presúvajte ťahaním", "body": "Podržte jedlo a potiahnite ho na iný deň." },
+    "span": { "title": "Varíte do zásoby?", "body": "Roztiahnite jedlo na viac dní." },
+    "add": { "title": "Pridajte čokoľvek", "body": "Vyhľadajte recept alebo napíšte vlastnú položku, napríklad „ryža“ alebo „jeme vonku“." },
+    "done": { "title": "Hotovo?", "body": "Keď skončíte, ťuknite na Hotovo." }
+  },
+  "plannerDesktop": {
+    "slot": { "title": "Presúvajte jedlá", "body": "Potiahnite jedlo na iný deň." },
+    "resize": { "title": "Varíte do zásoby?", "body": "Potiahnutím okraja roztiahnete jedlo na viac dní." },
+    "add": { "title": "Pridajte čokoľvek", "body": "Pridajte recept alebo vlastnú položku, napríklad „ryža“ alebo „jeme vonku“." }
+  },
+  "shoppingGenerate": {
+    "itemName": { "title": "Upravte položky", "body": "Ťuknutím na položku zmeníte jej názov alebo množstvo." },
+    "itemDelete": { "title": "Máte to už doma?", "body": "Odstráňte to zo zoznamu." },
+    "portions": { "title": "Varíte pre viac ľudí?", "body": "Zmeňte počet porcií a množstvá sa prepočítajú." },
+    "remove": { "title": "Tentoraz to nevaríte?", "body": "Vynechajte celý recept." }
+  },
+  "shoppingList": {
+    "add": { "title": "Vezmite si zoznam do obchodu", "body": "Odškrtávajte položky, ktoré vložíte do košíka. Tu môžete pridať aj ďalšie." }
+  }
+}

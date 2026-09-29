@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { usePostHog } from 'posthog-js/react'
+import { trackMilestone } from '@/lib/analytics/milestones'
 import { ExternalLink, AlertTriangle } from 'lucide-react'
 import { IngredientEditor } from './IngredientEditor'
 import { StepEditor } from './StepEditor'
@@ -171,7 +172,7 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
     }
 
     const saved = await res.json() as { id: string }
-    if (!isEdit) posthog.capture('recipe_created')
+    if (!isEdit) trackMilestone(posthog, 'recipe_created', { source: draft ? 'import' : 'manual' })
     router.push(`/recipes/${saved.id}`)
     router.refresh()
   }

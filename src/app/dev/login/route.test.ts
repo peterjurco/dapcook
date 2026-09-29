@@ -76,7 +76,7 @@ describe('GET /dev/login', () => {
 
   it('detaches the dev user from its household with fresh=1 and opens onboarding', async () => {
     const res = await GET(request('?fresh=1'))
-    expect(mocks.adminUpdate).toHaveBeenCalledWith({ household_id: null, ui_language: 'en' })
+    expect(mocks.adminUpdate).toHaveBeenCalledWith({ household_id: null, ui_language: 'en', tours_seen: [] })
     expect(mocks.adminUpdateEq).toHaveBeenCalledWith('id', 'dev-user')
     expect(mocks.forgetHouseholdId).toHaveBeenCalledWith('dev-user')
     expect(res.headers.get('location')).toBe('http://localhost:3000/onboarding')

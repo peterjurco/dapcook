@@ -54,3 +54,20 @@ describe('SlotCard continuing from last week', () => {
     expect(screen.queryByTitle('Drag to extend or shrink across days')).toBeNull()
   })
 })
+
+describe('SlotCard tour target', () => {
+  it('marks the card root as the grid-slot tour target', () => {
+    const { container } = render(
+      <DndContext>
+        <SlotCard
+          slot={recipeSlot({ id: 's1', date: '2026-06-08', span_days: 1 })}
+          onDelete={() => {}}
+          maxSpanDays={7}
+          onSpanPreview={() => {}}
+          onSpanCommit={() => {}}
+        />
+      </DndContext>,
+    )
+    expect(container.querySelector('[data-tour="grid-slot"]')).not.toBeNull()
+  })
+})

@@ -17,6 +17,11 @@ vi.mock('next-intl', () => ({
     mockTranslate(namespace, key, values),
 }))
 
+const mockCapture = vi.fn()
+vi.mock('posthog-js/react', () => ({
+  usePostHog: () => ({ capture: mockCapture }),
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ count: 1 }) } as Response)
@@ -105,6 +110,21 @@ describe('GenerateShoppingPage', () => {
     expect(screen.queryByText('Eating out')).toBeNull()
   })
 
+  it('marks ingredient name, delete, portions and remove as tour targets', () => {
+    renderPage()
+    expect(document.querySelector('[data-tour="item-name"]')).not.toBeNull()
+    expect(document.querySelector('[data-tour="item-delete"]')).not.toBeNull()
+    expect(document.querySelector('[data-tour="generate-portions"]')).not.toBeNull()
+    expect(document.querySelector('[data-tour="generate-remove"]')).not.toBeNull()
+  })
+
+  it('anchors portions and remove tour targets to the first recipe box, not a leading custom meal', () => {
+    renderPage([customSlot({ id: 'c1', date: '2026-06-07', label: 'rice' }), carbonara])
+    const section = screen.getByRole('region', { name: 'Carbonara' })
+    expect(document.querySelector('[data-tour="generate-portions"]')!.closest('section')).toBe(section)
+    expect(document.querySelector('[data-tour="generate-remove"]')!.closest('section')).toBe(section)
+  })
+
   it('notes a recipe without ingredients', () => {
     renderPage([recipeSlot({ id: 'r2', date: '2026-06-08', title: 'Toast', servings: 1 })])
     expect(box('Toast').getByText('This recipe has no ingredients.')).toBeInTheDocument()
@@ -155,6 +175,18 @@ describe('GenerateShoppingPage', () => {
       ingredients: [{ name: 'spaghetti', quantity: 200, unit: 'g', recipe_id: 'r1' }],
       customItems: [{ name: 'rice', portions: 1 }],
     })
+  })
+
+  it('captures shopping_list_generated after adding', async () => {
+    renderPage()
+    await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
+
+    await waitFor(() =>
+      expect(mockCapture).toHaveBeenCalledWith(
+        'shopping_list_generated',
+        expect.objectContaining({ item_count: expect.any(Number), recipe_count: expect.any(Number), removed_recipe_count: 0 }),
+      ),
+    )
   })
 
   it('shows the recipe image next to the title and a placeholder for custom meals', () => {

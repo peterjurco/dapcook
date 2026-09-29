@@ -97,6 +97,7 @@ function MealRow({
       <button
         {...attributes}
         {...listeners}
+        data-tour="edit-grip"
         className="touch-none pl-3 text-gray-300 cursor-grab active:cursor-grabbing flex-shrink-0 self-center"
         aria-label={t('editList.dragMoveAria')}
       >
@@ -115,24 +116,26 @@ function MealRow({
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
             <p className="text-xs font-semibold text-gray-500 leading-none">{rangeLabel(slot, weekDays, locale, t)}</p>
-            <button
-              type="button"
-              onClick={() => onSpanChange(slot.span - 1)}
-              disabled={slot.continued || slot.span <= 1}
-              className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-              aria-label={t('editList.shrinkAria')}
-            >
-              <ChevronLeft size={12} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onSpanChange(slot.span + 1)}
-              disabled={slot.continued || slot.span >= maxSpan}
-              className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-              aria-label={t('editList.extendAria')}
-            >
-              <ChevronRight size={12} />
-            </button>
+            <span data-tour="edit-span" className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onSpanChange(slot.span - 1)}
+                disabled={slot.continued || slot.span <= 1}
+                className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                aria-label={t('editList.shrinkAria')}
+              >
+                <ChevronLeft size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onSpanChange(slot.span + 1)}
+                disabled={slot.continued || slot.span >= maxSpan}
+                className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                aria-label={t('editList.extendAria')}
+              >
+                <ChevronRight size={12} />
+              </button>
+            </span>
           </div>
           <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{title}</p>
         </div>
@@ -227,6 +230,7 @@ function DaySection({
           <button
             type="button"
             onClick={onOpenSearch}
+            data-tour="edit-add"
             className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors"
             aria-label={t('editList.addMealAria', { weekday, day })}
           >

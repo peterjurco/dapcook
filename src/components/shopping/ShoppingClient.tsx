@@ -21,6 +21,8 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { trackMilestone } from '@/lib/analytics/milestones'
+import { useTour } from '@/components/tour/TourProvider'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
 
@@ -134,6 +136,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }, [list])
 
   async function handleCheck(id: string, checked: boolean) {
+    if (checked) trackMilestone(posthog, 'shopping_item_checked')
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: checked } : item))
     await fetch(`/api/shopping/items/${id}`, {
       method: 'PATCH',
@@ -227,7 +230,8 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     })
   }
 
-  function handleCreateFirst() {
+  // Blank item at the end of the list, opened in edit mode. Enter chains more items below it.
+  function handleAddItem() {
     const pendingItem: ShoppingItem = {
       id: crypto.randomUUID(),
       shopping_list_id: list?.id ?? '',
@@ -236,11 +240,11 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       unit: null,
       category: null,
       is_checked: false,
-      sort_order: 0,
+      sort_order: items.reduce((max, i) => Math.max(max, i.sort_order), -1) + 1,
       source_recipe_ids: [],
     }
     setPendingItemIds((prev) => new Set(prev).add(pendingItem.id))
-    setItems([pendingItem])
+    setItems((prev) => [...prev, pendingItem])
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -292,6 +296,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }
 
   const visibleItems = items.filter((item) => !item.is_checked)
+  useTour('shopping-list', visibleItems.length > 0 && !showClearConfirm && pendingItemIds.size === 0)
   const colorMap = new Map(categories.map((c) => [c.name, c.color]))
   const otherCategory = t('client.otherCategory')
 
@@ -378,7 +383,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
             </p>
             <button
               type="button"
-              onClick={handleCreateFirst}
+              onClick={handleAddItem}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <Plus size={15} />
@@ -386,6 +391,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
             </button>
           </div>
         ) : (
+          <>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={visibleItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
               <div className="px-3 pb-1">
@@ -424,6 +430,16 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
               </div>
             </SortableContext>
           </DndContext>
+          <button
+            type="button"
+            onClick={handleAddItem}
+            data-tour="shopping-add"
+            className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900"
+          >
+            <Plus size={16} />
+            {t('client.addItem')}
+          </button>
+          </>
         )}
       </div>
 

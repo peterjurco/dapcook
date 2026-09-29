@@ -78,4 +78,10 @@ describe('PlannerDesktopGrid', () => {
     expect(cells.filter((r) => r === '1')).toHaveLength(6)
     expect(cells.filter((r) => r === '2')).toHaveLength(1)
   })
+
+  it('marks slot cards and day add affordances as tour targets', () => {
+    renderGrid([recipeSlot({ id: 'a', date: '2026-06-10', span_days: 1, title: 'Kurča' })])
+    expect(document.querySelector('[data-tour="grid-slot"]')).not.toBeNull()
+    expect(document.querySelectorAll('[data-tour="grid-add"]')).toHaveLength(7)
+  })
 })

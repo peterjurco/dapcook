@@ -1,0 +1,36 @@
+{
+  "controls": {
+    "next": "Next",
+    "back": "Back",
+    "done": "Done",
+    "gotIt": "Got it",
+    "skip": "Skip tour",
+    "stepOf": "{current} / {total}"
+  },
+  "planRecipe": {
+    "planButton": { "title": "Plan this recipe", "body": "Add it to a day in your weekly plan." }
+  },
+  "plannerMobileView": {
+    "edit": { "title": "Edit your plan", "body": "Move meals, stretch them over several days or add your own items." }
+  },
+  "plannerMobileEdit": {
+    "grip": { "title": "Drag to move", "body": "Hold and drag a meal to another day." },
+    "span": { "title": "Cooking in batches?", "body": "Stretch a meal over multiple days." },
+    "add": { "title": "Add anything", "body": "Search a recipe or type your own item, like “rice” or “eating out”." },
+    "done": { "title": "All set?", "body": "Tap Done when you're finished." }
+  },
+  "plannerDesktop": {
+    "slot": { "title": "Move meals", "body": "Drag a meal to another day." },
+    "resize": { "title": "Cooking in batches?", "body": "Drag the edge to stretch a meal over multiple days." },
+    "add": { "title": "Add anything", "body": "Add a recipe or your own item, like “rice” or “eating out”." }
+  },
+  "shoppingGenerate": {
+    "itemName": { "title": "Adjust items", "body": "Tap an item to change its name or quantity." },
+    "itemDelete": { "title": "Already have it at home?", "body": "Remove it from the list." },
+    "portions": { "title": "Cooking for more people?", "body": "Change the portions and the quantities follow." },
+    "remove": { "title": "Not cooking it this time?", "body": "Skip the whole recipe." }
+  },
+  "shoppingList": {
+    "add": { "title": "Take this list to the store", "body": "Tick items off as they go into the cart. Add anything else here." }
+  }
+}
