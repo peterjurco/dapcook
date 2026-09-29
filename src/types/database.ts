@@ -53,6 +53,7 @@ export interface Database {
           avatar_url: string | null
           default_recipe_filter: string[]
           ui_language: 'en' | 'sk'
+          tours_seen: string[]
           created_at: string
           updated_at: string
         }
@@ -63,6 +64,7 @@ export interface Database {
           avatar_url?: string | null
           default_recipe_filter?: string[]
           ui_language?: 'en' | 'sk'
+          tours_seen?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -73,6 +75,7 @@ export interface Database {
           avatar_url?: string | null
           default_recipe_filter?: string[]
           ui_language?: 'en' | 'sk'
+          tours_seen?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -511,6 +514,10 @@ export interface Database {
       }
       delete_tag: {
         Args: { p_household_id: string; p_name: string }
+        Returns: void
+      }
+      mark_tour_seen: {
+        Args: { p_tour: string }
         Returns: void
       }
     }

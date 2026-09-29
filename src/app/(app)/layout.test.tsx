@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   getCurrentProfile: vi.fn(),
   readOnboardingStatus: vi.fn(),
+  TourProvider: vi.fn(({ children }: { children: unknown }) => children),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -24,9 +25,24 @@ vi.mock('@/lib/onboarding/status', async (importOriginal) => ({
 vi.mock('next-intl/server', () => ({ getMessages: vi.fn(async () => ({})), setRequestLocale: vi.fn() }))
 vi.mock('next-intl', () => ({ NextIntlClientProvider: ({ children }: { children: unknown }) => children }))
 vi.mock('@/components/layout/AppShell', () => ({ AppShell: ({ children }: { children: unknown }) => children }))
+vi.mock('@/components/tour/TourProvider', () => ({ TourProvider: mocks.TourProvider }))
 vi.mock('@/components/providers/PostHogIdentifier', () => ({ PostHogIdentifier: () => null }))
 
 import AppLayout from './layout'
+
+function findProps(node: unknown, type: unknown): Record<string, unknown> | undefined {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findProps(child, type)
+      if (found) return found
+    }
+    return undefined
+  }
+  if (!node || typeof node !== 'object' || !('props' in node)) return undefined
+  const el = node as { type: unknown; props: Record<string, unknown> }
+  if (el.type === type) return el.props
+  return findProps(el.props.children, type)
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -54,5 +70,18 @@ describe('(app) layout', () => {
   it('renders the app once onboarding is finished', async () => {
     mocks.readOnboardingStatus.mockResolvedValue({ step: null, createdBy: 'user-1' })
     await expect(AppLayout({ children: null })).resolves.toBeDefined()
+  })
+
+  it('seeds TourProvider with the profile tours_seen', async () => {
+    mocks.readOnboardingStatus.mockResolvedValue({ step: null, createdBy: 'user-1' })
+    mocks.getCurrentProfile.mockResolvedValue({ household_id: 'hh-1', ui_language: 'en', tours_seen: ['plan-recipe'] })
+    const tree = await AppLayout({ children: null })
+    expect(findProps(tree, mocks.TourProvider)?.initialSeen).toEqual(['plan-recipe'])
+  })
+
+  it('falls back to an empty seen list when the profile has no tours_seen', async () => {
+    mocks.readOnboardingStatus.mockResolvedValue({ step: null, createdBy: 'user-1' })
+    const tree = await AppLayout({ children: null })
+    expect(findProps(tree, mocks.TourProvider)?.initialSeen).toEqual([])
   })
 })

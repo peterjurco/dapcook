@@ -31,6 +31,7 @@ function makeSupabase({
 } = {}) {
   return {
     auth: authMock(user),
+    rpc: vi.fn().mockResolvedValue({ error: null }),
     from: vi.fn((table: string) => {
       if (table === 'profiles') return makeQB(profileResult)
       throw new Error(`Unexpected table: ${table}`)
@@ -116,5 +117,49 @@ describe('PATCH /api/profile', () => {
 
     const qb = supabase.from.mock.results[0].value
     expect(qb.update).toHaveBeenCalledWith({ default_recipe_filter: ['main'], ui_language: 'en' })
+  })
+
+  it('marks a tour seen through the idempotent RPC without a profile update', async () => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ tour_seen: 'plan-recipe' }))
+    expect(res.status).toBe(200)
+    expect(supabase.rpc).toHaveBeenCalledWith('mark_tour_seen', { p_tour: 'plan-recipe' })
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['an unknown id', 'nope'],
+    ['a non-string value', 123],
+  ])('rejects %s before any write', async (_label, tourSeen) => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ ui_language: 'en', tour_seen: tourSeen }))
+    expect(res.status).toBe(400)
+    expect(supabase.rpc).not.toHaveBeenCalled()
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it('applies the profile update and marks the tour seen for a mixed payload', async () => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ ui_language: 'sk', tour_seen: 'plan-recipe' }))
+    expect(res.status).toBe(200)
+
+    const qb = supabase.from.mock.results[0].value
+    expect(qb.update).toHaveBeenCalledWith({ ui_language: 'sk' })
+    expect(supabase.rpc).toHaveBeenCalledWith('mark_tour_seen', { p_tour: 'plan-recipe' })
+  })
+
+  it('returns 500 when the RPC fails', async () => {
+    const supabase = makeSupabase()
+    supabase.rpc.mockResolvedValue({ error: { message: 'boom' } })
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ tour_seen: 'shopping-list' }))
+    expect(res.status).toBe(500)
   })
 })

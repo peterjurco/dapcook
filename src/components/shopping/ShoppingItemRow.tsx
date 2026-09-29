@@ -234,6 +234,7 @@ export function ShoppingItemRow({
               {/* Clicking the text enters inline edit mode */}
               <span
                 onClick={startEdit}
+                data-tour="item-name"
                 className={`flex-1 min-w-0 text-base transition-colors duration-150 select-none ${
                   saveError
                     ? 'text-gray-900 cursor-text'
@@ -269,6 +270,7 @@ export function ShoppingItemRow({
                   onMouseLeave={() => setDeleteHovered(false)}
                   className={`transition-colors ${deleteHovered ? 'text-red-500' : 'text-gray-300'}`}
                   title={t('itemRow.deleteTitle')}
+                  data-tour="item-delete"
                 >
                   <X size={18} />
                 </button>

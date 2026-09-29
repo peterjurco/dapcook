@@ -34,7 +34,7 @@ Supabase SQL editor. Never edit `supabase/baseline.txt`.
 - **Dev login:** with `npm run dev` running, open http://localhost:3000/dev/login to sign in as
   `dev@dapcook.local` without Google. `.env.local` points at the **staging** Supabase project.
   - `?next=/shopping` — land on a specific page.
-  - `?fresh=1` — detach the dev user from its household (and reset its language to English) and
+  - `?fresh=1` — detach the dev user from its household (and reset its language to English and its seen product tours) and
     open `/onboarding`, to walk through the wizard again. Old dev households stay in staging.
   - The route returns 404 unless `NODE_ENV === 'development'`.
   - `next dev` listens on all interfaces, so anyone on the LAN can hit `/dev/login` — run

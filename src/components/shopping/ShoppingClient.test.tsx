@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ShoppingClient } from './ShoppingClient'
+import { TourProvider } from '@/components/tour/TourProvider'
 import { mockTranslate } from '@/test/mockMessages'
 import type { TranslationValues } from 'use-intl'
 import type { ShoppingItem, ShoppingList, ShoppingCategory } from '@/types/database'
@@ -13,6 +15,20 @@ const realtime = vi.hoisted(() => ({
 vi.mock('next-intl', () => ({
   useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
     mockTranslate(namespace, key, values),
+}))
+
+vi.mock('next/navigation', () => ({ usePathname: () => '/shopping' }))
+
+vi.mock('@/components/tour/TourOverlay', () => ({
+  // Mirrors the real overlay's advanceOnTargetClick behaviour: clicking the target advances the tour.
+  TourOverlay: ({ step, onNext }: { step: { target: string }; onNext: () => void }) => {
+    useEffect(() => {
+      const el = document.querySelector(`[data-tour="${step.target}"]`)
+      el?.addEventListener('click', onNext)
+      return () => el?.removeEventListener('click', onNext)
+    }, [step.target, onNext])
+    return <div data-testid="tour-stub">{step.target}</div>
+  },
 }))
 
 vi.mock('posthog-js/react', () => ({
@@ -106,6 +122,14 @@ describe('ShoppingClient', () => {
     expect(getByRole('button', { name: 'Clear list' })).toBeTruthy()
   })
 
+  it('captures shopping_item_checked once the check animation completes', async () => {
+    const { getByRole } = render(
+      <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
+    )
+    fireEvent.click(getByRole('checkbox'))
+    await waitFor(() => expect(mockCapture).toHaveBeenCalledWith('shopping_item_checked', expect.anything()), { timeout: 1500 })
+  })
+
   it('does not show Clear list button when list is empty', () => {
     const { queryByRole } = render(
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[]} />
@@ -188,5 +212,73 @@ describe('ShoppingClient', () => {
       })
       randomUuid.mockRestore()
     }
+  })
+
+  it('shows an Add item row that appends an editable item and saves it on Enter', async () => {
+    const itemId = '33333333-3333-4333-8333-333333333333'
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce(itemId)
+    vi.mocked(fetch).mockImplementation((url) =>
+      Promise.resolve(
+        url === '/api/shopping/items'
+          ? { ok: true, json: () => Promise.resolve({ ...mockItem, id: itemId, name: 'Eggs', sort_order: 1 }) }
+          : { ok: true },
+      ) as Promise<Response>,
+    )
+    render(<ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />)
+
+    const addRow = screen.getByRole('button', { name: 'Add item' })
+    expect(addRow).toHaveAttribute('data-tour', 'shopping-add')
+    fireEvent.click(addRow)
+
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveFocus()
+    fireEvent.change(input, { target: { value: 'Eggs' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    const createRequest = vi.mocked(fetch).mock.calls.find(([url]) => url === '/api/shopping/items')
+    expect(JSON.parse(createRequest?.[1]?.body as string)).toMatchObject({ id: itemId, name: 'Eggs' })
+    await waitFor(() => expect(screen.getByText('Milk')).toBeTruthy())
+  })
+
+  it('walks the shopping-list tour from Copy list to Add item and finishes it', async () => {
+    vi.useFakeTimers()
+    const write = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { write, writeText: vi.fn() }, configurable: true })
+    vi.stubGlobal('ClipboardItem', class { constructor(public items: unknown) {} })
+    try {
+      render(
+        <TourProvider initialSeen={[]}>
+          <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
+        </TourProvider>,
+      )
+      expect(screen.queryByTestId('tour-stub')).toBeNull()
+      await act(async () => { vi.advanceTimersByTime(700) })
+      expect(screen.getByTestId('tour-stub')).toHaveTextContent('shopping-copy')
+
+      // Copying is what the step suggests, so it moves on to the next step.
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /copy list/i }))
+      })
+      expect(write).toHaveBeenCalled()
+      expect(screen.getByTestId('tour-stub')).toHaveTextContent('shopping-add')
+      expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/profile', expect.anything())
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Add item' }))
+      })
+      expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+        body: JSON.stringify({ tour_seen: 'shopping-list' }),
+      }))
+      expect(screen.queryByTestId('tour-stub')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('keeps the empty-state Add item button working', () => {
+    render(<ShoppingClient {...defaultProps} initialList={mockList} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add item' }))
+    expect(screen.getByRole('textbox')).toHaveFocus()
   })
 })

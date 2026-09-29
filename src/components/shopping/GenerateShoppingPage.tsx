@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import { usePostHog } from 'posthog-js/react'
 import { ArrowLeft } from 'lucide-react'
+import { useTour } from '@/components/tour/TourProvider'
+import { trackMilestone } from '@/lib/analytics/milestones'
 import { formatDayLabel, parseDateString } from '@/lib/utils/week'
 import {
   applyIngredientEdit,
@@ -22,6 +25,7 @@ interface Props {
 
 export function GenerateShoppingPage({ slots }: Props) {
   const router = useRouter()
+  const posthog = usePostHog()
   const locale = useLocale()
   const t = useTranslations('shopping')
 
@@ -32,6 +36,10 @@ export function GenerateShoppingPage({ slots }: Props) {
     }),
   )
   const [isAdding, setIsAdding] = useState(false)
+  useTour(
+    'shopping-generate',
+    entries.some((e) => e.kind === 'recipe' && !e.removed && e.ingredients.length > 0) && !isAdding,
+  )
   const [error, setError] = useState<string | null>(null)
 
   const payload = buildSubmitPayload(entries)
@@ -94,6 +102,11 @@ export function GenerateShoppingPage({ slots }: Props) {
         // ignore storage errors
       }
 
+      trackMilestone(posthog, 'shopping_list_generated', {
+        item_count: itemCount,
+        recipe_count: entries.filter((e) => e.kind === 'recipe' && !e.removed).length,
+        removed_recipe_count: entries.filter((e) => e.kind === 'recipe' && e.removed).length,
+      })
       router.push('/shopping')
     } catch {
       setError(t('generate.networkError'))

@@ -1,7 +1,8 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlannerClient } from './PlannerClient'
+import { TOUR_START_DELAY_MS, TourProvider } from '@/components/tour/TourProvider'
 import { mockTranslate } from '@/test/mockMessages'
 import type { TranslationValues } from 'use-intl'
 import type { WeekData } from '@/types/planner'
@@ -10,6 +11,10 @@ const mockPush = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
+  usePathname: () => '/planner',
+}))
+vi.mock('@/components/tour/TourOverlay', () => ({
+  TourOverlay: ({ step }: { step: { target: string } }) => <div data-testid="tour-step">{step.target}</div>,
 }))
 
 vi.mock('next-intl', () => ({
@@ -17,8 +22,9 @@ vi.mock('next-intl', () => ({
     mockTranslate(namespace, key, values),
 }))
 
+const mockCapture = vi.fn()
 vi.mock('posthog-js/react', () => ({
-  usePostHog: () => ({ capture: vi.fn() }),
+  usePostHog: () => ({ capture: mockCapture }),
 }))
 
 vi.mock('@dnd-kit/core', () => ({
@@ -308,6 +314,31 @@ describe('PlannerClient', () => {
 
     const post = fetchMock.mock.calls.find(([url, init]) => url === '/api/planner/slots' && (init as RequestInit)?.method === 'POST')
     expect(JSON.parse((post![1] as RequestInit).body as string)).toEqual({ date: '2026-06-10', custom_label: 'Leftovers' })
+    await waitFor(() =>
+      expect(mockCapture).toHaveBeenCalledWith(
+        'meal_planned',
+        expect.objectContaining({ source: 'planner', kind: 'custom' }),
+      ),
+    )
+  })
+
+  it('marks the plan-recipe tour seen after adding a custom meal', async () => {
+    const data = emptyWeekData('2026-06-08')
+    data.slots = weekData('Something').slots.map((s) => ({ ...s, date: '2026-06-08' }))
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response(data))
+      .mockResolvedValue({ ok: true, json: async () => ({ id: 'new' }) } as Response)
+    global.fetch = fetchMock
+
+    render(<TourProvider initialSeen={[]}><PlannerClient weekStart={new Date(2026, 5, 8)} /></TourProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: 'add on day 3' }))
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ tour_seen: 'plan-recipe' }),
+      })),
+    )
   })
 
   it('is a no-op when a continued meal is dropped on the column it is drawn in', async () => {
@@ -418,5 +449,49 @@ describe('PlannerClient', () => {
     await screen.findByTestId('planner-grid')
 
     expect(screen.queryByRole('button', { name: /generate shopping list/i })).toBeNull()
+  })
+
+  it('marks Edit and Done as planner tour targets', async () => {
+    global.fetch = vi.fn().mockResolvedValue(response(weekData('Edit Pasta', '2026-07-06')))
+    render(<PlannerClient weekStart={new Date('2026-07-06T00:00:00.000Z')} />)
+    expect(await screen.findByText('Edit Pasta')).toBeInTheDocument()
+    const actions = screen.getByRole('region', { name: /planner actions/i })
+    expect(within(actions).getByRole('button', { name: /edit/i })).toHaveAttribute('data-tour', 'planner-edit')
+    await userEvent.click(within(actions).getByRole('button', { name: /edit/i }))
+    expect(within(actions).getByRole('button', { name: /done/i })).toHaveAttribute('data-tour', 'planner-done')
+  })
+
+  describe('tour wiring', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    })
+
+    it('runs the mobile view tour, then the mobile edit tour after tapping Edit', async () => {
+      vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }))
+      global.fetch = vi.fn().mockResolvedValue(response(weekData('Tour Pasta', '2026-07-06')))
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+      render(
+        <TourProvider initialSeen={[]}>
+          <PlannerClient weekStart={new Date('2026-07-06T00:00:00.000Z')} />
+        </TourProvider>,
+      )
+      expect(await screen.findByText('Tour Pasta')).toBeInTheDocument()
+      expect(screen.queryByTestId('tour-step')).toBeNull()
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(TOUR_START_DELAY_MS + 50) })
+      expect(screen.getByTestId('tour-step')).toHaveTextContent('planner-edit')
+
+      await user.click(screen.getByRole('button', { name: /edit/i }))
+      // Leaving view mode drops the view tour without consuming it, then the edit tour starts.
+      await act(async () => { await vi.advanceTimersByTimeAsync(TOUR_START_DELAY_MS + 50) })
+      expect(screen.getByTestId('tour-step')).toHaveTextContent('edit-grip')
+    })
   })
 })

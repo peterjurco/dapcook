@@ -1,0 +1,170 @@
+'use client'
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { isTourId, type TourId } from '@/lib/tours/ids'
+import { TOURS } from './tours'
+import { TourOverlay } from './TourOverlay'
+
+/** Lets layout and scroll settle before a tour appears. */
+export const TOUR_START_DELAY_MS = 600
+
+interface ActiveTour {
+  id: TourId
+  stepIndex: number
+  pathname: string
+}
+
+interface TourContextValue {
+  seen: ReadonlySet<TourId>
+  active: ActiveTour | null
+  start: (id: TourId) => void
+  next: () => void
+  back: () => void
+  /** Ends the active tour (finished or skipped) and marks it seen. */
+  close: () => void
+  /** Marks a tour seen without showing it, e.g. once the user already did what it teaches. */
+  markSeen: (id: TourId) => void
+  /**
+   * Ends the active tour without marking it seen (condition lost, navigation, unmount), so it can
+   * come back. With `id`, only acts when that tour is the active one.
+   */
+  dismiss: (id?: TourId) => void
+}
+
+const TourContext = createContext<TourContextValue | null>(null)
+
+export function TourProvider({ initialSeen, children }: { initialSeen: string[]; children: React.ReactNode }) {
+  const pathname = usePathname()
+  const [seen, setSeen] = useState<ReadonlySet<TourId>>(() => new Set(initialSeen.filter(isTourId)))
+  const seenRef = useRef(seen)
+  const [active, setActiveState] = useState<ActiveTour | null>(null)
+  // Refs mirror state synchronously so two tours starting in one tick can't both win.
+  const activeRef = useRef<ActiveTour | null>(null)
+  const pathnameRef = useRef(pathname)
+  pathnameRef.current = pathname
+
+  const setActive = useCallback((next: ActiveTour | null) => {
+    activeRef.current = next
+    setActiveState(next)
+  }, [])
+
+  const markSeen = useCallback((id: TourId) => {
+    if (seenRef.current.has(id)) return
+    const next = new Set(seenRef.current).add(id)
+    seenRef.current = next
+    setSeen(next)
+    fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tour_seen: id }),
+    }).catch(() => {
+      // Best effort — worst case the tour shows once more on another device.
+    })
+  }, [])
+
+  const start = useCallback((id: TourId) => {
+    if (seenRef.current.has(id) || activeRef.current) return
+    setActive({ id, stepIndex: 0, pathname: pathnameRef.current })
+  }, [setActive])
+
+  const close = useCallback(() => {
+    const current = activeRef.current
+    if (!current) return
+    setActive(null)
+    markSeen(current.id)
+  }, [markSeen, setActive])
+
+  const dismiss = useCallback((id?: TourId) => {
+    const current = activeRef.current
+    if (!current || (id && current.id !== id)) return
+    setActive(null)
+  }, [setActive])
+
+  const next = useCallback(() => {
+    const current = activeRef.current
+    if (!current) return
+    if (current.stepIndex + 1 >= TOURS[current.id].length) close()
+    else setActive({ ...current, stepIndex: current.stepIndex + 1 })
+  }, [close, setActive])
+
+  // A target that never shows up must not consume the tour: skip the step, or on the last one
+  // dismiss so the tour can come back.
+  const missing = useCallback(() => {
+    const current = activeRef.current
+    if (!current) return
+    if (current.stepIndex + 1 >= TOURS[current.id].length) dismiss()
+    else setActive({ ...current, stepIndex: current.stepIndex + 1 })
+  }, [dismiss, setActive])
+
+  const back = useCallback(() => {
+    const current = activeRef.current
+    if (!current || current.stepIndex === 0) return
+    setActive({ ...current, stepIndex: current.stepIndex - 1 })
+  }, [setActive])
+
+  // Leaving the page ends the tour without consuming it.
+  useEffect(() => {
+    if (activeRef.current && activeRef.current.pathname !== pathname) dismiss()
+  }, [pathname, dismiss])
+
+  const value = useMemo(
+    () => ({ seen, active, start, next, back, close, markSeen, dismiss }),
+    [seen, active, start, next, back, close, markSeen, dismiss],
+  )
+
+  return (
+    <TourContext.Provider value={value}>
+      {children}
+      {active && (
+        <TourOverlay
+          key={`${active.id}-${active.stepIndex}`}
+          step={TOURS[active.id][active.stepIndex]}
+          stepIndex={active.stepIndex}
+          total={TOURS[active.id].length}
+          onNext={next}
+          onMissing={missing}
+          onBack={back}
+          onClose={close}
+        />
+      )}
+    </TourContext.Provider>
+  )
+}
+
+/** Tour controls, or null outside a TourProvider. */
+export function useTourControls(): TourContextValue | null {
+  return useContext(TourContext)
+}
+
+/**
+ * Shows tour `id` once `condition` holds (after a short settle delay), unless it was
+ * already seen or another tour is running. Dismisses (without marking seen) if `condition` stops holding or the caller unmounts.
+ */
+export function useTour(id: TourId, condition: boolean) {
+  const ctx = useContext(TourContext)
+  const start = ctx?.start
+  const dismiss = ctx?.dismiss
+  const isSeen = ctx ? ctx.seen.has(id) : true
+  const activeId = ctx?.active?.id ?? null
+
+  useEffect(() => {
+    if (!start || !condition || isSeen || activeId) return
+    const timer = setTimeout(() => start(id), TOUR_START_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [start, id, condition, isSeen, activeId])
+
+  useEffect(() => {
+    if (!condition && activeId === id) dismiss?.(id)
+  }, [condition, activeId, id, dismiss])
+
+  // Unmounting the owner (e.g. the target's UI is gone) ends its tour without consuming it.
+  useEffect(() => () => dismiss?.(id), [dismiss, id])
+}
+
+/** True while the active tour step highlights `target` — used to force hover-only controls visible. */
+export function useTourStep(target: string): boolean {
+  const active = useContext(TourContext)?.active
+  if (!active) return false
+  return TOURS[active.id][active.stepIndex]?.target === target
+}

@@ -121,3 +121,20 @@ describe('CustomLabelCard continuing from last week', () => {
     expect(screen.queryByTitle('Drag to extend or shrink across days')).toBeNull()
   })
 })
+
+describe('CustomLabelCard tour target', () => {
+  it('marks the card root as the grid-slot tour target', () => {
+    const { container } = render(
+      <DndContext>
+        <CustomLabelCard
+          slot={customSlot({ id: 'c1', date: '2026-06-08', span_days: 1, label: 'Leftovers' })}
+          onDelete={() => {}}
+          maxSpanDays={7}
+          onSpanPreview={() => {}}
+          onSpanCommit={() => {}}
+        />
+      </DndContext>,
+    )
+    expect(container.querySelector('[data-tour="grid-slot"]')).not.toBeNull()
+  })
+})

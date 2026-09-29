@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddToPlanButton } from './AddToPlanButton'
+import { TourProvider } from '@/components/tour/TourProvider'
 import { WeekStartProvider } from '@/components/providers/WeekStartProvider'
 import { getWeekStart, nextWeekStart, toDateString } from '@/lib/utils/week'
 import { mockTranslate } from '@/test/mockMessages'
@@ -10,11 +11,18 @@ import type { TranslationValues } from 'use-intl'
 const mockPush = vi.fn()
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
+  usePathname: () => '/recipes/1',
 }))
+vi.mock('@/components/tour/TourOverlay', () => ({ TourOverlay: () => null }))
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
   useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
     mockTranslate(namespace, key, values),
+}))
+
+const mockCapture = vi.fn()
+vi.mock('posthog-js/react', () => ({
+  usePostHog: () => ({ capture: mockCapture }),
 }))
 
 beforeEach(() => {
@@ -29,6 +37,42 @@ function lastFetchBody() {
 }
 
 describe('AddToPlanButton', () => {
+  it('marks the toolbar button as the plan-recipe tour target, but not the card overlay', () => {
+    const { container, rerender } = render(<AddToPlanButton recipeId="recipe-1" />)
+    expect(container.querySelector('[data-tour="plan-button"]')).not.toBeNull()
+    rerender(<AddToPlanButton recipeId="recipe-1" variant="overlay" />)
+    expect(container.querySelector('[data-tour="plan-button"]')).toBeNull()
+  })
+
+  it('marks the plan-recipe tour seen after planning from the picker', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'slot-1' }) } as Response)
+    render(<TourProvider initialSeen={[]}><AddToPlanButton recipeId="recipe-1" /></TourProvider>)
+
+    await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /add to \w+ \d+/i }))
+
+    await waitFor(() =>
+      expect(global.fetch).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+        body: JSON.stringify({ tour_seen: 'plan-recipe' }),
+      })),
+    )
+  })
+
+  it('captures meal_planned with source recipe after adding from the picker', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'slot-1' }) } as Response)
+    render(<AddToPlanButton recipeId="recipe-1" />)
+
+    await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /add to \w+ \d+/i }))
+
+    await waitFor(() =>
+      expect(mockCapture).toHaveBeenCalledWith(
+        'meal_planned',
+        expect.objectContaining({ source: 'recipe', kind: 'recipe' }),
+      ),
+    )
+  })
+
   it('opens a destination picker and adds the recipe to the chosen day', async () => {
     render(<AddToPlanButton recipeId="recipe-1" />)
 
