@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { placeCard, GUTTER } from './placement'
@@ -30,6 +30,8 @@ interface TourOverlayProps {
 
 export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }: TourOverlayProps) {
   const t = useTranslations('tour')
+  const titleId = useId()
+  const bodyId = useId()
   const [target, setTarget] = useState<HTMLElement | null>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -44,6 +46,7 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
   })
 
   // Resolve the target, waiting briefly for it to mount; never trap the user on a missing one.
+  // (The provider keys the overlay per step, so these resets only matter if step.target changes in place.)
   useEffect(() => {
     setTarget(null)
     setRect(null)
@@ -74,7 +77,8 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
   // Keep the spotlight on the target through scrolling (any container) and resizes.
   useLayoutEffect(() => {
     if (!target) return
-    target.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    target.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' })
     const update = () => setRect(target.getBoundingClientRect())
     update()
     window.addEventListener('scroll', update, true)
@@ -84,6 +88,18 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
       window.removeEventListener('resize', update)
     }
   }, [target])
+
+  // If the target node is replaced (re-render, data load), follow the live element.
+  useEffect(() => {
+    if (!target) return
+    const observer = new MutationObserver(() => {
+      if (target.isConnected) return
+      const el = findTarget(step.target)
+      if (el) setTarget(el)
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [target, step.target])
 
   // Clicking the highlighted control is progress (e.g. tapping Plan or Edit).
   useEffect(() => {
@@ -95,11 +111,21 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCloseRef.current()
+      if (e.key === 'Escape' && !e.defaultPrevented) onCloseRef.current()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
+
+  // Move focus into the card once it is shown; stay unobtrusive when the user is meant to click the target.
+  const shown = Boolean(target && rect)
+  useEffect(() => {
+    if (!shown) return
+    const el = step.advanceOnTargetClick
+      ? cardRef.current
+      : cardRef.current?.querySelector<HTMLButtonElement>('[data-tour-primary]')
+    el?.focus({ preventScroll: true })
+  }, [shown, step.advanceOnTargetClick, stepIndex])
 
   useLayoutEffect(() => {
     const h = cardRef.current?.offsetHeight
@@ -123,24 +149,26 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
     // The layer ignores pointer events so the highlighted control stays clickable.
     <div className="fixed inset-0 z-[60] pointer-events-none">
       <div
-        className="absolute rounded-xl transition-all duration-200"
+        className="absolute rounded-xl"
         style={{ ...spot, boxShadow: '0 0 0 9999px rgb(0 0 0 / 0.5)' }}
       />
       <div
         ref={cardRef}
         role="dialog"
-        aria-labelledby="tour-title"
-        className="pointer-events-auto absolute rounded-xl bg-white p-4 shadow-xl"
+        tabIndex={-1}
+        aria-labelledby={titleId}
+        aria-describedby={bodyId}
+        className="pointer-events-auto absolute rounded-xl bg-white p-4 shadow-xl focus:outline-none"
         style={{ top: pos.top, left: pos.left, width: cardWidth }}
       >
-        <p id="tour-title" className="text-sm font-semibold text-gray-900">{t(`${step.key}.title`)}</p>
-        <p className="mt-1 text-sm leading-5 text-gray-600">{t(`${step.key}.body`)}</p>
+        <p id={titleId} className="text-sm font-semibold text-gray-900">{t(`${step.key}.title`)}</p>
+        <p id={bodyId} className="mt-1 text-sm leading-5 text-gray-600">{t(`${step.key}.body`)}</p>
         <div className="mt-4 flex items-center gap-2">
           {total > 1 && (
-            <span className="text-xs text-gray-400">{t('controls.stepOf', { current: stepIndex + 1, total })}</span>
+            <span className="text-xs text-gray-500">{t('controls.stepOf', { current: stepIndex + 1, total })}</span>
           )}
           {total > 1 && (
-            <button type="button" onClick={onClose} className="ml-auto text-xs font-medium text-gray-500 hover:text-gray-900">
+            <button type="button" onClick={onClose} className="ml-auto text-xs font-medium text-gray-500 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none">
               {t('controls.skip')}
             </button>
           )}
@@ -148,15 +176,16 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
             <button
               type="button"
               onClick={onBack}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 ${total > 1 ? '' : 'ml-auto'}`}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none ${total > 1 ? '' : 'ml-auto'}`}
             >
               {t('controls.back')}
             </button>
           )}
           <button
             type="button"
+            data-tour-primary
             onClick={onNext}
-            className={`rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 ${total > 1 ? '' : 'ml-auto'}`}
+            className={`rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none ${total > 1 ? '' : 'ml-auto'}`}
           >
             {total === 1 ? t('controls.gotIt') : isLast ? t('controls.done') : t('controls.next')}
           </button>
