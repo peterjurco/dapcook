@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { getCurrentProfile, getCurrentUser } from '@/lib/auth/current-user'
+import { TourProvider } from '@/components/tour/TourProvider'
 import { isLocale, defaultLocale } from '@/i18n/config'
 
 export default async function FlowLayout({
@@ -20,9 +21,11 @@ export default async function FlowLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <div className="min-h-screen bg-gray-50">
-        {children}
-      </div>
+      <TourProvider initialSeen={profile?.tours_seen ?? []}>
+        <div className="min-h-screen bg-gray-50">
+          {children}
+        </div>
+      </TourProvider>
     </NextIntlClientProvider>
   )
 }

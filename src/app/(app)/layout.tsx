@@ -6,6 +6,7 @@ import { getHouseholdWeekStartDay } from '@/lib/auth/household'
 import { AppShell } from '@/components/layout/AppShell'
 import { PostHogIdentifier } from '@/components/providers/PostHogIdentifier'
 import { WeekStartProvider } from '@/components/providers/WeekStartProvider'
+import { TourProvider } from '@/components/tour/TourProvider'
 import { isLocale, defaultLocale } from '@/i18n/config'
 import { needsOnboarding, readOnboardingStatus } from '@/lib/onboarding/status'
 
@@ -36,9 +37,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <NextIntlClientProvider locale={locale} messages={messages}>
       {user.email && <PostHogIdentifier userId={user.id} email={user.email} optOut={isAdmin} />}
       <WeekStartProvider value={weekStartDay}>
-        <AppShell user={user} profile={profile} isAdmin={isAdmin} birthdayConfig={birthdayConfig}>
-          {children}
-        </AppShell>
+        <TourProvider initialSeen={profile.tours_seen ?? []}>
+          <AppShell user={user} profile={profile} isAdmin={isAdmin} birthdayConfig={birthdayConfig}>
+            {children}
+          </AppShell>
+        </TourProvider>
       </WeekStartProvider>
     </NextIntlClientProvider>
   )

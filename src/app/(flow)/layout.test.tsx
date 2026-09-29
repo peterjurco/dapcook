@@ -1,8 +1,15 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { useLocale } from 'next-intl'
 import FlowLayout from './layout'
 import { authMock } from '@/test/authMock'
+
+const mocks = vi.hoisted(() => ({
+  profile: { ui_language: 'en' } as Record<string, unknown>,
+  TourProvider: vi.fn(({ children }: { children: unknown }) => children),
+}))
+
+vi.mock('@/components/tour/TourProvider', () => ({ TourProvider: mocks.TourProvider }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
@@ -10,7 +17,7 @@ vi.mock('@/lib/supabase/server', () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
-          single: async () => ({ data: { ui_language: 'en' }, error: null }),
+          single: async () => ({ data: mocks.profile, error: null }),
         }),
       }),
     }),
@@ -32,6 +39,22 @@ function LocaleProbe() {
 }
 
 describe('FlowLayout', () => {
+  beforeEach(() => {
+    mocks.TourProvider.mockClear()
+    mocks.profile = { ui_language: 'en' }
+  })
+
+  it('seeds TourProvider with the profile tours_seen', async () => {
+    mocks.profile = { ui_language: 'en', tours_seen: ['plan-recipe'] }
+    render(await FlowLayout({ children: <LocaleProbe /> }))
+    expect(mocks.TourProvider.mock.calls[0][0]).toMatchObject({ initialSeen: ['plan-recipe'] })
+  })
+
+  it('falls back to an empty seen list when the profile has no tours_seen', async () => {
+    render(await FlowLayout({ children: <LocaleProbe /> }))
+    expect(mocks.TourProvider.mock.calls[0][0]).toMatchObject({ initialSeen: [] })
+  })
+
   it('wraps children in a NextIntlClientProvider so next-intl hooks work', async () => {
     render(await FlowLayout({ children: <LocaleProbe /> }))
     expect(screen.getByText('locale:en')).toBeInTheDocument()
