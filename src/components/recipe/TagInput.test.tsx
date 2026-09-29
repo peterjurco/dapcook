@@ -61,4 +61,17 @@ describe('TagInput suggestions', () => {
     fireEvent.focus(screen.getByPlaceholderText('Type a tag and press Enter'))
     expect(onRequestSuggestions).toHaveBeenCalledTimes(1)
   })
+
+  it('hides the suggestions row while typing', () => {
+    renderInput({ suggestions: { existing: ['pasta'], new: 'italian' } })
+    fireEvent.change(screen.getByPlaceholderText('Type a tag and press Enter'), { target: { value: 'x' } })
+    expect(screen.queryByText('Suggested')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'pasta' })).not.toBeInTheDocument()
+  })
+
+  it('adds a suggested existing tag on click', () => {
+    const { onChange } = renderInput({ tags: ['quick'], suggestions: { existing: ['pasta'], new: null } })
+    fireEvent.click(screen.getByRole('button', { name: 'pasta' }))
+    expect(onChange).toHaveBeenCalledWith(['quick', 'pasta'])
+  })
 })

@@ -47,6 +47,15 @@ function suggestionKey(title: string, ingredients: { name: string }[]): string {
   return JSON.stringify([title.trim(), ingredients.map((ing) => ing.name.trim()).filter(Boolean)])
 }
 
+/** Accepts only a well-formed suggestion payload; anything else is treated as a failed request. */
+function parseTagSuggestions(data: unknown): TagSuggestions | null {
+  if (typeof data !== 'object' || data === null) return null
+  const { existing, new: newTag = null } = data as Record<string, unknown>
+  if (!Array.isArray(existing) || !existing.every((n) => typeof n === 'string')) return null
+  if (newTag !== null && typeof newTag !== 'string') return null
+  return { existing, new: newTag }
+}
+
 export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const router = useRouter()
   const posthog = usePostHog()
@@ -97,8 +106,11 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
         body: JSON.stringify({ title: trimmedTitle, ingredientNames }),
       })
       if (res.ok) {
-        setTagSuggestions(await res.json() as TagSuggestions)
-        lastSuggestionKey.current = key
+        const parsed = parseTagSuggestions(await res.json())
+        if (parsed) {
+          setTagSuggestions(parsed)
+          lastSuggestionKey.current = key
+        }
       }
     } catch {
       // Suggestions are optional — the "most used" row stays as the fallback.
