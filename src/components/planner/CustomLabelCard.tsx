@@ -101,6 +101,7 @@ export function CustomLabelCard({
     <>
       <div
         ref={setNodeRef}
+        data-tour="grid-slot"
         style={css}
         className={`relative h-full min-h-[11rem] rounded-lg border group ${style.bg} ${
           isDragging ? 'shadow-lg ring-2 ring-gray-300' : isResizing ? 'border-gray-400 shadow-md' : ''

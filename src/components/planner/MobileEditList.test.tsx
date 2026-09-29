@@ -101,4 +101,12 @@ describe('MobileEditList', () => {
     expect(screen.getByRole('button', { name: /extend by one day/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /drag to move/i })).toBeInTheDocument()
   })
+
+  it('marks the grip, span controls and add button as tour targets', () => {
+    setup([recipeSlot({ id: 'a', date: '2026-06-09', span_days: 1, title: 'Meal A' })])
+    expect(screen.getAllByRole('button', { name: 'Drag to move to another day' })[0]).toHaveAttribute('data-tour', 'edit-grip')
+    expect(screen.getAllByRole('button', { name: 'Extend by one day' })[0].closest('[data-tour="edit-span"]')).not.toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Shrink by one day' })[0].closest('[data-tour="edit-span"]')).not.toBeNull()
+    expect(document.querySelector('[data-tour="edit-add"]')).not.toBeNull()
+  })
 })

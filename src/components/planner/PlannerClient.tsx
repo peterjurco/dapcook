@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowRight, CalendarDays, ChefHat, Pencil, ShoppingCart, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
-import { useTourControls } from '@/components/tour/TourProvider'
+import { useTour, useTourControls } from '@/components/tour/TourProvider'
+import { useIsDesktop } from '@/components/tour/useIsDesktop'
 import { trackMilestone } from '@/lib/analytics/milestones'
 import { DndContext, DragEndEvent, DragOverlay, pointerWithin } from '@dnd-kit/core'
 import { SlotCard } from './SlotCard'
@@ -187,6 +188,11 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   const isWeekEmpty = slots.length === 0
   const hasRecipeSlots = placed.some((p) => p.recipe_id && !p.continued)
+  const isDesktop = useIsDesktop()
+  const hasSlots = !loading && !isWeekEmpty
+  useTour('planner-mobile-view', isDesktop === false && hasSlots && !isMobileEditMode)
+  useTour('planner-mobile-edit', isDesktop === false && hasSlots && isMobileEditMode)
+  useTour('planner-desktop', isDesktop === true && hasSlots && openSearchDay === null)
 
   return (
     <div>
@@ -350,6 +356,7 @@ function PlannerActions({
         <button
           type="button"
           onClick={onToggleMobileEdit}
+          data-tour="planner-done"
           className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
         >
           <X size={15} />
@@ -367,6 +374,7 @@ function PlannerActions({
       <button
         type="button"
         onClick={onToggleMobileEdit}
+        data-tour="planner-edit"
         className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
       >
         <Pencil size={15} />

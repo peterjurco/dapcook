@@ -156,6 +156,7 @@ export function PlannerDesktopGrid({
             return (
               <div
                 key={`add-${day}`}
+                data-tour="grid-add"
                 className={`relative ${isEmptyDay ? '' : 'self-start'}`}
                 style={{ gridColumn: day, gridRow }}
               >
