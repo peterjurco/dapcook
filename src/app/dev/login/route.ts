@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   )
 
   if (fresh) {
-    await admin.from('profiles').update({ household_id: null, ui_language: 'en' }).eq('id', userId)
+    await admin.from('profiles').update({ household_id: null, ui_language: 'en', tours_seen: [] }).eq('id', userId)
     forgetHouseholdId(userId)
   }
 
