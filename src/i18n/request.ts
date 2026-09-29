@@ -26,7 +26,7 @@ export async function resolveRequestLocale(
 export default getRequestConfig(async ({ locale, requestLocale }) => {
   const resolved = await resolveRequestLocale(locale, await requestLocale)
 
-  const [common, nav, recipes, planner, shopping, settings, auth, admin, errors] = await Promise.all([
+  const [common, nav, recipes, planner, shopping, settings, auth, admin, errors, tour] = await Promise.all([
     import(`../../messages/${resolved}/common.json`),
     import(`../../messages/${resolved}/nav.json`),
     import(`../../messages/${resolved}/recipes.json`),
@@ -36,6 +36,7 @@ export default getRequestConfig(async ({ locale, requestLocale }) => {
     import(`../../messages/${resolved}/auth.json`),
     import(`../../messages/${resolved}/admin.json`),
     import(`../../messages/${resolved}/errors.json`),
+    import(`../../messages/${resolved}/tour.json`),
   ])
 
   return {
@@ -50,6 +51,7 @@ export default getRequestConfig(async ({ locale, requestLocale }) => {
       auth: auth.default,
       admin: admin.default,
       errors: errors.default,
+      tour: tour.default,
     },
   }
 })
