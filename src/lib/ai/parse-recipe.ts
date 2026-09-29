@@ -54,7 +54,7 @@ export async function parseRecipeData(
   const tagSection = tagContext
     ? `
 
-Also add a top-level "suggestedTags" field to the JSON object: {"existing": [...], "new": "..." or null}, suggesting tags for the recipe titled "${tagContext.title}".
+Also add a top-level "suggestedTags" field to the JSON object: {"existing": [...], "new": "..." or null}, suggesting tags for the recipe titled ${JSON.stringify(tagContext.title.slice(0, 200))}.
 ${tagSuggestionRules(tagContext)}`
     : ''
 

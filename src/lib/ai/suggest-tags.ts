@@ -79,7 +79,7 @@ export async function suggestTags({
   const ingredients = ingredientNames.slice(0, MAX_INGREDIENTS).join(', ') || '(none given)'
   const prompt = `Suggest tags for this recipe.
 
-Recipe title: ${title}
+Recipe title: ${JSON.stringify(title.slice(0, 200))}
 Ingredients: ${ingredients}
 
 ${tagSuggestionRules({ householdTags, language })}
