@@ -1,4 +1,9 @@
 {
+  "weekStart": {
+    "monday": "Pondelok",
+    "saturday": "Sobota",
+    "sunday": "Nedeľa"
+  },
   "account": {
     "heading": "Váš účet",
     "interfaceLanguage": "Jazyk rozhrania",
@@ -106,6 +111,8 @@
     "translationHelp": "Ak je zapnuté, recepty sa pri importe preložia do zvoleného jazyka. Existujúce recepty možno aktualizovať hromadným prekladom.",
     "unitsLabel": "Preferované jednotky",
     "unitsHelp": "Použije sa pri importe nových receptov.",
+    "weekStartLabel": "Začiatok týždňa",
+    "weekStartHelp": "Plánovač zobrazuje týždne od tohto dňa.",
     "inviteLinkLabel": "Pozývací odkaz",
     "inviteLinkHelp": "Zdieľajte tento odkaz s kýmkoľvek, koho chcete pozvať do tejto domácnosti.",
     "tags": "Štítky",

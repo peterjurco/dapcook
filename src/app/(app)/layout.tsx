@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { getCurrentProfile, getCurrentUser } from '@/lib/auth/current-user'
+import { getHouseholdWeekStartDay } from '@/lib/auth/household'
 import { AppShell } from '@/components/layout/AppShell'
 import { PostHogIdentifier } from '@/components/providers/PostHogIdentifier'
+import { WeekStartProvider } from '@/components/providers/WeekStartProvider'
 import { isLocale, defaultLocale } from '@/i18n/config'
 import { needsOnboarding, readOnboardingStatus } from '@/lib/onboarding/status'
 
@@ -28,13 +30,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const locale = isLocale(profile.ui_language) ? profile.ui_language : defaultLocale
   setRequestLocale(locale)
   const messages = await getMessages({ locale })
+  const weekStartDay = await getHouseholdWeekStartDay()
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       {user.email && <PostHogIdentifier userId={user.id} email={user.email} optOut={isAdmin} />}
-      <AppShell user={user} profile={profile} isAdmin={isAdmin} birthdayConfig={birthdayConfig}>
-        {children}
-      </AppShell>
+      <WeekStartProvider value={weekStartDay}>
+        <AppShell user={user} profile={profile} isAdmin={isAdmin} birthdayConfig={birthdayConfig}>
+          {children}
+        </AppShell>
+      </WeekStartProvider>
     </NextIntlClientProvider>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowRight, CalendarDays, ChefHat, Pencil, ShoppingCart, X } from 'lucide-react'
@@ -12,8 +12,9 @@ import { WeekNav } from './WeekNav'
 import { MobileEditList } from './MobileEditList'
 import { PlannerDesktopGrid } from './PlannerDesktopGrid'
 import { PlannerMobileAgenda } from './PlannerMobileAgenda'
-import { getWeekDays, toDateString } from '@/lib/utils/week'
+import { addDays, getWeekDays, toDateString } from '@/lib/utils/week'
 import { buildEditDays, maxSpanForStart } from '@/lib/planner/layout'
+import { placeInWeek } from '@/lib/planner/placement'
 import { getCachedWeekData, setCachedWeekData, updateCachedWeekSlots } from './plannerWeekCache'
 import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
 import type { WeekPlan } from '@/types/database'
@@ -36,6 +37,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const [openSearchDay, setOpenSearchDay] = useState<number | null>(null)
   const [addingToDay, setAddingToDay] = useState<number | null>(null)
   const [isMobileEditMode, setIsMobileEditMode] = useState(false)
+  // Span each meal had before a desktop resize drag began, so a rejected commit can restore it.
+  const spanBeforeResize = useRef(new Map<string, number>())
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -72,12 +75,16 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     loadWeek()
   }, [loadWeek])
 
+  const weekDays = getWeekDays(weekStart)
+  const placed = placeInWeek(slots, weekStart)
+  const dateOf = (day: number) => toDateString(addDays(weekStart, day - 1))
+
   async function handleAddRecipe(dayOfWeek: number, recipe: RecipeListItem) {
     setAddingToDay(dayOfWeek)
     const res = await fetch('/api/planner/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ week_start: weekStartStr, day_of_week: dayOfWeek, recipe_id: recipe.id }),
+      body: JSON.stringify({ date: dateOf(dayOfWeek), recipe_id: recipe.id }),
     })
     if (res.ok) {
       const slot = await res.json() as MealSlotWithRecipe
@@ -93,7 +100,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     const res = await fetch('/api/planner/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ week_start: weekStartStr, day_of_week: dayOfWeek, custom_label: label }),
+      body: JSON.stringify({ date: dateOf(dayOfWeek), custom_label: label }),
     })
     if (res.ok) {
       const slot = await res.json() as MealSlotWithRecipe
@@ -110,37 +117,56 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
 
   // Move a meal to another start day. Overlaps are allowed — no other slot is touched.
   function handleMove(slotId: string, newDay: number) {
+    const p = placed.find((s) => s.id === slotId)
+    if (!p) return
+    if (newDay === p.day) return
     const slot = slots.find((s) => s.id === slotId)
     if (!slot) return
-    const day = Math.max(1, Math.min(8 - slot.span_days, newDay))
-    if (day === slot.day_of_week) return
-    const prevDay = slot.day_of_week
-    setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, day_of_week: day } : s)))
+    const date = dateOf(Math.max(1, Math.min(8 - slot.span_days, newDay)))
+    if (date === slot.date) return
+    const prevDate = slot.date
+    const revert = () => {
+      setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, date: prevDate } : s)))
+    }
+    setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, date } : s)))
     fetch(`/api/planner/slots/${slotId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ day_of_week: day }),
-    }).catch(() => {
-      setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, day_of_week: prevDay } : s)))
-    })
+      body: JSON.stringify({ date }),
+    }).then((res) => {
+      if (!res.ok) revert()
+    }).catch(revert)
   }
 
   // Live span change during desktop resize drag — state only, no API.
   function handleSpanPreview(slotId: string, newSpan: number) {
+    const slot = slots.find((s) => s.id === slotId)
+    if (slot && !spanBeforeResize.current.has(slotId)) spanBeforeResize.current.set(slotId, slot.span_days)
     setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, span_days: newSpan } : s)))
   }
 
-  // Persist a span change (desktop resize release, or mobile ‹ › tap). Clamped to the week.
+  // Persist a span change (desktop resize release, or mobile ‹ › tap). Clamped to the week;
+  // a meal continuing from last week is not resized from here.
   async function handleSpanCommit(slotId: string, newSpan: number) {
-    const slot = slots.find((s) => s.id === slotId)
-    if (!slot) return
-    const span = Math.max(1, Math.min(maxSpanForStart(slot.day_of_week), newSpan))
+    const p = placed.find((s) => s.id === slotId)
+    if (!p || p.continued) return
+    const span = Math.max(1, Math.min(maxSpanForStart(p.day), newSpan))
+    const prevSpan = spanBeforeResize.current.get(slotId) ?? p.span_days
+    spanBeforeResize.current.delete(slotId)
+    const revert = () => {
+      setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, span_days: prevSpan } : s)))
+    }
     setSlotsAndCache((prev) => prev.map((s) => (s.id === slotId ? { ...s, span_days: span } : s)))
-    await fetch(`/api/planner/slots/${slotId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ span_days: span }),
-    })
+    try {
+      const res = await fetch(`/api/planner/slots/${slotId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ span_days: span }),
+      })
+      if (!res.ok) revert()
+    } catch {
+      revert()
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -153,9 +179,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
     handleMove(draggedSlot.id, targetDay)
   }
 
-  const weekDays = getWeekDays(weekStart)
   const isWeekEmpty = slots.length === 0
-  const hasRecipeSlots = slots.some((s) => s.recipe_id)
+  const hasRecipeSlots = placed.some((p) => p.recipe_id && !p.continued)
 
   return (
     <div>
@@ -226,7 +251,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
               <PlannerDesktopGrid
                 weekDays={weekDays}
                 today={today}
-                slots={slots}
+                slots={placed}
                 openSearchDay={openSearchDay}
                 addingToDay={addingToDay}
                 onOpenSearch={(day) => setOpenSearchDay(day)}
@@ -265,7 +290,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           <div className="md:hidden">
             {isMobileEditMode ? (
               <MobileEditList
-                editDays={buildEditDays(slots)}
+                editDays={buildEditDays(placed)}
                 weekDays={weekDays}
                 onMove={handleMove}
                 onDelete={handleDelete}
@@ -274,7 +299,7 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
                 onAddCustom={handleAddCustom}
               />
             ) : (
-              <PlannerMobileAgenda weekDays={weekDays} today={today} slots={slots} />
+              <PlannerMobileAgenda weekDays={weekDays} today={today} slots={placed} />
             )}
           </div>
         </>

@@ -6,12 +6,13 @@ import { buildMobileAgenda } from '@/lib/planner/layout'
 import { formatDayLabel, toDateString } from '@/lib/utils/week'
 import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import type { MealSlotWithRecipe } from '@/types/planner'
+import type { PlacedSlot } from '@/lib/planner/placement'
 import Image from 'next/image'
 
 interface PlannerMobileAgendaProps {
   weekDays: Date[]
   today: Date
-  slots: MealSlotWithRecipe[]
+  slots: PlacedSlot[]
 }
 
 /** Mobile View: a read-only day-by-day agenda. Multi-day meals repeat on each covered day. */

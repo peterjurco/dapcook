@@ -1,17 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
-import { parseWeekParam, getWeekStart, toDateString } from '@/lib/utils/week'
+import { parseWeekParam, getWeekStart, toDateString, type WeekStartDay } from '@/lib/utils/week'
 import { PlannerClient } from '@/components/planner/PlannerClient'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { getCurrentHouseholdId } from '@/lib/auth/household'
+import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 interface PlannerPageProps {
   searchParams: { week?: string }
 }
 
 export default async function PlannerPage({ searchParams }: PlannerPageProps) {
+  const startDay = await getHouseholdWeekStartDay()
   const weekStart = searchParams.week
-    ? parseWeekParam(searchParams.week)
-    : await getDefaultWeek()
+    ? parseWeekParam(searchParams.week, startDay)
+    : await getDefaultWeek(startDay)
 
   return (
     <div className="px-6 pt-6 pb-8 max-w-6xl mx-auto">
@@ -21,32 +22,25 @@ export default async function PlannerPage({ searchParams }: PlannerPageProps) {
 }
 
 /**
- * Returns the latest week >= current week that has at least one meal slot.
- * Falls back to the current week if none found.
+ * Returns the week containing the latest meal on or after the current week;
+ * falls back to the current week.
  */
-async function getDefaultWeek(): Promise<Date> {
-  const currentWeekStart = getWeekStart()
-  const currentWeekStr = toDateString(currentWeekStart)
+async function getDefaultWeek(startDay: WeekStartDay): Promise<Date> {
+  const currentWeekStart = getWeekStart(new Date(), startDay)
 
-  const supabase = createClient()
   const user = await getCurrentUser()
   if (!user) return currentWeekStart
-
   const householdId = await getCurrentHouseholdId()
   if (!householdId) return currentWeekStart
 
-  // Fetch upcoming week_plans (including current week) with their slots
-  const { data: weekPlans } = await supabase
-    .from('week_plans')
-    .select('week_start, meal_slots(id)')
+  const { data: latest } = await createClient()
+    .from('meal_slots')
+    .select('date')
     .eq('household_id', householdId)
-    .gte('week_start', currentWeekStr)
-    .order('week_start', { ascending: false })
-    .limit(10)
+    .gte('date', toDateString(currentWeekStart))
+    .order('date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-  const latestWithMeals = weekPlans?.find(
-    (wp) => Array.isArray(wp.meal_slots) && wp.meal_slots.length > 0
-  )
-
-  return latestWithMeals ? parseWeekParam(latestWithMeals.week_start) : currentWeekStart
+  return latest ? parseWeekParam(latest.date, startDay) : currentWeekStart
 }

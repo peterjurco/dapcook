@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { DndContext } from '@dnd-kit/core'
 import { PlannerDesktopGrid } from './PlannerDesktopGrid'
 import { getWeekDays } from '@/lib/utils/week'
+import { placeInWeek } from '@/lib/planner/placement'
 import { mockTranslate } from '@/test/mockMessages'
 import type { TranslationValues } from 'use-intl'
 import type { MealSlotWithRecipe } from '@/types/planner'
@@ -17,11 +18,11 @@ vi.mock('next-intl', () => ({
     mockTranslate(namespace, key, values),
 }))
 
-function recipeSlot(p: { id: string; day_of_week: number; span_days: number; title: string }): MealSlotWithRecipe {
+function recipeSlot(p: { id: string; date: string; span_days: number; title: string }): MealSlotWithRecipe {
   return {
     id: p.id,
-    week_plan_id: 'w',
-    day_of_week: p.day_of_week,
+    household_id: 'household-1',
+    date: p.date,
     meal_type: 'lunch',
     recipe_id: `r-${p.id}`,
     custom_label: null,
@@ -32,7 +33,8 @@ function recipeSlot(p: { id: string; day_of_week: number; span_days: number; tit
   }
 }
 
-const weekDays = getWeekDays(new Date('2026-06-08T00:00:00.000Z'))
+const weekStart = new Date(2026, 5, 8)
+const weekDays = getWeekDays(weekStart)
 const noop = () => {}
 
 function renderGrid(slots: MealSlotWithRecipe[]) {
@@ -41,7 +43,7 @@ function renderGrid(slots: MealSlotWithRecipe[]) {
       <PlannerDesktopGrid
         weekDays={weekDays}
         today={new Date('2000-01-01T00:00:00.000Z')}
-        slots={slots}
+        slots={placeInWeek(slots, weekStart)}
         openSearchDay={null}
         addingToDay={null}
         onOpenSearch={noop}
@@ -59,8 +61,8 @@ function renderGrid(slots: MealSlotWithRecipe[]) {
 describe('PlannerDesktopGrid', () => {
   it('renders one add affordance per day and the meal cards', () => {
     renderGrid([
-      recipeSlot({ id: 'a', day_of_week: 3, span_days: 1, title: 'Kurča' }),
-      recipeSlot({ id: 'b', day_of_week: 4, span_days: 1, title: 'Špagety' }),
+      recipeSlot({ id: 'a', date: '2026-06-10', span_days: 1, title: 'Kurča' }),
+      recipeSlot({ id: 'b', date: '2026-06-11', span_days: 1, title: 'Špagety' }),
     ])
     expect(screen.getAllByRole('button', { name: /add meal to/i })).toHaveLength(7)
     expect(screen.getByText('Kurča')).toBeInTheDocument()
@@ -68,7 +70,7 @@ describe('PlannerDesktopGrid', () => {
   })
 
   it('places an empty day add slot in the first grid row, and a non-empty day add below its meal', () => {
-    renderGrid([recipeSlot({ id: 'a', day_of_week: 3, span_days: 1, title: 'Kurča' })])
+    renderGrid([recipeSlot({ id: 'a', date: '2026-06-10', span_days: 1, title: 'Kurča' })])
     const buttons = screen.getAllByRole('button', { name: /add meal to/i })
     // Each add affordance lives in a positioned grid cell; row 1 = empty day, row 2 = under a meal.
     const cells = buttons.map((b) => (b.closest('[style*="grid-row"]') as HTMLElement)?.style.gridRow)

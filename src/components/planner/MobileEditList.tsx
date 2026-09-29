@@ -20,7 +20,7 @@ import { maxSpanForStart, type EditDay } from '@/lib/planner/layout'
 import { formatDayLabel } from '@/lib/utils/week'
 import { translateCustomLabel } from '@/lib/planner/custom-labels'
 import type { Locale } from '@/i18n/config'
-import type { MealSlotWithRecipe } from '@/types/planner'
+import type { PlacedSlot } from '@/lib/planner/placement'
 import Image from 'next/image'
 import type { RecipeListItem } from '@/lib/recipes/list-columns'
 
@@ -34,22 +34,26 @@ interface MobileEditListProps {
   onAddCustom: (dayOfWeek: number, label: string) => Promise<void>
 }
 
-/** "Tue 9" for a single day, "Tue 9 → Fri 12 · 4 days" for a span. */
+/**
+ * "Tue 9" for a single day, "Tue 9 → Fri 12 · 4 days" for a span — the days visible
+ * this week, prefixed with "From last week · " when the meal began in an earlier week.
+ */
 function rangeLabel(
-  slot: MealSlotWithRecipe,
+  slot: PlacedSlot,
   weekDays: Date[],
   locale: Locale,
   t: ReturnType<typeof useTranslations>,
 ): string {
-  const start = formatDayLabel(weekDays[slot.day_of_week - 1], locale)
-  if (slot.span_days <= 1) return t('editList.oneDay', { weekday: start.weekday, day: start.day })
-  const end = formatDayLabel(weekDays[slot.day_of_week + slot.span_days - 2], locale)
-  return t('editList.multiDay', {
+  const prefix = slot.continued ? `${t('editList.continued')} · ` : ''
+  const start = formatDayLabel(weekDays[slot.day - 1], locale)
+  if (slot.span <= 1) return prefix + t('editList.oneDay', { weekday: start.weekday, day: start.day })
+  const end = formatDayLabel(weekDays[slot.day + slot.span - 2], locale)
+  return prefix + t('editList.multiDay', {
     startWeekday: start.weekday,
     startDay: start.day,
     endWeekday: end.weekday,
     endDay: end.day,
-    days: slot.span_days,
+    days: slot.span,
   })
 }
 
@@ -61,7 +65,7 @@ function MealRow({
   onDelete,
   onSpanChange,
 }: {
-  slot: MealSlotWithRecipe
+  slot: PlacedSlot
   weekDays: Date[]
   locale: Locale
   t: ReturnType<typeof useTranslations>
@@ -79,7 +83,7 @@ function MealRow({
   }
   const customLabel = slot.custom_label ? translateCustomLabel(slot.custom_label, t) : null
   const title = slot.recipe?.title ?? customLabel ?? t('editList.recipeFallback')
-  const maxSpan = maxSpanForStart(slot.day_of_week)
+  const maxSpan = maxSpanForStart(slot.day)
 
   return (
     <div
@@ -113,8 +117,8 @@ function MealRow({
             <p className="text-xs font-semibold text-gray-500 leading-none">{rangeLabel(slot, weekDays, locale, t)}</p>
             <button
               type="button"
-              onClick={() => onSpanChange(slot.span_days - 1)}
-              disabled={slot.span_days <= 1}
+              onClick={() => onSpanChange(slot.span - 1)}
+              disabled={slot.continued || slot.span <= 1}
               className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               aria-label={t('editList.shrinkAria')}
             >
@@ -122,8 +126,8 @@ function MealRow({
             </button>
             <button
               type="button"
-              onClick={() => onSpanChange(slot.span_days + 1)}
-              disabled={slot.span_days >= maxSpan}
+              onClick={() => onSpanChange(slot.span + 1)}
+              disabled={slot.continued || slot.span >= maxSpan}
               className="flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-25 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               aria-label={t('editList.extendAria')}
             >

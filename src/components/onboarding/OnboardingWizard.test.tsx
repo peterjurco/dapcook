@@ -18,7 +18,7 @@ vi.mock('@/lib/auth/actions', () => ({ createHousehold: vi.fn(), joinHousehold: 
 global.fetch = vi.fn()
 
 const invite = 'http://localhost:3000/join/abc'
-const household = { translationEnabled: false, preferredLanguage: 'en', preferredUnits: 'metric' as const }
+const household = { translationEnabled: false, preferredLanguage: 'en', preferredUnits: 'metric' as const, weekStartDay: 'monday' as const }
 
 function bodies() {
   return vi.mocked(fetch).mock.calls.map(([url, init]) => [url, (init as RequestInit).body])
@@ -42,7 +42,7 @@ describe('OnboardingWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
     fireEvent.click(await screen.findByRole('button', { name: "Let's start" }))
     expect(await screen.findByLabelText('Household name')).toBeInTheDocument()
-    expect(screen.getByText('Step 2 of 7')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 8')).toBeInTheDocument()
     expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'language', skipped: false })
     expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'intro', skipped: false })
   })
@@ -74,9 +74,20 @@ describe('OnboardingWizard', () => {
   it('saves the step, then stores the next one', async () => {
     render(<OnboardingWizard initialStep="units" locale="en" household={household} />)
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(await screen.findByText('What kind of recipes will you add?')).toBeInTheDocument()
+    expect(await screen.findByText('When does your week start?')).toBeInTheDocument()
     expect(bodies()).toEqual([
       ['/api/household', JSON.stringify({ preferred_units: 'metric' })],
+      ['/api/household', JSON.stringify({ onboarding_step: 'week_start' })],
+    ])
+  })
+
+  it('saves the week start, then moves on to tags', async () => {
+    render(<OnboardingWizard initialStep="week_start" locale="en" household={household} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Sunday' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(await screen.findByText('What kind of recipes will you add?')).toBeInTheDocument()
+    expect(bodies()).toEqual([
+      ['/api/household', JSON.stringify({ week_start_day: 'sunday' })],
       ['/api/household', JSON.stringify({ onboarding_step: 'tags' })],
     ])
   })
@@ -146,12 +157,16 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard initialStep="units" locale="en" household={household} />)
     fireEvent.click(screen.getByRole('button', { name: /Imperial/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(await screen.findByText('When does your week start?')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Soup' }))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText('Shopping categories')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByRole('button', { name: 'Soup' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('When does your week start?')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByRole('button', { name: /Imperial/ })).toHaveAttribute('aria-pressed', 'true')
   })

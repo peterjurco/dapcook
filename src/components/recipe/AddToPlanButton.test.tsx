@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddToPlanButton } from './AddToPlanButton'
+import { WeekStartProvider } from '@/components/providers/WeekStartProvider'
+import { getWeekStart, nextWeekStart, toDateString } from '@/lib/utils/week'
 import { mockTranslate } from '@/test/mockMessages'
 import type { TranslationValues } from 'use-intl'
 
@@ -23,7 +25,7 @@ beforeEach(() => {
 function lastFetchBody() {
   const calls = (global.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls
   const init = calls[calls.length - 1][1] as RequestInit
-  return JSON.parse(init.body as string) as { week_start: string; day_of_week: number; recipe_id: string }
+  return JSON.parse(init.body as string) as { date: string; recipe_id: string }
 }
 
 describe('AddToPlanButton', () => {
@@ -42,13 +44,12 @@ describe('AddToPlanButton', () => {
 
     const body = lastFetchBody()
     expect(body.recipe_id).toBe('recipe-1')
-    expect(typeof body.day_of_week).toBe('number')
-    expect(body.week_start).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(body.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 
     expect(await screen.findByText(/added to/i)).toBeInTheDocument()
   })
 
-  it('defaults next week to Monday', async () => {
+  it('defaults a later week to its first day', async () => {
     render(<AddToPlanButton recipeId="recipe-1" />)
 
     await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
@@ -56,7 +57,10 @@ describe('AddToPlanButton', () => {
     await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalled())
-    expect(lastFetchBody().day_of_week).toBe(1)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const expectedDate = toDateString(nextWeekStart(getWeekStart(today, 'monday')))
+    expect(lastFetchBody().date).toBe(expectedDate)
   })
 
   // Regression: "Change" should move the just-placed meal, not create a second slot.
@@ -99,5 +103,26 @@ describe('AddToPlanButton', () => {
     await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
 
     expect(onCardClick).not.toHaveBeenCalled()
+  })
+})
+
+describe('AddToPlanButton with a Sunday week', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 8, 30, 12)) // Wednesday 2026-09-30, local
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('uses the household week and preselects today', async () => {
+    render(
+      <WeekStartProvider value="sunday">
+        <AddToPlanButton recipeId="recipe-1" />
+      </WeekStartProvider>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /add to plan/i }))
+    await userEvent.click(screen.getByRole('button', { name: /add to \w+ \d+/i }))
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled())
+    expect(lastFetchBody()).toMatchObject({ date: '2026-09-30' })
   })
 })

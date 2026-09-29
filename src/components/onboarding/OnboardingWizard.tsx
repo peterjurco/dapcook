@@ -26,12 +26,15 @@ import { LanguageStep } from './steps/LanguageStep'
 import { HouseholdStep } from './steps/HouseholdStep'
 import { TranslationStep, type TranslationAnswer } from './steps/TranslationStep'
 import { UnitsStep, type Units } from './steps/UnitsStep'
+import { WeekStartStep } from './steps/WeekStartStep'
 import { TagsStep } from './steps/TagsStep'
+import type { WeekStartDay } from '@/lib/utils/week'
 
 export interface OnboardingHousehold {
   translationEnabled: boolean
   preferredLanguage: string
   preferredUnits: Units
+  weekStartDay: WeekStartDay
 }
 
 interface Props {
@@ -61,6 +64,7 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
     language: household?.translationEnabled ? household.preferredLanguage : locale,
   }))
   const [units, setUnits] = useState<Units>(household?.preferredUnits ?? 'metric')
+  const [weekStart, setWeekStart] = useState<WeekStartDay>(household?.weekStartDay ?? 'monday')
   const [tagSelection, setTagSelection] = useState<TagSelection>(tags)
   const [shoppingCategories, setShoppingCategories] = useState<ShoppingCategory[]>(categories)
 
@@ -138,6 +142,10 @@ export function OnboardingWizard({ initialStep, locale, household, categories = 
 
         {step === 'units' && household && (
           <UnitsStep value={units} onSaved={setUnits} onNext={next} onSkip={skip} onBack={back} />
+        )}
+
+        {step === 'week_start' && household && (
+          <WeekStartStep value={weekStart} onSaved={setWeekStart} onNext={next} onSkip={skip} onBack={back} />
         )}
 
         {step === 'tags' && (

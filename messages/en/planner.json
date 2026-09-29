@@ -15,7 +15,8 @@
     "extendAria": "Extend by one day",
     "removeAria": "Remove from plan",
     "addMealAria": "Add meal to {weekday} {day}",
-    "addMeal": "Add meal"
+    "addMeal": "Add meal",
+    "continued": "From last week"
   },
   "client": {
     "headingW": "W",
@@ -54,7 +55,8 @@
     "extendTitle": "Drag to extend or shrink across days",
     "removeConfirm": "Remove \"{title}\" from the plan?",
     "removeConfirmFallback": "this recipe",
-    "removeConfirmLabel": "Remove"
+    "removeConfirmLabel": "Remove",
+    "continues": "Continues from last week"
   },
   "weekNav": {
     "prevAria": "Previous week",

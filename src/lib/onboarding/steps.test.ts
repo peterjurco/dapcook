@@ -36,6 +36,14 @@ describe('onboarding steps', () => {
     expect(stepNumber('intro')).toBe(1)
     expect(stepNumber('invite')).toBe(TOTAL_STEPS)
     expect(stepNumber('done')).toBe(0)
-    expect(TOTAL_STEPS).toBe(7)
+    expect(TOTAL_STEPS).toBe(8)
+  })
+
+  it('asks for the week start right after units', () => {
+    expect(nextStep('units')).toBe('week_start')
+    expect(nextStep('week_start')).toBe('tags')
+    expect(previousStep('tags')).toBe('week_start')
+    expect(persistedStepAfter('units')).toBe('week_start')
+    expect(persistedStepAfter('week_start')).toBe('tags')
   })
 })

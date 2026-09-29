@@ -15,7 +15,8 @@
     "extendAria": "Predĺžiť o jeden deň",
     "removeAria": "Odstrániť z plánu",
     "addMealAria": "Pridať jedlo na {weekday} {day}",
-    "addMeal": "Pridať jedlo"
+    "addMeal": "Pridať jedlo",
+    "continued": "Z minulého týždňa"
   },
   "client": {
     "headingW": "T",
@@ -54,7 +55,8 @@
     "extendTitle": "Ťahaním predĺžite alebo skrátite naprieč dňami",
     "removeConfirm": "Odstrániť „{title}“ z plánu?",
     "removeConfirmFallback": "tento recept",
-    "removeConfirmLabel": "Odstrániť"
+    "removeConfirmLabel": "Odstrániť",
+    "continues": "Pokračuje z minulého týždňa"
   },
   "weekNav": {
     "prevAria": "Predchádzajúci týždeň",

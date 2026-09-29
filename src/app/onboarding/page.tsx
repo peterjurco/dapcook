@@ -37,7 +37,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
   const [{ data: household }, { data: categories }, { data: tagGroups }, { data: tags }] = await Promise.all([
     supabase
       .from('households')
-      .select('onboarding_step, created_by, invite_token, translation_enabled, preferred_language, preferred_units')
+      .select('onboarding_step, created_by, invite_token, translation_enabled, preferred_language, preferred_units, week_start_day')
       .eq('id', profile.household_id)
       .single(),
     supabase.from('shopping_categories').select('*').eq('household_id', profile.household_id).order('sort_order'),
@@ -63,6 +63,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
         translationEnabled: household.translation_enabled,
         preferredLanguage: household.preferred_language,
         preferredUnits: household.preferred_units,
+        weekStartDay: household.week_start_day,
       }}
       categories={categories ?? []}
       inviteUrl={inviteUrl(getOrigin(), household.invite_token)}

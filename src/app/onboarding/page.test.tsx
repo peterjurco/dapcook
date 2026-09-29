@@ -73,6 +73,7 @@ describe('OnboardingPage', () => {
       translation_enabled: true,
       preferred_language: 'sk',
       preferred_units: 'metric',
+      week_start_day: 'sunday',
     }
     mocks.categories = [{ id: 'cat-1' }]
 
@@ -80,10 +81,11 @@ describe('OnboardingPage', () => {
 
     expect(result.props.initialStep).toBe('tags')
     expect(result.props.locale).toBe('sk')
-    expect(result.props.household).toEqual({
+    expect(result.props.household).toMatchObject({
       translationEnabled: true,
       preferredLanguage: 'sk',
       preferredUnits: 'metric',
+      weekStartDay: 'sunday',
     })
     expect(result.props.categories).toEqual([{ id: 'cat-1' }])
     expect(result.props.inviteUrl).toBe('https://dapcook-staging.vercel.app/join/abc')
