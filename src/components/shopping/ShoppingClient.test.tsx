@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ShoppingClient } from './ShoppingClient'
 import { mockTranslate } from '@/test/mockMessages'
 import type { TranslationValues } from 'use-intl'
@@ -104,6 +104,14 @@ describe('ShoppingClient', () => {
       <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
     )
     expect(getByRole('button', { name: 'Clear list' })).toBeTruthy()
+  })
+
+  it('captures shopping_item_checked once the check animation completes', async () => {
+    const { getByRole } = render(
+      <ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />
+    )
+    fireEvent.click(getByRole('checkbox'))
+    await waitFor(() => expect(mockCapture).toHaveBeenCalledWith('shopping_item_checked', expect.anything()), { timeout: 1500 })
   })
 
   it('does not show Clear list button when list is empty', () => {

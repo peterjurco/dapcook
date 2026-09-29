@@ -17,6 +17,11 @@ vi.mock('next-intl', () => ({
     mockTranslate(namespace, key, values),
 }))
 
+const mockCapture = vi.fn()
+vi.mock('posthog-js/react', () => ({
+  usePostHog: () => ({ capture: mockCapture }),
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ count: 1 }) } as Response)
@@ -155,6 +160,18 @@ describe('GenerateShoppingPage', () => {
       ingredients: [{ name: 'spaghetti', quantity: 200, unit: 'g', recipe_id: 'r1' }],
       customItems: [{ name: 'rice', portions: 1 }],
     })
+  })
+
+  it('captures shopping_list_generated after adding', async () => {
+    renderPage()
+    await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
+
+    await waitFor(() =>
+      expect(mockCapture).toHaveBeenCalledWith(
+        'shopping_list_generated',
+        expect.objectContaining({ item_count: expect.any(Number), recipe_count: expect.any(Number), removed_recipe_count: 0 }),
+      ),
+    )
   })
 
   it('shows the recipe image next to the title and a placeholder for custom meals', () => {

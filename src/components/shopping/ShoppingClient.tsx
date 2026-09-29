@@ -21,6 +21,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { trackMilestone } from '@/lib/analytics/milestones'
 import { ShoppingItemRow } from './ShoppingItemRow'
 import type { ShoppingList, ShoppingItem, ShoppingCategory } from '@/types/database'
 
@@ -134,6 +135,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }, [list])
 
   async function handleCheck(id: string, checked: boolean) {
+    if (checked) trackMilestone(posthog, 'shopping_item_checked')
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: checked } : item))
     await fetch(`/api/shopping/items/${id}`, {
       method: 'PATCH',
