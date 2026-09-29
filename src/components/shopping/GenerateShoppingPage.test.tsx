@@ -118,6 +118,13 @@ describe('GenerateShoppingPage', () => {
     expect(document.querySelector('[data-tour="generate-remove"]')).not.toBeNull()
   })
 
+  it('anchors portions and remove tour targets to the first recipe box, not a leading custom meal', () => {
+    renderPage([customSlot({ id: 'c1', date: '2026-06-07', label: 'rice' }), carbonara])
+    const section = screen.getByRole('region', { name: 'Carbonara' })
+    expect(document.querySelector('[data-tour="generate-portions"]')!.closest('section')).toBe(section)
+    expect(document.querySelector('[data-tour="generate-remove"]')!.closest('section')).toBe(section)
+  })
+
   it('notes a recipe without ingredients', () => {
     renderPage([recipeSlot({ id: 'r2', date: '2026-06-08', title: 'Toast', servings: 1 })])
     expect(box('Toast').getByText('This recipe has no ingredients.')).toBeInTheDocument()
