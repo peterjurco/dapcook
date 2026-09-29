@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { CalendarPlus } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { useTour } from '@/components/tour/TourProvider'
 import { AddToPlanPicker } from './AddToPlanPicker'
 
 interface AddToPlanButtonProps {
@@ -20,6 +21,7 @@ export function AddToPlanButton({ recipeId, variant = 'toolbar' }: AddToPlanButt
   const [open, setOpen] = useState(false)
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  useTour('plan-recipe', variant === 'toolbar' && !open)
   const iconSize = variant === 'overlay' ? 11 : 13
 
   const updateCoords = useCallback(() => {
@@ -66,6 +68,7 @@ export function AddToPlanButton({ recipeId, variant = 'toolbar' }: AddToPlanButt
         )}
         title={t('addToPlan.buttonTitle')}
         aria-expanded={open}
+        data-tour={variant === 'toolbar' ? 'plan-button' : undefined}
       >
         <CalendarPlus size={iconSize} />
         {t('addToPlan.button')}

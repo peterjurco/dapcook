@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { usePostHog } from 'posthog-js/react'
+import { useTourControls } from '@/components/tour/TourProvider'
 import { trackMilestone } from '@/lib/analytics/milestones'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
@@ -35,6 +36,7 @@ interface AddToPlanPickerProps {
 export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
   const router = useRouter()
   const posthog = usePostHog()
+  const tour = useTourControls()
   const t = useTranslations('recipes')
   const locale = useLocale()
   const startDay = useWeekStartDay()
@@ -98,6 +100,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
     if (res.ok) {
       // "Change" re-places the same meal; only the first placement counts as planning.
       if (!placed) trackMilestone(posthog, 'meal_planned', { source: 'recipe', kind: 'recipe' })
+      tour?.markSeen('plan-recipe')
       try {
         const slot = (await res.json()) as MealSlotWithRecipe & { id?: string }
         if (slot?.id) {

@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlannerClient } from './PlannerClient'
+import { TourProvider } from '@/components/tour/TourProvider'
 import { mockTranslate } from '@/test/mockMessages'
 import type { TranslationValues } from 'use-intl'
 import type { WeekData } from '@/types/planner'
@@ -10,7 +11,9 @@ const mockPush = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
+  usePathname: () => '/planner',
 }))
+vi.mock('@/components/tour/TourOverlay', () => ({ TourOverlay: () => null }))
 
 vi.mock('next-intl', () => ({
   useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
@@ -314,6 +317,25 @@ describe('PlannerClient', () => {
         'meal_planned',
         expect.objectContaining({ source: 'planner', kind: 'custom' }),
       ),
+    )
+  })
+
+  it('marks the plan-recipe tour seen after adding a custom meal', async () => {
+    const data = emptyWeekData('2026-06-08')
+    data.slots = weekData('Something').slots.map((s) => ({ ...s, date: '2026-06-08' }))
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response(data))
+      .mockResolvedValue({ ok: true, json: async () => ({ id: 'new' }) } as Response)
+    global.fetch = fetchMock
+
+    render(<TourProvider initialSeen={[]}><PlannerClient weekStart={new Date(2026, 5, 8)} /></TourProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: 'add on day 3' }))
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ tour_seen: 'plan-recipe' }),
+      })),
     )
   })
 
