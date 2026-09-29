@@ -13,12 +13,11 @@ interface Props {
   value: TagSelection
   onSaved: (value: TagSelection) => void
   onNext: () => Promise<void>
-  onSkip: () => Promise<void>
   onBack: () => void
   locale: Locale
 }
 
-export function TagsStep({ value, onSaved, onNext, onSkip, onBack, locale }: Props) {
+export function TagsStep({ value, onSaved, onNext, onBack, locale }: Props) {
   const t = useTranslations('auth')
   const [selected, setSelected] = useState<Record<string, string[]>>(value.selected)
   const [custom, setCustom] = useState<Record<string, string[]>>(value.custom)
@@ -64,7 +63,6 @@ export function TagsStep({ value, onSaved, onNext, onSkip, onBack, locale }: Pro
       help={t('onboarding.tags.help')}
       error={failed ? t('onboarding.saveError') : null}
       onNext={save}
-      onSkip={onSkip}
       onBack={onBack}
       settingsNote
     >

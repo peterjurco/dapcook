@@ -60,12 +60,12 @@ Migration `supabase/migrations/021_onboarding_invite_step.sql` (feedback round, 
 
 ## 4. Wizard UI
 
-`src/app/onboarding/page.tsx` renders `OnboardingWizard` (client) from `src/components/onboarding/`. One component per step, each with a single responsibility and props `{ onNext, onSkip, onBack }`. The wizard owns the answers (translation, units, tags, shopping categories) and passes them in as `value`; steps report what they saved via `onSaved` before `onNext`, so going back shows the remembered answer. The page also loads the saved `tag_groups` + `tags` and maps them back onto the catalog (`selectionFromSavedTags`), so a resumed session shows them too.
+`src/app/onboarding/page.tsx` renders `OnboardingWizard` (client) from `src/components/onboarding/`. One component per step, each with a single responsibility and props `{ onNext, onBack }`. The wizard owns the answers (translation, units, tags, shopping categories) and passes them in as `value`; steps report what they saved via `onSaved` before `onNext`, so going back shows the remembered answer. The page also loads the saved `tag_groups` + `tags` and maps them back onto the catalog (`selectionFromSavedTags`), so a resumed session shows them too.
 
 Common frame:
 - Heading styled like other pages: `font-fraunces`, first letter `text-emerald-700` ("**W**elcome to dapcook" / Slovak equivalent), via `headingW` + `headingRest` message keys like the other pages.
 - Progress indicator "Step n of 7" over steps 2–8 below (the language step and the done screen are not counted).
-- Footer: **Back** (text button, left) on steps 2, 3 and 5–8, **Skip** on steps 4–8, **Next** (primary). Back is client-side only — no save, no analytics, the stored step stays the furthest one reached. No Back on language (first) or translation (the household already exists). Steps 4–8 show a small note: "You can change this anytime in Settings."
+- Footer: **Back** (text button, left) on steps 2, 3 and 5–8, **Next** (primary). Back is client-side only — no save, no analytics, the stored step stays the furthest one reached. No Back on language (first) or translation (the household already exists). Steps 4–8 show a small note: "You can change this anytime in Settings."
 
 Steps:
 
@@ -86,7 +86,7 @@ Steps:
 8. **Invite** — "Cook together": explains that the whole household shares recipes, meal plan and shopping list, and shows `InviteLink` with the household's invite URL (`inviteUrl(token)`). `InviteLink` has Copy and, where `navigator.share` exists, Share (system share sheet; cancelling is ignored). Settings uses the same component.
 9. **Done** — "You're all set" → sets `onboarding_step = NULL` → `/recipes?ob=1`.
 
-Step advance: Next/Skip on steps 4–7 → `PATCH /api/household { onboarding_step: <next> }` (after the step's own save on Next). Leaving the invite step does not PATCH; the Done screen's Next sets `null`, so a refresh on Done lands back on Done.
+Step advance: Next on steps 4–7 → `PATCH /api/household { onboarding_step: <next> }` (after the step's own save on Next). Leaving the invite step does not PATCH; the Done screen's Next sets `null`, so a refresh on Done lands back on Done.
 
 ### Tag catalog
 
@@ -106,7 +106,7 @@ Step advance: Next/Skip on steps 4–7 → `PATCH /api/household { onboarding_st
 
 ## 6. Analytics (PostHog)
 
-- `onboarding_step_completed` `{ step, skipped: boolean }` — captured client-side in the wizard on every Next/Skip (steps: `language`, `intro`, `household`, `translation`, `units`, `tags`, `shopping_categories`, `invite`). Back is not tracked.
+- `onboarding_step_completed` `{ step }` — captured client-side in the wizard on every Next (steps: `language`, `intro`, `household`, `translation`, `units`, `tags`, `shopping_categories`, `invite`). Back is not tracked.
 - `onboarding_completed` `{ method: 'create' | 'join' }` — `PostHogIdentifier` keeps the `?ob=1` mechanism and reads `obm` (`create` default, `join`), stripping both params.
 
 ## 7. Settings
@@ -126,7 +126,7 @@ Vitest (AI SDK never called; no test hits paid APIs):
 - `PATCH /api/household` — `name` and `onboarding_step` validation.
 - `auth/callback` — invalid pending token → `/join-invalid`.
 - `(app)` layout / onboarding page guard — redirects by household + `onboarding_step` + creator.
-- Component tests per step (language buttons, join fallback toggle, units cards, tag chips + custom add, invite link share, Back with remembered answers, Skip/Next calls + PostHog capture).
+- Component tests per step (language buttons, join fallback toggle, units cards, tag chips + custom add, invite link share, Back with remembered answers, Next calls + PostHog capture).
 - Settings household rename.
 - Update existing `src/app/onboarding/page.test.tsx`.
 

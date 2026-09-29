@@ -10,14 +10,13 @@ interface StepFrameProps {
   error?: string | null
   onNext: () => Promise<void> | void
   nextLabel?: string
-  onSkip?: () => Promise<void> | void
   /** Client-side only: returns to the previous step without saving. */
   onBack?: () => void
   /** Shows "You can change this anytime in Settings." under the buttons. */
   settingsNote?: boolean
 }
 
-export function StepFrame({ title, help, children, error, onNext, nextLabel, onSkip, onBack, settingsNote }: StepFrameProps) {
+export function StepFrame({ title, help, children, error, onNext, nextLabel, onBack, settingsNote }: StepFrameProps) {
   const t = useTranslations('auth')
   const [busy, setBusy] = useState(false)
 
@@ -43,16 +42,6 @@ export function StepFrame({ title, help, children, error, onNext, nextLabel, onS
 
       <div className="flex items-center justify-end gap-3 pt-1">
         {onBack && <BackButton onClick={onBack} disabled={busy} />}
-        {onSkip && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => run(onSkip)}
-            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 disabled:opacity-50"
-          >
-            {t('onboarding.skip')}
-          </button>
-        )}
         <button
           type="button"
           disabled={busy}

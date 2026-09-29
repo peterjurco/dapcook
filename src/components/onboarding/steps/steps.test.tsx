@@ -93,7 +93,7 @@ describe('TranslationStep', () => {
     const onNext = vi.fn(async () => {})
     const onSaved = vi.fn()
     render(
-      <TranslationStep value={{ enabled: false, language: 'sk' }} onSaved={onSaved} onNext={onNext} onSkip={vi.fn()} />
+      <TranslationStep value={{ enabled: false, language: 'sk' }} onSaved={onSaved} onNext={onNext} />
     )
     expect(screen.queryByRole('button', { name: 'Slovak' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('switch', { name: 'Translate imported recipes' }))
@@ -107,13 +107,13 @@ describe('TranslationStep', () => {
   })
 
   it('shows the remembered answer', () => {
-    render(<TranslationStep value={{ enabled: true, language: 'de' }} onSaved={vi.fn()} onNext={vi.fn()} onSkip={vi.fn()} />)
+    render(<TranslationStep value={{ enabled: true, language: 'de' }} onSaved={vi.fn()} onNext={vi.fn()} />)
     expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByRole('button', { name: 'German' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('offers no way back — the household already exists', () => {
-    render(<TranslationStep value={{ enabled: false, language: 'en' }} onSaved={vi.fn()} onNext={vi.fn()} onSkip={vi.fn()} />)
+    render(<TranslationStep value={{ enabled: false, language: 'en' }} onSaved={vi.fn()} onNext={vi.fn()} />)
     expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
   })
 })
@@ -122,7 +122,7 @@ describe('UnitsStep', () => {
   it('shows examples for both systems and saves the choice', async () => {
     const onNext = vi.fn(async () => {})
     const onSaved = vi.fn()
-    render(<UnitsStep value="metric" onSaved={onSaved} onNext={onNext} onSkip={vi.fn()} onBack={vi.fn()} />)
+    render(<UnitsStep value="metric" onSaved={onSaved} onNext={onNext} onBack={vi.fn()} />)
     // Non-breaking spaces keep a number and its unit on one line; the default
     // normalizer would turn them into plain spaces.
     const raw = { normalizer: (text: string) => text }
@@ -139,7 +139,7 @@ describe('UnitsStep', () => {
 
   it('shows the remembered answer and goes back without saving', () => {
     const onBack = vi.fn()
-    render(<UnitsStep value="imperial" onSaved={vi.fn()} onNext={vi.fn()} onSkip={vi.fn()} onBack={onBack} />)
+    render(<UnitsStep value="imperial" onSaved={vi.fn()} onNext={vi.fn()} onBack={onBack} />)
     expect(screen.getByRole('button', { name: /Imperial/ })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(onBack).toHaveBeenCalled()
@@ -151,7 +151,7 @@ describe('WeekStartStep', () => {
   it('preselects the saved day and saves the chosen one before moving on', async () => {
     const onSaved = vi.fn()
     const onNext = vi.fn(async () => {})
-    render(<WeekStartStep value="monday" onSaved={onSaved} onNext={onNext} onSkip={vi.fn()} onBack={vi.fn()} />)
+    render(<WeekStartStep value="monday" onSaved={onSaved} onNext={onNext} onBack={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: /monday/i })).toHaveAttribute('aria-pressed', 'true')
     await userEvent.click(screen.getByRole('button', { name: /sunday/i }))
@@ -170,7 +170,7 @@ describe('TagsStep', () => {
 
   function renderTags(value = empty, onSaved = vi.fn()) {
     const onNext = vi.fn(async () => {})
-    render(<TagsStep value={value} onSaved={onSaved} onNext={onNext} onSkip={vi.fn()} onBack={vi.fn()} locale="en" />)
+    render(<TagsStep value={value} onSaved={onSaved} onNext={onNext} onBack={vi.fn()} locale="en" />)
     return { onNext, onSaved }
   }
 

@@ -43,8 +43,8 @@ describe('OnboardingWizard', () => {
     fireEvent.click(await screen.findByRole('button', { name: "Let's start" }))
     expect(await screen.findByLabelText('Household name')).toBeInTheDocument()
     expect(screen.getByText('Step 2 of 8')).toBeInTheDocument()
-    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'language', skipped: false })
-    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'intro', skipped: false })
+    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'language' })
+    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'intro' })
   })
 
   it('scrolls back to the top whenever the step changes, forwards or back', async () => {
@@ -52,7 +52,7 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard initialStep="translation" locale="en" household={household} />)
     scrollTo.mockClear()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText('Which units do you use?')).toBeInTheDocument()
     expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
 
@@ -61,14 +61,6 @@ describe('OnboardingWizard', () => {
     expect(await screen.findByText('Translate recipes?')).toBeInTheDocument()
     expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
     scrollTo.mockRestore()
-  })
-
-  it('skipping a step stores the next one without saving anything else', async () => {
-    render(<OnboardingWizard initialStep="translation" locale="en" household={household} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
-    expect(await screen.findByText('Which units do you use?')).toBeInTheDocument()
-    expect(bodies()).toEqual([['/api/household', JSON.stringify({ onboarding_step: 'units' })]])
-    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'translation', skipped: true })
   })
 
   it('saves the step, then stores the next one', async () => {
@@ -95,7 +87,7 @@ describe('OnboardingWizard', () => {
   it('stays on the step when the progress cannot be stored', async () => {
     vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
     render(<OnboardingWizard initialStep="translation" locale="en" household={household} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText("Couldn't save. Please try again.")).toBeInTheDocument()
     expect(screen.getByText('Translate recipes?')).toBeInTheDocument()
   })
@@ -112,8 +104,6 @@ describe('OnboardingWizard', () => {
     expect(screen.getByDisplayValue(invite)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument()
     expect(screen.getByText('You can change this anytime in Settings.')).toBeInTheDocument()
-    // Leaving the invite step saves nothing, so Skip would just duplicate Next.
-    expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByText('Shopping categories')).toBeInTheDocument()
   })
@@ -123,7 +113,7 @@ describe('OnboardingWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByRole('button', { name: 'Go to recipes' })).toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
-    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'invite', skipped: false })
+    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'invite' })
   })
 
   it('offers Back from intro but not on the language or translation steps', async () => {

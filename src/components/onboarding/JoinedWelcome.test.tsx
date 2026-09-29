@@ -32,7 +32,7 @@ describe('JoinedWelcome', () => {
     expect(fetch).toHaveBeenCalledWith('/api/profile', expect.objectContaining({
       body: JSON.stringify({ ui_language: 'sk' }),
     }))
-    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'language', skipped: false })
+    expect(capture).toHaveBeenCalledWith('onboarding_step_completed', { step: 'language' })
   })
 
   it('scrolls back to the top when the welcome screen replaces the language step', async () => {

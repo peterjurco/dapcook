@@ -16,10 +16,9 @@ interface Props {
   value: TranslationAnswer
   onSaved: (value: TranslationAnswer) => void
   onNext: () => Promise<void>
-  onSkip: () => Promise<void>
 }
 
-export function TranslationStep({ value, onSaved, onNext, onSkip }: Props) {
+export function TranslationStep({ value, onSaved, onNext }: Props) {
   const t = useTranslations('auth')
   const [enabled, setEnabled] = useState(value.enabled)
   const [language, setLanguage] = useState(value.language)
@@ -39,7 +38,6 @@ export function TranslationStep({ value, onSaved, onNext, onSkip }: Props) {
       help={t('onboarding.translation.help')}
       error={failed ? t('onboarding.saveError') : null}
       onNext={save}
-      onSkip={onSkip}
       settingsNote
     >
       <button

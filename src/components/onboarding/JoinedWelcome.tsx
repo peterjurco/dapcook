@@ -27,7 +27,7 @@ export function JoinedWelcome({ householdName, initialStep = 'language' }: Props
   useScrollToTop(step)
 
   async function languageChosen() {
-    posthog?.capture('onboarding_step_completed', { step: 'language', skipped: false })
+    posthog?.capture('onboarding_step_completed', { step: 'language' })
     window.history.replaceState(null, '', '/onboarding?joined=1&welcome=1')
     setStep('done')
   }
