@@ -129,13 +129,29 @@ describe('PATCH /api/profile', () => {
     expect(supabase.from).not.toHaveBeenCalled()
   })
 
-  it('rejects an unknown tour id', async () => {
+  it.each([
+    ['an unknown id', 'nope'],
+    ['a non-string value', 123],
+  ])('rejects %s before any write', async (_label, tourSeen) => {
     const supabase = makeSupabase()
     vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
 
-    const res = await PATCH(req({ tour_seen: 'nope' }))
+    const res = await PATCH(req({ ui_language: 'en', tour_seen: tourSeen }))
     expect(res.status).toBe(400)
     expect(supabase.rpc).not.toHaveBeenCalled()
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it('applies the profile update and marks the tour seen for a mixed payload', async () => {
+    const supabase = makeSupabase()
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+
+    const res = await PATCH(req({ ui_language: 'sk', tour_seen: 'plan-recipe' }))
+    expect(res.status).toBe(200)
+
+    const qb = supabase.from.mock.results[0].value
+    expect(qb.update).toHaveBeenCalledWith({ ui_language: 'sk' })
+    expect(supabase.rpc).toHaveBeenCalledWith('mark_tour_seen', { p_tour: 'plan-recipe' })
   })
 
   it('returns 500 when the RPC fails', async () => {
