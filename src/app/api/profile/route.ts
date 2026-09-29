@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { locales, isLocale } from '@/i18n/config'
 import type { Database } from '@/types/database'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { isTourId } from '@/lib/tours/ids'
 
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 
@@ -14,10 +15,15 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json() as {
     default_recipe_filter?: unknown
     ui_language?: unknown
+    tour_seen?: unknown
   }
 
-  if (body.default_recipe_filter === undefined && body.ui_language === undefined) {
+  if (body.default_recipe_filter === undefined && body.ui_language === undefined && body.tour_seen === undefined) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+  }
+
+  if (body.tour_seen !== undefined && !isTourId(body.tour_seen)) {
+    return NextResponse.json({ error: 'tour_seen must be a known tour id' }, { status: 400 })
   }
 
   const update: ProfileUpdate = {}
@@ -40,12 +46,19 @@ export async function PATCH(request: NextRequest) {
     update.ui_language = candidate
   }
 
-  const { error } = await supabase
-    .from('profiles')
-    .update(update)
-    .eq('id', user.id)
+  if (Object.keys(update).length > 0) {
+    const { error } = await supabase
+      .from('profiles')
+      .update(update)
+      .eq('id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (isTourId(body.tour_seen)) {
+    const { error } = await supabase.rpc('mark_tour_seen', { p_tour: body.tour_seen })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }
