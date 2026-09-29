@@ -1,5 +1,13 @@
+import Anthropic from '@anthropic-ai/sdk'
+import { createClient } from '@/lib/supabase/server'
 import { LANGUAGE_NAMES } from '@/lib/constants/languages'
 import type { TagSuggestions } from '@/types/recipe'
+import { logAiUsage } from './log-usage'
+
+const client = new Anthropic()
+
+// Enough to identify the dish; keeps prompts small for huge ingredient lists.
+const MAX_INGREDIENTS = 40
 
 export const MAX_EXISTING_SUGGESTIONS = 8
 
@@ -52,4 +60,48 @@ export function sanitizeTagSuggestions(raw: unknown, householdTags: readonly str
   const cleanedNew = typeof candidate === 'string' ? clean(candidate) : ''
 
   return { existing: picked, new: cleanedNew && !known.has(cleanedNew) ? cleanedNew : null }
+}
+
+export interface SuggestTagsInput extends TagPromptContext {
+  title: string
+  ingredientNames: readonly string[]
+  householdId: string
+}
+
+/** Standalone suggestion call for recipes that are not going through AI import. Never throws. */
+export async function suggestTags({
+  title,
+  ingredientNames,
+  householdTags,
+  language,
+  householdId,
+}: SuggestTagsInput): Promise<TagSuggestions> {
+  const ingredients = ingredientNames.slice(0, MAX_INGREDIENTS).join(', ') || '(none given)'
+  const prompt = `Suggest tags for this recipe.
+
+Recipe title: ${title}
+Ingredients: ${ingredients}
+
+${tagSuggestionRules({ householdTags, language })}
+
+Return a JSON object with EXACTLY this structure, no other text:
+{"existing": ["dinner"], "new": "mexican"}`
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 256,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    void logAiUsage(createClient(), householdId, 'tag_suggest', response.usage)
+
+    const text = response.content[0].type === 'text' ? response.content[0].text : ''
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return EMPTY_TAG_SUGGESTIONS
+    return sanitizeTagSuggestions(JSON.parse(jsonMatch[0]), householdTags)
+  } catch (err) {
+    console.error('[suggest-tags] Tag suggestion failed:', err)
+    return EMPTY_TAG_SUGGESTIONS
+  }
 }
