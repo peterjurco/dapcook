@@ -22,13 +22,13 @@ export const TOURS: Record<TourId, TourStep[]> = {
   'planner-mobile-edit': [
     { target: 'edit-grip', key: 'plannerMobileEdit.grip', placement: 'bottom' },
     { target: 'edit-span', key: 'plannerMobileEdit.span', placement: 'bottom' },
-    { target: 'edit-add', key: 'plannerMobileEdit.add', placement: 'top' },
+    { target: 'edit-add', key: 'plannerMobileEdit.add', placement: 'top', advanceOnTargetClick: true },
     { target: 'planner-done', key: 'plannerMobileEdit.done', placement: 'bottom', advanceOnTargetClick: true },
   ],
   'planner-desktop': [
     { target: 'grid-slot', key: 'plannerDesktop.slot', placement: 'right' },
     { target: 'grid-resize', key: 'plannerDesktop.resize', placement: 'right' },
-    { target: 'grid-add', key: 'plannerDesktop.add', placement: 'right' },
+    { target: 'grid-add', key: 'plannerDesktop.add', placement: 'right', advanceOnTargetClick: true },
   ],
   'shopping-generate': [
     { target: 'item-name', key: 'shoppingGenerate.itemName', placement: 'bottom' },
@@ -37,6 +37,6 @@ export const TOURS: Record<TourId, TourStep[]> = {
     { target: 'generate-remove', key: 'shoppingGenerate.remove', placement: 'bottom' },
   ],
   'shopping-list': [
-    { target: 'shopping-add', key: 'shoppingList.add', placement: 'top' },
+    { target: 'shopping-add', key: 'shoppingList.add', placement: 'top', advanceOnTargetClick: true },
   ],
 }
