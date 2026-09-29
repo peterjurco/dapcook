@@ -25,6 +25,11 @@ interface TourContextValue {
   close: () => void
   /** Marks a tour seen without showing it, e.g. once the user already did what it teaches. */
   markSeen: (id: TourId) => void
+  /**
+   * Ends the active tour without marking it seen (condition lost, navigation, unmount), so it can
+   * come back. With `id`, only acts when that tour is the active one.
+   */
+  dismiss: (id?: TourId) => void
 }
 
 const TourContext = createContext<TourContextValue | null>(null)
@@ -70,6 +75,12 @@ export function TourProvider({ initialSeen, children }: { initialSeen: string[];
     markSeen(current.id)
   }, [markSeen, setActive])
 
+  const dismiss = useCallback((id?: TourId) => {
+    const current = activeRef.current
+    if (!current || (id && current.id !== id)) return
+    setActive(null)
+  }, [setActive])
+
   const next = useCallback(() => {
     const current = activeRef.current
     if (!current) return
@@ -83,14 +94,14 @@ export function TourProvider({ initialSeen, children }: { initialSeen: string[];
     setActive({ ...current, stepIndex: current.stepIndex - 1 })
   }, [setActive])
 
-  // Leaving the page ends the tour; it counts as skipped.
+  // Leaving the page ends the tour without consuming it.
   useEffect(() => {
-    if (activeRef.current && activeRef.current.pathname !== pathname) close()
-  }, [pathname, close])
+    if (activeRef.current && activeRef.current.pathname !== pathname) dismiss()
+  }, [pathname, dismiss])
 
   const value = useMemo(
-    () => ({ seen, active, start, next, back, close, markSeen }),
-    [seen, active, start, next, back, close, markSeen],
+    () => ({ seen, active, start, next, back, close, markSeen, dismiss }),
+    [seen, active, start, next, back, close, markSeen, dismiss],
   )
 
   return (
@@ -118,12 +129,12 @@ export function useTourControls(): TourContextValue | null {
 
 /**
  * Shows tour `id` once `condition` holds (after a short settle delay), unless it was
- * already seen or another tour is running. Ends the tour if `condition` stops holding.
+ * already seen or another tour is running. Dismisses (without marking seen) if `condition` stops holding or the caller unmounts.
  */
 export function useTour(id: TourId, condition: boolean) {
   const ctx = useContext(TourContext)
   const start = ctx?.start
-  const close = ctx?.close
+  const dismiss = ctx?.dismiss
   const isSeen = ctx ? ctx.seen.has(id) : true
   const activeId = ctx?.active?.id ?? null
 
@@ -134,8 +145,11 @@ export function useTour(id: TourId, condition: boolean) {
   }, [start, id, condition, isSeen, activeId])
 
   useEffect(() => {
-    if (!condition && activeId === id) close?.()
-  }, [condition, activeId, id, close])
+    if (!condition && activeId === id) dismiss?.(id)
+  }, [condition, activeId, id, dismiss])
+
+  // Unmounting the owner (e.g. the target's UI is gone) ends its tour without consuming it.
+  useEffect(() => () => dismiss?.(id), [dismiss, id])
 }
 
 /** True while the active tour step highlights `target` — used to force hover-only controls visible. */

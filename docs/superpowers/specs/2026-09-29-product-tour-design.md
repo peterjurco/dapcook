@@ -22,7 +22,7 @@ contextual spotlight tours, and record the activation funnel in PostHog.
   appends it server-side only if absent (`array_append` guarded by `NOT (id = ANY(tours_seen))`),
   so the client never sends the whole array and concurrent tabs cannot overwrite each other.
 - `src/types/database.ts` updated for the new column.
-- A tour is marked seen when it is **completed or skipped**.
+- A tour is marked seen when it is **completed or skipped** (Done, Skip, Esc, last-step Next, target click on the last step). Losing the trigger condition, navigating away or unmounting only ends the tour; it is not marked seen and can start again.
 
 ### Units (`src/components/tour/`)
 
@@ -30,9 +30,10 @@ contextual spotlight tours, and record the activation funnel in PostHog.
   `{ id: TourId, steps: { target: string; titleKey: string; bodyKey: string; placement: 'top' | 'bottom' | 'left' | 'right' }[] }`.
   `target` matches a `data-tour="…"` attribute. Copy lives in a new namespace `messages/{en,sk}/tour.json`, registered in `src/i18n/request.ts`.
 - **`TourProvider`** — context with `seen: Set<TourId>`, `active: { id, stepIndex } | null` and
-  `start(id)`, `next()`, `back()`, `skip()`, `finish()`, `markSeen(id)`.
+  `start(id)`, `next()`, `back()`, `close()`, `dismiss(id?)`, `markSeen(id)`.
   - `start` is a no-op when the tour is seen or another tour is active.
-  - `finish`/`skip` update `seen` optimistically and fire-and-forget the PATCH.
+  - `close` (finish or skip) marks the tour seen; `dismiss` ends it **without** marking seen and is used on condition loss, pathname change and unmount of the owning `useTour` caller.
+  - `close` updates `seen` optimistically and fire-and-forget the PATCH.
   - `markSeen(id)` lets feature code suppress a tour without showing it (used by tour 1).
   - Mounted in `(app)/layout.tsx` (around `AppShell`) and `(flow)/layout.tsx`, seeded with
     `profile.tours_seen`.
@@ -138,7 +139,7 @@ queried if completion rates are ever needed.
 ## Testing
 
 - `TourProvider`: start is a no-op when seen or when another tour is active; next/back/finish; skip
-  persists via PATCH; `markSeen` suppresses without showing.
+  persists via PATCH; `markSeen` suppresses without showing; `dismiss` (condition loss, navigation, unmount) does not mark seen.
 - `TourOverlay`: renders the tooltip for the present target; skips a missing target after the timeout;
   Esc skips; clicking the target advances.
 - `useTour`: starts only when the condition is true, after the delay.

@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TourProvider, useTour, useTourControls, useTourStep, TOUR_START_DELAY_MS } from './TourProvider'
 import type { TourId } from '@/lib/tours/ids'
@@ -76,10 +77,12 @@ describe('TourProvider', () => {
     )
     advance()
     expect(screen.getAllByTestId('overlay')).toHaveLength(1)
-    const first = screen.getByTestId('overlay').textContent
+    expect(screen.getByTestId('overlay')).toHaveTextContent('plan-button:0')
     await userEvent.click(screen.getByRole('button', { name: 'close' }))
     advance()
-    expect(screen.getByTestId('overlay').textContent).not.toBe(first)
+    expect(screen.getAllByTestId('overlay')).toHaveLength(1)
+    expect(screen.getByTestId('overlay')).not.toHaveTextContent('plan-button')
+    expect(patchedTours()).toEqual(['plan-recipe'])
   })
 
   it('steps forward and back, finishes after the last step and persists it', async () => {
@@ -114,19 +117,59 @@ describe('TourProvider', () => {
     expect(patchedTours()).toEqual(['plan-recipe'])
   })
 
-  it('closes the active tour when its condition turns false', () => {
+  it('dismisses (without marking seen) when the condition turns false, and restarts when it returns', () => {
     const { rerender } = render(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
     advance()
     rerender(<TourProvider initialSeen={[]}><Starter id="plan-recipe" when={false} /></TourProvider>)
     expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+    expect(patchedTours()).toEqual([])
+    rerender(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
+    advance()
+    expect(screen.getByTestId('overlay')).toHaveTextContent('plan-button:0')
   })
 
-  it('closes the active tour on navigation', () => {
+  it('dismisses on navigation without marking seen', () => {
     const { rerender } = render(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
     advance()
     mockPathname = '/planner'
     rerender(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
     expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+    expect(patchedTours()).toEqual([])
+    advance()
+    expect(screen.getByTestId('overlay')).toBeInTheDocument()
+  })
+
+  it('dismisses without PATCH when the starter unmounts while active', () => {
+    const { rerender } = render(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
+    advance()
+    rerender(<TourProvider initialSeen={[]}>{null}</TourProvider>)
+    expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+    expect(patchedTours()).toEqual([])
+  })
+
+  it('clears a pending start when the condition goes false before the delay', () => {
+    const { rerender } = render(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
+    act(() => { vi.advanceTimersByTime(TOUR_START_DELAY_MS - 100) })
+    rerender(<TourProvider initialSeen={[]}><Starter id="plan-recipe" when={false} /></TourProvider>)
+    advance()
+    expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+  })
+
+  it('does not throw when persisting fails', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('offline'))
+    render(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
+    advance()
+    await userEvent.click(screen.getByRole('button', { name: 'close' }))
+    expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+  })
+
+  it('shows one overlay and sends one PATCH under StrictMode', async () => {
+    render(<StrictMode><TourProvider initialSeen={[]}><Starter id="planner-desktop" /></TourProvider></StrictMode>)
+    advance()
+    expect(screen.getAllByTestId('overlay')).toHaveLength(1)
+    for (let i = 0; i < 3; i++) await userEvent.click(screen.getByRole('button', { name: 'next' }))
+    expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+    expect(patchedTours()).toEqual(['planner-desktop'])
   })
 
   it('hooks are no-ops without a provider', () => {
