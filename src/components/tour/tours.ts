@@ -37,6 +37,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     { target: 'generate-remove', key: 'shoppingGenerate.remove', placement: 'bottom', advanceOnTargetClick: true },
   ],
   'shopping-list': [
+    { target: 'shopping-copy', key: 'shoppingList.copy', placement: 'bottom', advanceOnTargetClick: true },
     { target: 'shopping-add', key: 'shoppingList.add', placement: 'top', advanceOnTargetClick: true },
   ],
 }

@@ -31,6 +31,7 @@
     "remove": { "title": "Tentoraz to nevaríte?", "body": "Vynechajte celý recept." }
   },
   "shoppingList": {
-    "add": { "title": "Vezmite si zoznam do obchodu", "body": "Odškrtávajte položky, ktoré vložíte do košíka. Tu môžete pridať aj ďalšie." }
+    "copy": { "title": "Používate vlastnú nákupnú aplikáciu?", "body": "Skopírujte zoznam a vložte ho tam." },
+    "add": { "title": "Alebo nakupujte priamo tu", "body": "Odškrtávajte položky, ktoré vložíte do košíka. Ďalšie môžete pridať nižšie." }
   }
 }

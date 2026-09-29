@@ -31,6 +31,7 @@
     "remove": { "title": "Not cooking it this time?", "body": "Skip the whole recipe." }
   },
   "shoppingList": {
-    "add": { "title": "Take this list to the store", "body": "Tick items off as they go into the cart. Add anything else here." }
+    "copy": { "title": "Use your own shopping app?", "body": "Copy the list and paste it there." },
+    "add": { "title": "Or shop right here", "body": "Tick items off as they go into the cart. Add anything else below." }
   }
 }

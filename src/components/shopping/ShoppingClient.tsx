@@ -350,6 +350,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
             <button
               type="button"
               onClick={copyToClipboard}
+              data-tour="shopping-copy"
               aria-label={copied ? t('client.copiedAria') : t('client.copyAria')}
               className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
             >
