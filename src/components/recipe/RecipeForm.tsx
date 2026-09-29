@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { usePostHog } from 'posthog-js/react'
@@ -11,7 +11,7 @@ import { ImageUpload } from './ImageUpload'
 import { TagInput } from './TagInput'
 import { DeleteRecipeButton } from './DeleteRecipeButton'
 import type { Recipe } from '@/types/database'
-import type { RecipeDraft, IngredientFormItem, Step } from '@/types/recipe'
+import type { RecipeDraft, IngredientFormItem, Step, TagSuggestions } from '@/types/recipe'
 import type { TagData } from '@/app/api/tags/route'
 
 interface RecipeFormProps {
@@ -40,6 +40,11 @@ function autoResizeTextarea(el: HTMLTextAreaElement | null) {
   const borderY = parseFloat(getComputedStyle(el).borderTopWidth) + parseFloat(getComputedStyle(el).borderBottomWidth)
   el.style.height = 'auto'
   el.style.height = `${el.scrollHeight + borderY}px`
+}
+
+/** Identifies the inputs a suggestion request was made for, so unchanged inputs aren't re-sent. */
+function suggestionKey(title: string, ingredients: { name: string }[]): string {
+  return JSON.stringify([title.trim(), ingredients.map((ing) => ing.name.trim()).filter(Boolean)])
 }
 
 export function RecipeForm({ recipe, draft }: RecipeFormProps) {
@@ -71,6 +76,36 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [allTags, setAllTags] = useState<TagData[]>([])
+  const [tagSuggestions, setTagSuggestions] = useState<TagSuggestions | null>(draft?.suggestedTags ?? null)
+  // Import suggestions count as already fetched for the draft's own title + ingredients.
+  const lastSuggestionKey = useRef<string | null>(
+    draft?.suggestedTags ? suggestionKey(draft.title, draft.ingredients) : null
+  )
+  const suggestionInFlight = useRef(false)
+
+  async function requestTagSuggestions() {
+    if (!title.trim() || suggestionInFlight.current) return
+    const key = suggestionKey(title, ingredients)
+    if (key === lastSuggestionKey.current) return
+
+    suggestionInFlight.current = true
+    try {
+      const [trimmedTitle, ingredientNames] = JSON.parse(key) as [string, string[]]
+      const res = await fetch('/api/tags/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmedTitle, ingredientNames }),
+      })
+      if (res.ok) {
+        setTagSuggestions(await res.json() as TagSuggestions)
+        lastSuggestionKey.current = key
+      }
+    } catch {
+      // Suggestions are optional — the "most used" row stays as the fallback.
+    } finally {
+      suggestionInFlight.current = false
+    }
+  }
 
   useEffect(() => {
     fetch('/api/tags').then((r) => r.json()).then((data) => {
@@ -233,7 +268,13 @@ export function RecipeForm({ recipe, draft }: RecipeFormProps) {
           {/* Tags */}
           <div>
             <label className={labelClass}>{t('form.tagsLabel')}</label>
-            <TagInput tags={tags} onChange={setTags} allTags={allTags} />
+            <TagInput
+              tags={tags}
+              onChange={setTags}
+              allTags={allTags}
+              suggestions={tagSuggestions}
+              onRequestSuggestions={requestTagSuggestions}
+            />
           </div>
         </section>
 

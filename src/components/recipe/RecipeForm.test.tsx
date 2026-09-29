@@ -315,3 +315,64 @@ describe('PostHog events', () => {
     expect(mockCapture).not.toHaveBeenCalledWith('recipe_created')
   })
 })
+
+// ── tag suggestions ──────────────────────────────────────────────────────────
+
+describe('tag suggestions', () => {
+  const TAG_PLACEHOLDER = 'Type a tag and press Enter'
+  const SUGGESTIONS = { existing: [], new: 'mexican' }
+
+  function mockFetchWithSuggestions() {
+    global.fetch = vi.fn(async (url: RequestInfo | URL) => {
+      if (url === '/api/tags/suggest') return { ok: true, json: async () => SUGGESTIONS } as Response
+      return { ok: true, json: async () => [] } as Response
+    }) as typeof fetch
+  }
+
+  function suggestCalls() {
+    return vi.mocked(global.fetch).mock.calls.filter(([url]) => url === '/api/tags/suggest')
+  }
+
+  it('uses suggestions from the import draft without fetching', async () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm draft={{ ...sampleDraft, suggestedTags: { existing: [], new: 'italian' } }} />)
+    expect(screen.getByRole('button', { name: /italian/ })).toBeInTheDocument()
+    fireEvent.focus(screen.getByPlaceholderText(TAG_PLACEHOLDER))
+    expect(suggestCalls()).toHaveLength(0)
+  })
+
+  it('fetches suggestions on first focus of the tag field', async () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm />)
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Burrito' } })
+    fireEvent.focus(screen.getByPlaceholderText(TAG_PLACEHOLDER))
+
+    expect(await screen.findByRole('button', { name: /mexican/ })).toBeInTheDocument()
+    expect(suggestCalls()).toHaveLength(1)
+    expect(JSON.parse(suggestCalls()[0][1]!.body as string)).toEqual({ title: 'Burrito', ingredientNames: [] })
+  })
+
+  it('does not refetch until the title changes', async () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm />)
+    const tagInput = screen.getByPlaceholderText(TAG_PLACEHOLDER)
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Burrito' } })
+    fireEvent.focus(tagInput)
+    await screen.findByRole('button', { name: /mexican/ })
+
+    fireEvent.blur(tagInput)
+    fireEvent.focus(tagInput)
+    expect(suggestCalls()).toHaveLength(1)
+
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Chicken burrito' } })
+    fireEvent.focus(tagInput)
+    await waitFor(() => expect(suggestCalls()).toHaveLength(2))
+  })
+
+  it('does not fetch while the title is empty', () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm />)
+    fireEvent.focus(screen.getByPlaceholderText(TAG_PLACEHOLDER))
+    expect(suggestCalls()).toHaveLength(0)
+  })
+})
