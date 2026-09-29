@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RecipeForm } from './RecipeForm'
 import { mockTranslate } from '@/test/mockMessages'
+import type { TranslationValues } from 'use-intl'
 import type { Recipe } from '@/types/database'
 import type { RecipeDraft } from '@/types/recipe'
 
@@ -18,7 +19,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('next-intl', () => ({
-  useTranslations: (namespace: string) => (key: string) => mockTranslate(namespace, key),
+  useTranslations: (namespace: string) => (key: string, values?: TranslationValues) => mockTranslate(namespace, key, values),
 }))
 
 vi.mock('posthog-js/react', () => ({
