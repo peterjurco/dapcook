@@ -182,12 +182,38 @@ describe('POST /api/recipes/import', () => {
   })
 
   it('passes raw ingredients and steps to parseRecipeData', async () => {
-    await POST(req({ url: 'https://example.com/pasta' }))
+    await collectEvents(await POST(req({ url: 'https://example.com/pasta' })))
     expect(vi.mocked(parseRecipeData)).toHaveBeenCalledWith(
       rawScraped.rawIngredients,
       rawScraped.rawSteps,
-      'hh-1'
+      'hh-1',
+      { title: 'Pasta', householdTags: [], language: 'en' }
     )
+  })
+
+  it('passes household tags to parsing and forwards suggested tags to the draft', async () => {
+    const supabase = makeSupabase()
+    const defaultFrom = supabase.from.getMockImplementation()!
+    supabase.from.mockImplementation((table: string) => {
+      if (table === 'recipes') return makeSelectChain([{ tags: ['Pasta', 'quick'] }])
+      if (table === 'tags') return makeSelectChain([{ name: 'dinner' }])
+      return defaultFrom(table)
+    })
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(parseRecipeData).mockResolvedValue({
+      ...parsedParts,
+      suggestedTags: { existing: ['pasta'], new: 'italian' },
+    })
+
+    const events = await collectEvents(await POST(req({ url: 'https://example.com/pasta' })))
+
+    expect(parseRecipeData).toHaveBeenCalledWith(
+      rawScraped.rawIngredients,
+      rawScraped.rawSteps,
+      'hh-1',
+      { title: 'Pasta', householdTags: ['dinner', 'pasta', 'quick'], language: 'en' }
+    )
+    expect(getDoneEvent(events)?.draft.suggestedTags).toEqual({ existing: ['pasta'], new: 'italian' })
   })
 
   it('skips transformRecipe when ingredient units already match preferred_units', async () => {

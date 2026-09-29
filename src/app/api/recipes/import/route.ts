@@ -11,6 +11,7 @@ import { LANGUAGE_NAMES } from '@/lib/constants/languages'
 import { defaultLocale } from '@/i18n/config'
 import { getUserTranslations } from '@/i18n/server-utils'
 import type { RecipeDraft } from '@/types/recipe'
+import { loadHouseholdTagNames } from '@/lib/tags/household-tags'
 import { getCurrentUser } from '@/lib/auth/current-user'
 
 export type ImportEvent =
@@ -61,28 +62,27 @@ export async function POST(request: NextRequest) {
         return
       }
 
-      // Step 2: Parse + household lookup in parallel
+      // Step 2: Household lookup, then parse
       send({ type: 'step', key: 'parsing', message: tRecipes('import.stepParsing') })
       const { raw, detectedLanguage } = scrapeResult
       const { rawIngredients, rawSteps, ...meta } = raw
 
-      const [{ ingredients, steps }, existingTags, { data: household }] = await Promise.all([
-        parseRecipeData(rawIngredients, rawSteps, profile?.household_id ?? undefined),
-        profile?.household_id
-          ? Promise.all([
-              supabase.from('recipes').select('tags').eq('household_id', profile.household_id).eq('is_archived', false),
-              supabase.from('tags').select('name').eq('household_id', profile.household_id),
-            ]).then(([{ data: recipes }, { data: tagsMeta }]) => {
-              const names = new Set<string>()
-              for (const r of recipes ?? []) for (const tag of r.tags ?? []) names.add(tag.toLowerCase())
-              for (const tagRow of tagsMeta ?? []) names.add(tagRow.name.toLowerCase())
-              return names
-            })
-          : Promise.resolve(new Set<string>()),
-        profile?.household_id
-          ? supabase.from('households').select('preferred_language, preferred_units, translation_enabled').eq('id', profile.household_id).single()
+      const householdId = profile?.household_id ?? undefined
+      // Tags and language are needed as input to parsing (for tag suggestions), so they load first.
+      const [householdTags, { data: household }] = await Promise.all([
+        householdId ? loadHouseholdTagNames(supabase, householdId) : Promise.resolve([] as string[]),
+        householdId
+          ? supabase.from('households').select('preferred_language, preferred_units, translation_enabled').eq('id', householdId).single()
           : Promise.resolve({ data: null }),
       ])
+      const existingTags = new Set(householdTags)
+
+      const { ingredients, steps, suggestedTags } = await parseRecipeData(
+        rawIngredients,
+        rawSteps,
+        householdId,
+        household ? { title: meta.title, householdTags, language: household.preferred_language } : undefined
+      )
 
       const baseDraft: RecipeDraft = {
         ...meta,
@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
         tags: (meta.tags ?? []).filter(tag => existingTags.has(tag.toLowerCase())),
         ingredients,
         steps,
+        ...(suggestedTags && { suggestedTags }),
       }
 
       // Normalise to base language code: "en-US" → "en"
