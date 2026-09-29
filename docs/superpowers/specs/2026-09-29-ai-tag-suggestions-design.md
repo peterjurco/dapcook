@@ -40,9 +40,9 @@ piggyback; it uses the lazy path like a manual recipe.
 
 Single owner of the tag-suggestion rules.
 
-- `tagSuggestionPromptSection({ householdTags, language })` — prompt text describing the rules
-  above and the JSON field `suggestedTags: { existing: [...], new: "..." | null }`. Used both
-  standalone and inside the parse prompt.
+- `tagSuggestionRules({ householdTags, language })` — prompt text describing the rules above for
+  the `existing` / `new` fields. The caller describes the surrounding JSON shape (standalone
+  call: `{ existing, new }`; parse call: a top-level `suggestedTags` field).
 - `sanitizeTagSuggestions(raw, householdTags): TagSuggestions` — enforces the rules in code,
   independent of model compliance:
   - `existing`: lowercased, trimmed, deduplicated, dropped if not in `householdTags`, capped at 8.

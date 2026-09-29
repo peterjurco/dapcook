@@ -98,8 +98,10 @@
   },
   "tagInput": {
     "placeholder": "Type a tag and press Enter",
-    "helper": "Press Enter or comma to add",
-    "mostUsed": "Most used"
+    "mostUsed": "Most used",
+    "suggested": "Suggested",
+    "new": "New",
+    "remove": "Remove {tag}"
   },
   "imageUpload": {
     "tooLarge": "Image must be under {maxSizeMb}MB",
