@@ -240,8 +240,11 @@ describe('ShoppingClient', () => {
     await waitFor(() => expect(screen.getByText('Milk')).toBeTruthy())
   })
 
-  it('starts the shopping-list tour on the Add item row and finishes it when clicked', async () => {
+  it('walks the shopping-list tour from Copy list to Add item and finishes it', async () => {
     vi.useFakeTimers()
+    const write = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { write, writeText: vi.fn() }, configurable: true })
+    vi.stubGlobal('ClipboardItem', class { constructor(public items: unknown) {} })
     try {
       render(
         <TourProvider initialSeen={[]}>
@@ -250,7 +253,15 @@ describe('ShoppingClient', () => {
       )
       expect(screen.queryByTestId('tour-stub')).toBeNull()
       await act(async () => { vi.advanceTimersByTime(700) })
+      expect(screen.getByTestId('tour-stub')).toHaveTextContent('shopping-copy')
+
+      // Copying is what the step suggests, so it moves on to the next step.
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /copy list/i }))
+      })
+      expect(write).toHaveBeenCalled()
       expect(screen.getByTestId('tour-stub')).toHaveTextContent('shopping-add')
+      expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/profile', expect.anything())
 
       await act(async () => {
         fireEvent.click(screen.getByRole('button', { name: 'Add item' }))
@@ -261,6 +272,7 @@ describe('ShoppingClient', () => {
       expect(screen.queryByTestId('tour-stub')).toBeNull()
     } finally {
       vi.useRealTimers()
+      vi.unstubAllGlobals()
     }
   })
 

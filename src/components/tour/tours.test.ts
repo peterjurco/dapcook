@@ -15,4 +15,10 @@ describe('TOURS', () => {
       }
     }
   })
+
+  it('points the shopping-list tour at Copy list first, then Add item', () => {
+    expect(TOURS['shopping-list'].map((s) => s.target)).toEqual(['shopping-copy', 'shopping-add'])
+    // Copying is the action the step suggests, so it moves the tour along.
+    expect(TOURS['shopping-list'][0].advanceOnTargetClick).toBe(true)
+  })
 })
