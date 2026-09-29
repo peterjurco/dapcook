@@ -14,7 +14,7 @@ vi.mock('next-intl', () => ({
 const step: TourStep = { target: 'plan-button', key: 'planRecipe.planButton', placement: 'bottom', advanceOnTargetClick: true }
 
 function renderOverlay(overrides: Partial<Parameters<typeof TourOverlay>[0]> = {}) {
-  const props = { step, stepIndex: 0, total: 1, onNext: vi.fn(), onBack: vi.fn(), onClose: vi.fn(), ...overrides }
+  const props = { step, stepIndex: 0, total: 1, onNext: vi.fn(), onMissing: vi.fn(), onBack: vi.fn(), onClose: vi.fn(), ...overrides }
   render(<TourOverlay {...props} />)
   return props
 }
@@ -71,7 +71,8 @@ describe('TourOverlay', () => {
     vi.useFakeTimers()
     const props = renderOverlay()
     act(() => { vi.advanceTimersByTime(TARGET_TIMEOUT_MS) })
-    expect(props.onNext).toHaveBeenCalled()
+    expect(props.onMissing).toHaveBeenCalledTimes(1)
+    expect(props.onNext).not.toHaveBeenCalled()
   })
 
   it('advances when the target itself is clicked', async () => {
@@ -98,6 +99,49 @@ describe('TourOverlay', () => {
     e.preventDefault()
     document.dispatchEvent(e)
     expect(props.onClose).not.toHaveBeenCalled()
+  })
+
+  it.each(['input', 'textarea', 'select'])('ignores Escape typed in a %s', async (tag) => {
+    addTarget()
+    const props = renderOverlay()
+    await screen.findByText('Plan this recipe')
+    const field = document.body.appendChild(document.createElement(tag))
+    fireEvent.keyDown(field, { key: 'Escape' })
+    expect(props.onClose).not.toHaveBeenCalled()
+  })
+
+  it('ignores Escape typed in a contenteditable', async () => {
+    addTarget()
+    const props = renderOverlay()
+    await screen.findByText('Plan this recipe')
+    const div = document.body.appendChild(document.createElement('div'))
+    // jsdom does not implement isContentEditable, so define it.
+    Object.defineProperty(div, 'isContentEditable', { value: true })
+    fireEvent.keyDown(div, { key: 'Escape' })
+    expect(props.onClose).not.toHaveBeenCalled()
+  })
+
+  it('re-measures via a ResizeObserver on the target and disconnects it on unmount', async () => {
+    const observe = vi.fn()
+    const disconnect = vi.fn()
+    let trigger: () => void = () => {}
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(cb: () => void) { trigger = cb }
+      observe = observe
+      unobserve() {}
+      disconnect = disconnect
+    })
+    const el = addTarget()
+    renderOverlay()
+    await screen.findByText('Plan this recipe')
+    expect(observe).toHaveBeenCalledWith(el)
+    const rect = { top: 300, left: 100, width: 80, height: 32, right: 180, bottom: 332, x: 100, y: 300, toJSON: () => ({}) } as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(rect)
+    act(() => trigger())
+    expect(screen.getByRole('dialog').style.top).not.toBe('')
+    cleanup()
+    expect(disconnect).toHaveBeenCalled()
+    vi.unstubAllGlobals()
   })
 
   it('closes on Skip', async () => {

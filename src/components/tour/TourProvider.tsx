@@ -88,6 +88,15 @@ export function TourProvider({ initialSeen, children }: { initialSeen: string[];
     else setActive({ ...current, stepIndex: current.stepIndex + 1 })
   }, [close, setActive])
 
+  // A target that never shows up must not consume the tour: skip the step, or on the last one
+  // dismiss so the tour can come back.
+  const missing = useCallback(() => {
+    const current = activeRef.current
+    if (!current) return
+    if (current.stepIndex + 1 >= TOURS[current.id].length) dismiss()
+    else setActive({ ...current, stepIndex: current.stepIndex + 1 })
+  }, [dismiss, setActive])
+
   const back = useCallback(() => {
     const current = activeRef.current
     if (!current || current.stepIndex === 0) return
@@ -114,6 +123,7 @@ export function TourProvider({ initialSeen, children }: { initialSeen: string[];
           stepIndex={active.stepIndex}
           total={TOURS[active.id].length}
           onNext={next}
+          onMissing={missing}
           onBack={back}
           onClose={close}
         />

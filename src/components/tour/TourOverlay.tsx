@@ -24,11 +24,13 @@ interface TourOverlayProps {
   stepIndex: number
   total: number
   onNext: () => void
+  /** The target never appeared. Must not count as the user finishing the tour. */
+  onMissing: () => void
   onBack: () => void
   onClose: () => void
 }
 
-export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }: TourOverlayProps) {
+export function TourOverlay({ step, stepIndex, total, onNext, onMissing, onBack, onClose }: TourOverlayProps) {
   const t = useTranslations('tour')
   const titleId = useId()
   const bodyId = useId()
@@ -40,9 +42,11 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
   // Latest callbacks in refs, so unstable callers can't re-run (and re-arm the timeout of) the effects below.
   const onNextRef = useRef(onNext)
   const onCloseRef = useRef(onClose)
+  const onMissingRef = useRef(onMissing)
   useLayoutEffect(() => {
     onNextRef.current = onNext
     onCloseRef.current = onClose
+    onMissingRef.current = onMissing
   })
 
   // Resolve the target, waiting briefly for it to mount; never trap the user on a missing one.
@@ -66,7 +70,7 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
     observer.observe(document.body, { childList: true, subtree: true, attributes: true })
     const timer = setTimeout(() => {
       observer.disconnect()
-      onNextRef.current()
+      onMissingRef.current()
     }, TARGET_TIMEOUT_MS)
     return () => {
       observer.disconnect()
@@ -83,9 +87,13 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
     update()
     window.addEventListener('scroll', update, true)
     window.addEventListener('resize', update)
+    // Layout shifts (content loading, reflow) move the target without a scroll or resize event.
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null
+    resizeObserver?.observe(target)
     return () => {
       window.removeEventListener('scroll', update, true)
       window.removeEventListener('resize', update)
+      resizeObserver?.disconnect()
     }
   }, [target])
 
@@ -111,7 +119,11 @@ export function TourOverlay({ step, stepIndex, total, onNext, onBack, onClose }:
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !e.defaultPrevented) onCloseRef.current()
+      if (e.key !== 'Escape' || e.defaultPrevented) return
+      // Esc inside a field belongs to the field (cancel edit, clear search).
+      const el = e.target instanceof HTMLElement ? e.target : null
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return
+      onCloseRef.current()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)

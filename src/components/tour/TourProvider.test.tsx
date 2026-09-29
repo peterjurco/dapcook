@@ -10,14 +10,16 @@ vi.mock('next/navigation', () => ({ usePathname: () => mockPathname }))
 
 // Stand-in overlay: exposes the active step and its controls.
 vi.mock('./TourOverlay', () => ({
-  TourOverlay: ({ step, stepIndex, onNext, onBack, onClose }: {
+  TourOverlay: ({ step, stepIndex, onNext, onBack, onClose, onMissing }: {
     step: { target: string }; stepIndex: number; onNext: () => void; onBack: () => void; onClose: () => void
+    onMissing: () => void
   }) => (
     <div data-testid="overlay">
       {step.target}:{stepIndex}
       <button type="button" onClick={onNext}>next</button>
       <button type="button" onClick={onBack}>back</button>
       <button type="button" onClick={onClose}>close</button>
+      <button type="button" onClick={onMissing}>missing</button>
     </div>
   ),
 }))
@@ -98,6 +100,26 @@ describe('TourProvider', () => {
     await userEvent.click(screen.getByRole('button', { name: 'next' }))
     expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
     expect(patchedTours()).toEqual(['planner-desktop'])
+  })
+
+  it('a missing target on a single-step tour ends it without persisting', async () => {
+    render(<TourProvider initialSeen={[]}><Starter id="plan-recipe" /></TourProvider>)
+    advance()
+    await userEvent.click(screen.getByRole('button', { name: 'missing' }))
+    expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+    expect(patchedTours()).toEqual([])
+  })
+
+  it('a missing middle step advances; a missing last step dismisses without persisting', async () => {
+    render(<TourProvider initialSeen={[]}><Starter id="planner-desktop" /></TourProvider>)
+    advance()
+    await userEvent.click(screen.getByRole('button', { name: 'missing' }))
+    expect(screen.getByTestId('overlay')).toHaveTextContent('grid-resize:1')
+    await userEvent.click(screen.getByRole('button', { name: 'missing' }))
+    expect(screen.getByTestId('overlay')).toHaveTextContent(':2')
+    await userEvent.click(screen.getByRole('button', { name: 'missing' }))
+    expect(screen.queryByTestId('overlay')).not.toBeInTheDocument()
+    expect(patchedTours()).toEqual([])
   })
 
   it('skipping marks the tour seen so it does not come back', async () => {
