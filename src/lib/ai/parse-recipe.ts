@@ -1,14 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { Ingredient, Step } from '@/types/recipe'
+import type { Ingredient, Step, TagSuggestions } from '@/types/recipe'
 import { createClient } from '@/lib/supabase/server'
 import { logAiUsage } from './log-usage'
 import { normalizeUnit } from '@/lib/units/normalize-unit'
+import { sanitizeTagSuggestions, tagSuggestionRules, type TagPromptContext } from './suggest-tags'
 
 const client = new Anthropic()
 
 interface ParseResult {
   ingredients: Ingredient[]
   steps: Step[]
+  /** Present only when `tagContext` was passed and the AI call succeeded. */
+  suggestedTags?: TagSuggestions
+}
+
+export interface ParseTagContext extends TagPromptContext {
+  title: string
 }
 
 // Fallback when AI is disabled: store raw strings without parsing
@@ -32,7 +39,8 @@ function rawFallback(rawIngredients: string[], rawSteps: string[]): ParseResult 
 export async function parseRecipeData(
   rawIngredients: string[],
   rawSteps: string[],
-  householdId?: string
+  householdId?: string,
+  tagContext?: ParseTagContext
 ): Promise<ParseResult> {
   // Guard: skip Claude call unless explicitly enabled
   if (process.env.RECIPE_IMPORT_USE_AI !== 'true') {
@@ -42,6 +50,13 @@ export async function parseRecipeData(
   if (rawIngredients.length === 0 && rawSteps.length === 0) {
     return { ingredients: [], steps: [] }
   }
+
+  const tagSection = tagContext
+    ? `
+
+Also add a top-level "suggestedTags" field to the JSON object: {"existing": [...], "new": "..." or null}, suggesting tags for the recipe titled ${JSON.stringify(tagContext.title.slice(0, 200))}.
+${tagSuggestionRules(tagContext)}`
+    : ''
 
   const prompt = `Parse this recipe data into structured JSON.
 
@@ -76,7 +91,7 @@ Rules:
 - name: the ingredient without quantity/unit/prep notes
 - notes: preparation notes like "finely chopped", "to serve", "optional" (empty string if none)
 - steps: clean up whitespace but preserve the full instruction text
-- Handle mixed languages (Slovak, English, etc.) — do not translate, keep original language`
+- Handle mixed languages (Slovak, English, etc.) — do not translate, keep original language${tagSection}`
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -101,6 +116,7 @@ Rules:
     const parsed = JSON.parse(jsonMatch[0]) as {
       ingredients: Array<{ quantity: number | null; unit: string; name: string; notes: string }>
       steps: Array<{ order: number; text: string }>
+      suggestedTags?: unknown
     }
 
     return {
@@ -116,6 +132,7 @@ Rules:
         order: step.order ?? i + 1,
         text: step.text ?? '',
       })),
+      ...(tagContext && { suggestedTags: sanitizeTagSuggestions(parsed.suggestedTags, tagContext.householdTags) }),
     }
   } catch (err) {
     console.error('[parse-recipe] Failed to parse Claude JSON response:', err)

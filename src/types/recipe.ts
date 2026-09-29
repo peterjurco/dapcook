@@ -12,6 +12,12 @@ export interface Step {
   text: string
 }
 
+/** AI tag suggestions for one recipe. `existing` are household tags; `new` is at most one tag the household doesn't have yet. */
+export interface TagSuggestions {
+  existing: string[]
+  new: string | null
+}
+
 // What the scraper + AI parser returns — not yet saved
 export interface RecipeDraft {
   title: string
@@ -26,6 +32,7 @@ export interface RecipeDraft {
   steps: Step[]
   partial: boolean
   partial_reason?: string
+  suggestedTags?: TagSuggestions
 }
 
 // Form-level ingredient (quantity as string for easy editing)

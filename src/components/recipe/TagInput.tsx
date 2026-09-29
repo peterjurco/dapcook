@@ -4,11 +4,16 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import type { TagData } from '@/app/api/tags/route'
+import type { TagSuggestions } from '@/types/recipe'
 
 interface TagInputProps {
   tags: string[]
   onChange: (tags: string[]) => void
   allTags: TagData[]
+  /** AI suggestions; when null/empty the "most used" row is shown instead. */
+  suggestions?: TagSuggestions | null
+  /** Fired when the input gains focus — the parent decides whether to fetch. */
+  onRequestSuggestions?: () => void
 }
 
 function normalize(s: string) {
@@ -30,7 +35,7 @@ function colorFor(name: string, allTags: TagData[]) {
   return allTags.find((tag) => tag.name === name)?.color ?? null
 }
 
-export function TagInput({ tags, onChange, allTags }: TagInputProps) {
+export function TagInput({ tags, onChange, allTags, suggestions: aiSuggestions, onRequestSuggestions }: TagInputProps) {
   const t = useTranslations('recipes')
   const [input, setInput] = useState('')
   const [open, setOpen] = useState(false)
@@ -77,8 +82,13 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
     ? allTags.filter((tag) => !tags.includes(tag.name) && normalize(tag.name).includes(norm))
     : []
 
-  // Most used: top 8 unused tags shown when input is empty
-  const mostUsed = !input
+  // AI suggestions, minus tags already on the recipe
+  const suggestedExisting = !input && aiSuggestions ? aiSuggestions.existing.filter((name) => !tags.includes(name)) : []
+  const suggestedNew = !input && aiSuggestions?.new && !tags.includes(aiSuggestions.new) ? aiSuggestions.new : null
+  const hasSuggestions = suggestedExisting.length > 0 || suggestedNew !== null
+
+  // Most used: top 8 unused tags shown when input is empty and there are no suggestions
+  const mostUsed = !input && !hasSuggestions
     ? allTags.filter((tag) => tag.count > 0 && !tags.includes(tag.name)).slice(0, 8)
     : []
 
@@ -109,7 +119,7 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
           type="text"
           value={input}
           onChange={(e) => { setInput(e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => { setOpen(true); onRequestSuggestions?.() }}
           onKeyDown={handleKeyDown}
           onBlur={() => { if (input.trim()) addTag(input) }}
           placeholder={t('tagInput.placeholder')}
@@ -136,6 +146,39 @@ export function TagInput({ tags, onChange, allTags }: TagInputProps) {
           </div>
         )}
       </div>
+
+      {/* AI suggestions */}
+      {hasSuggestions && (
+        <div>
+          <p className="text-xs text-gray-400 mb-1.5">{t('tagInput.suggested')}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {suggestedExisting.map((name) => {
+              const color = colorFor(name, allTags)
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => addTag(name)}
+                  className={`${tagClass(color)} hover:opacity-75 transition-opacity cursor-pointer`}
+                  style={tagStyle(color)}
+                >
+                  {name}
+                </button>
+              )
+            })}
+            {suggestedNew && (
+              <button
+                type="button"
+                onClick={() => addTag(suggestedNew)}
+                className="inline-flex items-center gap-1.5 border border-dashed border-gray-300 text-gray-600 text-xs font-medium px-2.5 py-1 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                {suggestedNew}
+                <span className="text-[10px] uppercase tracking-wide text-gray-400">{t('tagInput.new')}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Most used suggestions */}
       {mostUsed.length > 0 && (

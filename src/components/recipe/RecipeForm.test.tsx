@@ -315,3 +315,135 @@ describe('PostHog events', () => {
     expect(mockCapture).not.toHaveBeenCalledWith('recipe_created')
   })
 })
+
+// ── tag suggestions ──────────────────────────────────────────────────────────
+
+describe('tag suggestions', () => {
+  const TAG_PLACEHOLDER = 'Type a tag and press Enter'
+  const SUGGESTIONS = { existing: [], new: 'mexican' }
+
+  function mockFetchWithSuggestions() {
+    global.fetch = vi.fn(async (url: RequestInfo | URL) => {
+      if (url === '/api/tags/suggest') return { ok: true, json: async () => SUGGESTIONS } as Response
+      return { ok: true, json: async () => [] } as Response
+    }) as typeof fetch
+  }
+
+  function suggestCalls() {
+    return vi.mocked(global.fetch).mock.calls.filter(([url]) => url === '/api/tags/suggest')
+  }
+
+  it('uses suggestions from the import draft without fetching', async () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm draft={{ ...sampleDraft, suggestedTags: { existing: [], new: 'italian' } }} />)
+    expect(screen.getByRole('button', { name: /italian/ })).toBeInTheDocument()
+    fireEvent.focus(screen.getByPlaceholderText(TAG_PLACEHOLDER))
+    expect(suggestCalls()).toHaveLength(0)
+  })
+
+  it('fetches suggestions on first focus of the tag field', async () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm />)
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Burrito' } })
+    fireEvent.focus(screen.getByPlaceholderText(TAG_PLACEHOLDER))
+
+    expect(await screen.findByRole('button', { name: /mexican/ })).toBeInTheDocument()
+    expect(suggestCalls()).toHaveLength(1)
+    expect(JSON.parse(suggestCalls()[0][1]!.body as string)).toEqual({ title: 'Burrito', ingredientNames: [] })
+  })
+
+  it('does not refetch until the title changes', async () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm />)
+    const tagInput = screen.getByPlaceholderText(TAG_PLACEHOLDER)
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Burrito' } })
+    fireEvent.focus(tagInput)
+    await screen.findByRole('button', { name: /mexican/ })
+
+    fireEvent.blur(tagInput)
+    fireEvent.focus(tagInput)
+    expect(suggestCalls()).toHaveLength(1)
+
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Chicken burrito' } })
+    fireEvent.focus(tagInput)
+    await waitFor(() => expect(suggestCalls()).toHaveLength(2))
+  })
+
+  it('does not fetch while the title is empty', () => {
+    mockFetchWithSuggestions()
+    render(<RecipeForm />)
+    fireEvent.focus(screen.getByPlaceholderText(TAG_PLACEHOLDER))
+    expect(suggestCalls()).toHaveLength(0)
+  })
+
+  it('ignores a malformed suggestion body and keeps the most used fallback', async () => {
+    global.fetch = vi.fn(async (url: RequestInfo | URL) => {
+      if (url === '/api/tags/suggest') return { ok: true, json: async () => ({ existing: 'x' }) } as Response
+      return { ok: true, json: async () => [{ name: 'dinner', color: null, groupId: null, count: 3 }] } as Response
+    }) as typeof fetch
+    render(<RecipeForm />)
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Burrito' } })
+    fireEvent.focus(screen.getByPlaceholderText(TAG_PLACEHOLDER))
+    await waitFor(() => expect(suggestCalls()).toHaveLength(1))
+
+    await screen.findByText('Most used')
+    expect(screen.queryByText('Suggested')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /New/ })).not.toBeInTheDocument()
+  })
+
+  it('keeps the fallback on a failed response and retries on the next focus', async () => {
+    global.fetch = vi.fn(async (url: RequestInfo | URL) => {
+      if (url === '/api/tags/suggest') return { ok: false, json: async () => ({}) } as Response
+      return { ok: true, json: async () => [{ name: 'dinner', color: null, groupId: null, count: 3 }] } as Response
+    }) as typeof fetch
+    render(<RecipeForm />)
+    const tagInput = screen.getByPlaceholderText(TAG_PLACEHOLDER)
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Burrito' } })
+    fireEvent.focus(tagInput)
+    await waitFor(() => expect(suggestCalls()).toHaveLength(1))
+    await screen.findByText('Most used')
+
+    fireEvent.blur(tagInput)
+    fireEvent.focus(tagInput)
+    await waitFor(() => expect(suggestCalls()).toHaveLength(2))
+    expect(screen.getByText('Most used')).toBeInTheDocument()
+  })
+
+  it('sends only one request for rapid focuses while one is in flight', async () => {
+    let resolveSuggest!: (r: Response) => void
+    global.fetch = vi.fn((url: RequestInfo | URL) => {
+      if (url === '/api/tags/suggest') return new Promise<Response>((resolve) => { resolveSuggest = resolve })
+      return Promise.resolve({ ok: true, json: async () => [] } as Response)
+    }) as typeof fetch
+    render(<RecipeForm />)
+    const tagInput = screen.getByPlaceholderText(TAG_PLACEHOLDER)
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Burrito' } })
+    fireEvent.focus(tagInput)
+    fireEvent.blur(tagInput)
+    fireEvent.focus(tagInput)
+    expect(suggestCalls()).toHaveLength(1)
+
+    resolveSuggest({ ok: true, json: async () => SUGGESTIONS } as Response)
+    expect(await screen.findByRole('button', { name: /mexican/ })).toBeInTheDocument()
+    expect(suggestCalls()).toHaveLength(1)
+  })
+
+  it('refetches when only an ingredient name changes', async () => {
+    mockFetchWithSuggestions()
+    const draft: RecipeDraft = {
+      ...sampleDraft,
+      ingredients: [{ id: 'i-1', quantity: 1, unit: 'cup', name: 'Flour', notes: '' }],
+    }
+    render(<RecipeForm draft={draft} />)
+    const tagInput = screen.getByPlaceholderText(TAG_PLACEHOLDER)
+    fireEvent.focus(tagInput)
+    await waitFor(() => expect(suggestCalls()).toHaveLength(1))
+    expect(JSON.parse(suggestCalls()[0][1]!.body as string).ingredientNames).toEqual(['Flour'])
+
+    fireEvent.change(screen.getByDisplayValue('Flour'), { target: { value: 'Tortilla' } })
+    fireEvent.blur(tagInput)
+    fireEvent.focus(tagInput)
+    await waitFor(() => expect(suggestCalls()).toHaveLength(2))
+    expect(JSON.parse(suggestCalls()[1][1]!.body as string).ingredientNames).toEqual(['Tortilla'])
+  })
+})
