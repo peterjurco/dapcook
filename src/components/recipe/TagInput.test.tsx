@@ -1,0 +1,64 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { TagInput } from './TagInput'
+import { mockTranslate } from '@/test/mockMessages'
+import type { TagData } from '@/app/api/tags/route'
+
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) => mockTranslate(namespace, key),
+}))
+
+const ALL_TAGS: TagData[] = [
+  { name: 'dinner', color: null, groupId: null, count: 9 },
+  { name: 'quick', color: null, groupId: null, count: 5 },
+  { name: 'pasta', color: '#ef4444', groupId: null, count: 2 },
+]
+
+function renderInput(props: Partial<React.ComponentProps<typeof TagInput>> = {}) {
+  const onChange = vi.fn()
+  render(<TagInput tags={[]} onChange={onChange} allTags={ALL_TAGS} {...props} />)
+  return { onChange }
+}
+
+describe('TagInput suggestions', () => {
+  it('shows most used tags when there are no suggestions', () => {
+    renderInput({ suggestions: null })
+    expect(screen.getByText('Most used')).toBeInTheDocument()
+    expect(screen.queryByText('Suggested')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'dinner' })).toBeInTheDocument()
+  })
+
+  it('shows suggestions instead of most used', () => {
+    renderInput({ suggestions: { existing: ['pasta'], new: null } })
+    expect(screen.getByText('Suggested')).toBeInTheDocument()
+    expect(screen.queryByText('Most used')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'pasta' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'dinner' })).not.toBeInTheDocument()
+  })
+
+  it('marks the new tag and adds it on click', () => {
+    const { onChange } = renderInput({ suggestions: { existing: [], new: 'italian' } })
+    const chip = screen.getByRole('button', { name: /italian/ })
+    expect(chip).toHaveTextContent('New')
+    fireEvent.click(chip)
+    expect(onChange).toHaveBeenCalledWith(['italian'])
+  })
+
+  it('hides suggestions that are already selected', () => {
+    renderInput({ tags: ['pasta', 'italian'], suggestions: { existing: ['pasta', 'dinner'], new: 'italian' } })
+    expect(screen.getByRole('button', { name: 'dinner' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /New/ })).not.toBeInTheDocument()
+  })
+
+  it('falls back to most used when every suggestion is already selected', () => {
+    renderInput({ tags: ['pasta'], suggestions: { existing: ['pasta'], new: null } })
+    expect(screen.getByText('Most used')).toBeInTheDocument()
+  })
+
+  it('requests suggestions when the input gains focus', () => {
+    const onRequestSuggestions = vi.fn()
+    renderInput({ onRequestSuggestions })
+    fireEvent.focus(screen.getByPlaceholderText('Type a tag and press Enter'))
+    expect(onRequestSuggestions).toHaveBeenCalledTimes(1)
+  })
+})
