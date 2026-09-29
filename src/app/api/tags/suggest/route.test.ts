@@ -54,6 +54,34 @@ describe('POST /api/tags/suggest', () => {
     vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
     const res = await POST(req({ title: 'Burrito' }))
     expect(res.status).toBe(401)
+    expect(loadHouseholdTagNames).not.toHaveBeenCalled()
+    expect(suggestTags).not.toHaveBeenCalled()
+  })
+
+  it('treats a null JSON body as empty instead of throwing', async () => {
+    const res = await POST(req(null))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(EMPTY)
+    expect(suggestTags).not.toHaveBeenCalled()
+  })
+
+  it('caps ingredient names at 40 entries of 100 chars each', async () => {
+    const names = Array.from({ length: 60 }, () => 'x'.repeat(300))
+    await POST(req({ title: 'Burrito', ingredientNames: names }))
+    const sent = vi.mocked(suggestTags).mock.calls[0][0].ingredientNames
+    expect(sent.length).toBeLessThanOrEqual(40)
+    expect(sent.length).toBeGreaterThan(0)
+    for (const n of sent) expect(n.length).toBeLessThanOrEqual(100)
+  })
+
+  it('soft-fails with empty suggestions when loading household tags throws', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(loadHouseholdTagNames).mockRejectedValue(new Error('db down'))
+    const res = await POST(req({ title: 'Burrito' }))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(EMPTY)
+    expect(spy).toHaveBeenCalledWith('[tags/suggest] failed', expect.any(Error))
+    spy.mockRestore()
   })
 
   it('returns empty suggestions without calling AI when the flag is off', async () => {
