@@ -16,7 +16,9 @@
     "noIngredients": "Tento recept nemá žiadne ingrediencie.",
     "remove": "Odobrať",
     "removeAria": "Odstrániť z nákupného zoznamu",
-    "tooManyItems": "Príliš veľa ingrediencií (max. {max}). Odstráňte niektoré recepty alebo odškrtnite, čo už máte doma."
+    "tooManyItems": "Príliš veľa ingrediencií (max. {max}). Odstráňte niektoré recepty alebo odškrtnite, čo už máte doma.",
+    "addAgainConfirm": "Jedlá z tohto týždňa už sú v nákupnom zozname. Pridať ich znova?",
+    "addAgainConfirmLabel": "Pridať znova"
   },
   "client": {
     "headingS": "N",
@@ -34,7 +36,8 @@
     "clearConfirmLabel": "Vymazať",
     "copyAria": "Kopírovať zoznam",
     "copiedAria": "Skopírované!",
-    "clearAria": "Vymazať zoznam"
+    "clearAria": "Vymazať zoznam",
+    "checkFailed": "Zmenu sa nepodarilo uložiť. Skontrolujte pripojenie a skúste to znova."
   },
   "itemRow": {
     "dragAria": "Presunúť ťahaním",

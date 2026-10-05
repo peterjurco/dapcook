@@ -10,7 +10,8 @@ import type { PlanSlot } from '@/lib/shopping/plan-entries'
 import type { Ingredient } from '@/types/recipe'
 
 const mockPush = vi.fn()
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mockPush }) }))
+const mockReplace = vi.fn()
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace }) }))
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
   useTranslations: (namespace: string) => (key: string, values?: TranslationValues) =>
@@ -82,8 +83,13 @@ const carbonara = recipeSlot({
   ingredients: [ing({ quantity: 200, unit: 'g', name: 'spaghetti' }), ing({ quantity: 1, name: 'onion' })],
 })
 
-function renderPage(slots: PlanSlot[] = [carbonara, customSlot({ id: 'c1', date: '2026-06-09', label: 'rice' })]) {
-  render(<GenerateShoppingPage slots={slots} />)
+const WEEK = '2026-06-08'
+
+function renderPage(
+  slots: PlanSlot[] = [carbonara, customSlot({ id: 'c1', date: '2026-06-09', label: 'rice' })],
+  { alreadyAdded = false } = {},
+) {
+  render(<GenerateShoppingPage slots={slots} week={WEEK} alreadyAdded={alreadyAdded} />)
 }
 
 const box = (name: string) => within(screen.getByRole('region', { name }))
@@ -169,11 +175,13 @@ describe('GenerateShoppingPage', () => {
     const addButton = await screen.findByRole('button', { name: 'Add 2 items to shopping list' })
     await userEvent.click(addButton)
 
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
     expect(global.fetch).toHaveBeenCalledWith('/api/shopping/items/add-from-plan', expect.objectContaining({ method: 'POST' }))
     expect(lastFetchBody()).toEqual({
       ingredients: [{ name: 'spaghetti', quantity: 200, unit: 'g', recipe_id: 'r1' }],
       customItems: [{ name: 'rice', portions: 1 }],
+      week: WEEK,
+      force: false,
     })
   })
 
@@ -222,7 +230,7 @@ describe('GenerateShoppingPage', () => {
     renderPage()
     await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument()
-    expect(mockPush).not.toHaveBeenCalled()
+    expect(mockReplace).not.toHaveBeenCalled()
     expect(box('Carbonara').getByText('spaghetti')).toBeInTheDocument()
   })
 
@@ -246,7 +254,7 @@ describe('GenerateShoppingPage', () => {
     expect(box('Carbonara').queryByText('200g')).toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
     expect(lastFetchBody().ingredients[0]).toEqual({ name: 'spaghetti', quantity: null, unit: null, recipe_id: 'r1' })
   })
 
@@ -254,8 +262,8 @@ describe('GenerateShoppingPage', () => {
     renderPage()
     await userEvent.click(box('Carbonara').getByRole('button', { name: 'Remove from shopping list' }))
     await userEvent.click(screen.getByRole('button', { name: 'Add 1 item to shopping list' }))
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
-    expect(lastFetchBody()).toEqual({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }] })
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
+    expect(lastFetchBody()).toEqual({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }], week: WEEK, force: false })
   })
 
   it('shows a network error and stays on the page when the request fails', async () => {
@@ -263,7 +271,7 @@ describe('GenerateShoppingPage', () => {
     renderPage()
     await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
     expect(await screen.findByText('Network error. Please try again.')).toBeInTheDocument()
-    expect(mockPush).not.toHaveBeenCalled()
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 
   it('leaves a deleted ingredient out of the count and the request', async () => {
@@ -271,10 +279,12 @@ describe('GenerateShoppingPage', () => {
     await userEvent.click(box('Carbonara').getAllByRole('button', { name: 'Delete' })[1])
     expect(box('Carbonara').queryByText('onion')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Add 2 items to shopping list' }))
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
     expect(lastFetchBody()).toEqual({
       ingredients: [{ name: 'spaghetti', quantity: 200, unit: 'g', recipe_id: 'r1' }],
       customItems: [{ name: 'rice', portions: 1 }],
+      week: WEEK,
+      force: false,
     })
   })
 
@@ -282,7 +292,7 @@ describe('GenerateShoppingPage', () => {
     localStorage.removeItem('recipe_portions')
     renderPage()
     await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/shopping'))
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
     expect(JSON.parse(localStorage.getItem('recipe_portions')!)).toEqual({ r1: 2 })
   })
 
@@ -302,5 +312,51 @@ describe('GenerateShoppingPage', () => {
     expect(t('generate.addToList', { count: 1 })).toBe('Pridať 1 položku do zoznamu')
     expect(t('generate.addToList', { count: 3 })).toBe('Pridať 3 položky do zoznamu')
     expect(t('generate.addToList', { count: 5 })).toBe('Pridať 5 položiek do zoznamu')
+  })
+
+  it('replaces itself in history after adding, so Back cannot return to it', async () => {
+    renderPage()
+    await userEvent.click(screen.getByRole('button', { name: 'Add 3 items to shopping list' }))
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  describe('week already on the list', () => {
+    const addButton = () => screen.getByRole('button', { name: 'Add 3 items to shopping list' })
+    const confirmText = "This week's meals are already on your shopping list. Add them again?"
+
+    it('asks before adding again and sends nothing on Cancel', async () => {
+      renderPage(undefined, { alreadyAdded: true })
+      await userEvent.click(addButton())
+
+      expect(screen.getByRole('dialog')).toHaveTextContent(confirmText)
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('adds again with force once confirmed', async () => {
+      renderPage(undefined, { alreadyAdded: true })
+      await userEvent.click(addButton())
+      await userEvent.click(screen.getByRole('button', { name: 'Add again' }))
+
+      await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
+      expect(lastFetchBody()).toMatchObject({ week: WEEK, force: true })
+    })
+
+    it('asks when the server reports the week was added meanwhile, then forces on confirm', async () => {
+      vi.mocked(global.fetch).mockResolvedValueOnce({ ok: false, status: 409, json: async () => ({}) } as Response)
+      renderPage()
+      await userEvent.click(addButton())
+
+      expect(await screen.findByRole('dialog')).toHaveTextContent(confirmText)
+      expect(mockReplace).not.toHaveBeenCalled()
+      expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Add again' }))
+      await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/shopping'))
+      expect(lastFetchBody()).toMatchObject({ force: true })
+    })
   })
 })

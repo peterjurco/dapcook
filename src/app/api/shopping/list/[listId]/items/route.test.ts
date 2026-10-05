@@ -12,6 +12,9 @@ import { DELETE } from './route'
 import { authMock } from '@/test/authMock'
 import { householdIdMock } from '@/test/householdMock'
 
+const listUpdateEq = vi.fn().mockResolvedValue({ error: null })
+const listUpdate = vi.fn().mockReturnValue({ eq: listUpdateEq })
+
 function makeSupabase(
   user: { id: string } | null = { id: 'user-1' },
   list: { id: string } | null = { id: 'list-1' }
@@ -26,6 +29,7 @@ function makeSupabase(
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({ data: list }),
+      update: listUpdate,
     },
     shopping_items: {
       delete: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
@@ -61,6 +65,19 @@ describe('DELETE /api/shopping/list/[listId]/items', () => {
   })
 
   it('deletes all items for the list and returns 204', async () => {
+    const res = await DELETE(req(), { params: { listId: 'list-1' } })
+    expect(res.status).toBe(204)
+  })
+
+  it('forgets which weeks were added, so the next add does not ask', async () => {
+    await DELETE(req(), { params: { listId: 'list-1' } })
+    expect(listUpdate).toHaveBeenCalledWith({ generated_weeks: [] })
+    expect(listUpdateEq).toHaveBeenCalledWith('id', 'list-1')
+  })
+
+  it('still returns 204 when resetting the weeks fails', async () => {
+    listUpdateEq.mockResolvedValueOnce({ error: { message: 'column does not exist' } })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = await DELETE(req(), { params: { listId: 'list-1' } })
     expect(res.status).toBe(204)
   })

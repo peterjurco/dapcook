@@ -24,6 +24,12 @@ export async function DELETE(
   if (!list) return NextResponse.json({ error: 'List not found' }, { status: 404 })
 
   await supabase.from('shopping_items').delete().eq('shopping_list_id', params.listId)
+  // An empty list has no week on it any more, so the next add need not ask.
+  const { error: weeksError } = await supabase
+    .from('shopping_lists')
+    .update({ generated_weeks: [] })
+    .eq('id', params.listId)
+  if (weeksError) console.error('[shopping/list/items] Failed to reset generated weeks:', weeksError)
 
   return new NextResponse(null, { status: 204 })
 }

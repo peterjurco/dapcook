@@ -357,6 +357,7 @@ export interface Database {
           name: string
           date_from: string | null
           date_to: string | null
+          generated_weeks: string[]
           created_at: string
         }
         Insert: {
@@ -366,6 +367,7 @@ export interface Database {
           name: string
           date_from?: string | null
           date_to?: string | null
+          generated_weeks?: string[]
           created_at?: string
         }
         Update: {
@@ -375,6 +377,7 @@ export interface Database {
           name?: string
           date_from?: string | null
           date_to?: string | null
+          generated_weeks?: string[]
           created_at?: string
         }
         Relationships: []

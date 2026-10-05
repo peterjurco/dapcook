@@ -82,6 +82,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   const [recipeNames] = useState<Record<string, string>>(initialRecipeNames)
   const [copied, setCopied] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [checkFailed, setCheckFailed] = useState(false)
 
   const posthog = usePostHog()
 
@@ -138,11 +139,24 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   async function handleCheck(id: string, checked: boolean) {
     if (checked) trackMilestone(posthog, 'shopping_item_checked')
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: checked } : item))
-    await fetch(`/api/shopping/items/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_checked: checked }),
-    })
+    let saved = false
+    try {
+      const res = await fetch(`/api/shopping/items/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_checked: checked }),
+      })
+      saved = res.ok
+    } catch {
+      // Offline — handled below like any other failure
+    }
+    if (saved) {
+      setCheckFailed(false)
+      return
+    }
+    // Undo, so the screen never shows an item as done that the server still lists.
+    setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: !checked } : item))
+    setCheckFailed(true)
   }
 
   async function handleUpdate(id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) {
@@ -207,8 +221,16 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   }
 
   function handleCreateBelow(afterId: string) {
-    const afterItem = items.find((i) => i.id === afterId)
+    const afterIndex = items.findIndex((i) => i.id === afterId)
+    const afterItem = items[afterIndex]
     if (!afterItem) return
+    // Halfway to the next item of the same category, so the new one lands
+    // between them. Items are grouped by category, so a next item in another
+    // category does not bound it.
+    const next = items[afterIndex + 1]
+    const sortOrder = next && next.category === afterItem.category
+      ? (afterItem.sort_order + next.sort_order) / 2
+      : afterItem.sort_order + 1
     const pendingItem: ShoppingItem = {
       id: crypto.randomUUID(),
       shopping_list_id: list?.id ?? '',
@@ -217,7 +239,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       unit: null,
       category: afterItem.category,
       is_checked: false,
-      sort_order: afterItem.sort_order + 0.5,
+      sort_order: sortOrder,
       source_recipe_ids: [],
     }
     setPendingItemIds((prev) => new Set(prev).add(pendingItem.id))
@@ -374,6 +396,11 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       <p className="text-xs text-gray-400 mb-4 px-4 sm:px-0">
         {t('client.itemCount', { count: visibleItems.length })}
       </p>
+      {checkFailed && (
+        <p role="alert" className="mx-4 sm:mx-0 mb-3 px-3 py-2 text-sm text-red-700 bg-red-50 rounded-lg">
+          {t('client.checkFailed')}
+        </p>
+      )}
 
       {/* List card — full-width on mobile, rounded on sm+ */}
       <div className="sm:bg-white sm:border sm:border-gray-200 sm:rounded-xl divide-y divide-gray-50">

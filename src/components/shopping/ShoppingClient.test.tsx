@@ -62,6 +62,7 @@ const mockList: ShoppingList = {
   name: 'My List',
   date_from: null,
   date_to: null,
+  generated_weeks: [],
   created_at: '2026-06-08T00:00:00Z',
 }
 
@@ -280,5 +281,97 @@ describe('ShoppingClient', () => {
     render(<ShoppingClient {...defaultProps} initialList={mockList} />)
     fireEvent.click(screen.getByRole('button', { name: 'Add item' }))
     expect(screen.getByRole('textbox')).toHaveFocus()
+  })
+
+  describe('checking off an item', () => {
+    const checkFailedText = "Couldn't save the change. Check your connection and try again."
+
+    it('puts the item back and says so when the server rejects the change', async () => {
+      vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
+      render(<ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />)
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      expect(await screen.findByRole('alert', {}, { timeout: 1500 })).toHaveTextContent(checkFailedText)
+      expect(screen.getByText('Milk')).toBeTruthy()
+      expect(screen.getByRole('checkbox')).not.toBeChecked()
+      expect(screen.getByText('1 item')).toBeTruthy()
+    })
+
+    it('puts the item back when offline', async () => {
+      vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'))
+      render(<ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />)
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      expect(await screen.findByRole('alert', {}, { timeout: 1500 })).toHaveTextContent(checkFailedText)
+      expect(screen.getByText('Milk')).toBeTruthy()
+    })
+
+    it('clears the warning once a later change saves', async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      render(<ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem]} />)
+
+      fireEvent.click(screen.getByRole('checkbox'))
+      await screen.findByRole('alert', {}, { timeout: 1500 })
+
+      fireEvent.click(screen.getByRole('checkbox'))
+      await waitFor(() => expect(screen.queryByRole('alert')).toBeNull(), { timeout: 1500 })
+      expect(screen.queryByText('Milk')).toBeNull()
+    })
+  })
+
+  describe('adding an item below another', () => {
+    function mockCreate() {
+      vi.mocked(fetch).mockImplementation((url, init) =>
+        Promise.resolve(
+          url === '/api/shopping/items'
+            ? { ok: true, json: () => Promise.resolve({ ...mockItem, ...JSON.parse(init!.body as string), sort_order: 99 }) }
+            : { ok: true },
+        ) as Promise<Response>,
+      )
+    }
+
+    async function addBelow(name: string) {
+      fireEvent.click(screen.getByText(name))
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Eggs' } })
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+      await waitFor(() => expect(sortOrderPatch()).toBeDefined())
+    }
+
+    function sortOrderPatch() {
+      const call = vi.mocked(fetch).mock.calls.find(
+        ([url, init]) => String(url).startsWith('/api/shopping/items/') && init?.method === 'PATCH' && String(init.body).includes('sort_order'),
+      )
+      return call && JSON.parse(call[1]!.body as string).sort_order
+    }
+
+    it('lands halfway to the next item, even when that one sits half a step away', async () => {
+      mockCreate()
+      const bread: ShoppingItem = { ...mockItem, id: 'item-2', name: 'Bread', sort_order: 0.5 }
+      render(<ShoppingClient {...defaultProps} initialList={mockList} initialItems={[mockItem, bread]} />)
+
+      await addBelow('Milk')
+
+      expect(sortOrderPatch()).toBe(0.25)
+    })
+
+    it('goes one step past the last item of its category', async () => {
+      mockCreate()
+      const bread: ShoppingItem = { ...mockItem, id: 'item-2', name: 'Bread', category: 'Bakery', sort_order: 0.5 }
+      render(
+        <ShoppingClient
+          {...defaultProps}
+          initialList={mockList}
+          initialItems={[mockItem, bread]}
+          initialCategories={[{ id: 'c1', household_id: 'hh-1', name: 'Bakery', color: null, sort_order: 0 } as ShoppingCategory]}
+        />,
+      )
+
+      await addBelow('Milk')
+
+      expect(sortOrderPatch()).toBe(1)
+    })
   })
 })
