@@ -16,7 +16,9 @@
     "noIngredients": "This recipe has no ingredients.",
     "remove": "Remove",
     "removeAria": "Remove from shopping list",
-    "tooManyItems": "Too many ingredients ({max} max). Remove some recipes or tick off what you already have."
+    "tooManyItems": "Too many ingredients ({max} max). Remove some recipes or tick off what you already have.",
+    "addAgainConfirm": "This week's meals are already on your shopping list. Add them again?",
+    "addAgainConfirmLabel": "Add again"
   },
   "client": {
     "headingS": "S",
@@ -34,7 +36,8 @@
     "clearConfirmLabel": "Clear",
     "copyAria": "Copy list",
     "copiedAria": "Copied!",
-    "clearAria": "Clear list"
+    "clearAria": "Clear list",
+    "checkFailed": "Couldn't save the change. Check your connection and try again."
   },
   "itemRow": {
     "dragAria": "Drag to reorder",

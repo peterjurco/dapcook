@@ -21,13 +21,18 @@ import { ShoppingPlanBox } from './ShoppingPlanBox'
 
 interface Props {
   slots: PlanSlot[]
+  /** Week start (YYYY-MM-DD) these meals belong to. */
+  week: string
+  /** This week's meals are already on the list — adding again asks first. */
+  alreadyAdded: boolean
 }
 
-export function GenerateShoppingPage({ slots }: Props) {
+export function GenerateShoppingPage({ slots, week, alreadyAdded: initialAlreadyAdded }: Props) {
   const router = useRouter()
   const posthog = usePostHog()
   const locale = useLocale()
   const t = useTranslations('shopping')
+  const tCommon = useTranslations('common')
 
   const [entries, setEntries] = useState<PlanEntry[]>(() =>
     buildPlanEntries(slots, (slot) => {
@@ -36,6 +41,8 @@ export function GenerateShoppingPage({ slots }: Props) {
     }),
   )
   const [isAdding, setIsAdding] = useState(false)
+  const [alreadyAdded, setAlreadyAdded] = useState(initialAlreadyAdded)
+  const [showAddAgainConfirm, setShowAddAgainConfirm] = useState(false)
   useTour(
     'shopping-generate',
     entries.some((e) => e.kind === 'recipe' && !e.removed && e.ingredients.length > 0) && !isAdding,
@@ -74,7 +81,16 @@ export function GenerateShoppingPage({ slots }: Props) {
     updateIngredients(key, (list) => list.filter((i) => i.id !== id))
   }
 
-  async function handleAdd() {
+  function handleAdd() {
+    if (alreadyAdded) {
+      setShowAddAgainConfirm(true)
+      return
+    }
+    void submit(false)
+  }
+
+  async function submit(force: boolean) {
+    setShowAddAgainConfirm(false)
     setIsAdding(true)
     setError(null)
 
@@ -82,8 +98,16 @@ export function GenerateShoppingPage({ slots }: Props) {
       const res = await fetch('/api/shopping/items/add-from-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, week, force }),
       })
+
+      // Added from another tab or device since this page loaded.
+      if (res.status === 409) {
+        setAlreadyAdded(true)
+        setShowAddAgainConfirm(true)
+        setIsAdding(false)
+        return
+      }
 
       if (!res.ok) {
         setError(t('generate.genericError'))
@@ -107,7 +131,9 @@ export function GenerateShoppingPage({ slots }: Props) {
         recipe_count: entries.filter((e) => e.kind === 'recipe' && !e.removed).length,
         removed_recipe_count: entries.filter((e) => e.kind === 'recipe' && e.removed).length,
       })
-      router.push('/shopping')
+      // Replace, not push: Back from the list must never land on this page again,
+      // where one stray tap would add the whole week a second time.
+      router.replace('/shopping')
     } catch {
       setError(t('generate.networkError'))
       setIsAdding(false)
@@ -172,6 +198,39 @@ export function GenerateShoppingPage({ slots }: Props) {
           </button>
         </div>
       </div>
+
+      {showAddAgainConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowAddAgainConfirm(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-again-title"
+            className="bg-white rounded-xl p-6 shadow-xl max-w-sm mx-4 w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p id="add-again-title" className="text-gray-900 font-medium mb-5">{t('generate.addAgainConfirm')}</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAddAgainConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                {tCommon('actions.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void submit(true)}
+                className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                {t('generate.addAgainConfirmLabel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

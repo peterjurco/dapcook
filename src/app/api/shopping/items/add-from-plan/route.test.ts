@@ -17,7 +17,10 @@ import { householdIdMock } from '@/test/householdMock'
 function makeSupabase({
   categories = [] as { name: string; color: string | null }[],
   listExists = true,
+  generatedWeeks = [] as string[],
 } = {}) {
+  const listUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const listUpdate = vi.fn().mockReturnValue({ eq: listUpdateEq })
   const itemsInsert = vi.fn().mockResolvedValue({ error: null })
   const categoriesInsert = vi.fn().mockResolvedValue({ error: null })
   const listsInsert = vi.fn().mockReturnValue({
@@ -42,8 +45,11 @@ function makeSupabase({
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue(listExists ? { data: { id: 'list-1' } } : { data: null }),
+      maybeSingle: vi.fn().mockResolvedValue(
+        listExists ? { data: { id: 'list-1', generated_weeks: generatedWeeks } } : { data: null },
+      ),
       insert: listsInsert,
+      update: listUpdate,
     },
     shopping_items: {
       select: vi.fn().mockReturnThis(),
@@ -59,7 +65,7 @@ function makeSupabase({
     from: vi.fn((table: keyof typeof fromMap) => fromMap[table]),
   }
   vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>)
-  return { itemsInsert, categoriesInsert, listsInsert, fromMap }
+  return { itemsInsert, categoriesInsert, listsInsert, listUpdate, listUpdateEq, fromMap }
 }
 
 function request(body: unknown) {
@@ -317,5 +323,71 @@ describe('POST /api/shopping/items/add-from-plan', () => {
     await POST(request({ ingredients: [], customItems: [{ name: 'rice', portions: 1 }] }))
 
     expect(fromMap.shopping_lists.eq).toHaveBeenCalledWith('household_id', 'hh-1')
+  })
+
+  describe('week already on the list', () => {
+    const body = (extra: Record<string, unknown> = {}) => ({
+      ingredients: [{ name: 'milk', quantity: 1, unit: 'l', recipe_id: 'r1' }],
+      customItems: [],
+      week: '2026-10-05',
+      ...extra,
+    })
+
+    beforeEach(() => {
+      vi.mocked(makeShoppingListSmart).mockResolvedValue({
+        items: [{ name: 'milk', quantity: 1, unit: 'l', category: 'Dairy', source_recipe_ids: ['r1'] }],
+        newCategories: [],
+      })
+    })
+
+    it('returns 409 before calling the AI when the week was already added', async () => {
+      const { itemsInsert } = makeSupabase({ generatedWeeks: ['2026-10-05'] })
+
+      const res = await POST(request(body()))
+
+      expect(res.status).toBe(409)
+      expect(makeShoppingListSmart).not.toHaveBeenCalled()
+      expect(itemsInsert).not.toHaveBeenCalled()
+    })
+
+    it('adds the week again when forced, without recording it twice', async () => {
+      const { itemsInsert, listUpdate } = makeSupabase({ generatedWeeks: ['2026-10-05'] })
+
+      const res = await POST(request(body({ force: true })))
+
+      expect(res.status).toBe(200)
+      expect(itemsInsert).toHaveBeenCalled()
+      expect(listUpdate).not.toHaveBeenCalled()
+    })
+
+    it('records the week after adding it', async () => {
+      const { listUpdate, listUpdateEq } = makeSupabase({ generatedWeeks: ['2026-09-28'] })
+
+      const res = await POST(request(body()))
+
+      expect(res.status).toBe(200)
+      expect(listUpdate).toHaveBeenCalledWith({ generated_weeks: ['2026-09-28', '2026-10-05'] })
+      expect(listUpdateEq).toHaveBeenCalledWith('id', 'list-1')
+    })
+
+    it('still succeeds when recording the week fails', async () => {
+      const { listUpdateEq } = makeSupabase()
+      listUpdateEq.mockResolvedValue({ error: { message: 'column does not exist' } })
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const res = await POST(request(body()))
+
+      expect(res.status).toBe(200)
+    })
+
+    it('ignores a malformed week', async () => {
+      const { itemsInsert, listUpdate } = makeSupabase({ generatedWeeks: ['2026-10-05'] })
+
+      const res = await POST(request(body({ week: 'next week' })))
+
+      expect(res.status).toBe(200)
+      expect(itemsInsert).toHaveBeenCalled()
+      expect(listUpdate).not.toHaveBeenCalled()
+    })
   })
 })

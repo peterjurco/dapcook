@@ -27,12 +27,20 @@ function hasName(entry: RawEntry): entry is RawEntry & { name: string } {
   return typeof entry.name === 'string' && entry.name.trim().length > 0
 }
 
+const WEEK_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
 /** Tolerates a malformed body: non-array fields become [], non-object entries are dropped. */
-function parseBody(raw: unknown): { ingredients: RawEntry[]; customItems: RawEntry[] } {
+function parseBody(raw: unknown): {
+  ingredients: RawEntry[]
+  customItems: RawEntry[]
+  week: string | null
+  force: boolean
+} {
   const body = isRawEntry(raw) ? raw : {}
   const ingredients = Array.isArray(body.ingredients) ? body.ingredients.filter(isRawEntry) : []
   const customItems = Array.isArray(body.customItems) ? body.customItems.filter(isRawEntry) : []
-  return { ingredients, customItems }
+  const week = typeof body.week === 'string' && WEEK_PATTERN.test(body.week) ? body.week : null
+  return { ingredients, customItems, week, force: body.force === true }
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { ingredients: rawIngredients, customItems: rawCustomItems } = parseBody(rawBody)
+  const { ingredients: rawIngredients, customItems: rawCustomItems, week, force } = parseBody(rawBody)
   const ingredients = rawIngredients.filter(hasName)
   const validCustom = rawCustomItems.filter(hasName)
 
@@ -72,6 +80,22 @@ export async function POST(request: NextRequest) {
 
   if (!ingredients.length && !customItems.length) {
     return NextResponse.json({ error: 'ingredients or customItems are required' }, { status: 400 })
+  }
+
+  // `*` rather than naming generated_weeks, so the lookup still works before
+  // the column's migration has reached this database.
+  const { data: list } = await supabase
+    .from('shopping_lists')
+    .select('*')
+    .eq('household_id', householdId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const generatedWeeks: string[] = Array.isArray(list?.generated_weeks) ? list.generated_weeks : []
+
+  // Checked before the AI call, so an accidental second add costs nothing.
+  if (week && generatedWeeks.includes(week) && !force) {
+    return NextResponse.json({ error: 'Week already added' }, { status: 409 })
   }
 
   const [{ data: categories }, { data: rulesRows }] = await Promise.all([
@@ -138,14 +162,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'AI returned no items' }, { status: 500 })
   }
 
-  const { data: list } = await supabase
-    .from('shopping_lists')
-    .select('id')
-    .eq('household_id', householdId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
   // Safety: create a list if somehow missing (e.g. old accounts)
   let listId = list?.id
   if (!listId) {
@@ -181,6 +197,15 @@ export async function POST(request: NextRequest) {
     }))
   )
   if (error) return NextResponse.json({ error: 'Failed to insert items' }, { status: 500 })
+
+  if (week && !generatedWeeks.includes(week)) {
+    const { error: weekError } = await supabase
+      .from('shopping_lists')
+      .update({ generated_weeks: [...generatedWeeks, week] })
+      .eq('id', listId)
+    // The items are in; losing only the reminder is not worth failing the request.
+    if (weekError) console.error('[shopping/add-from-plan] Failed to record week:', weekError)
+  }
 
   return NextResponse.json({ count: toAppend.length })
 }
