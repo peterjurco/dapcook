@@ -9,6 +9,10 @@ const nextConfig = {
       dynamic: 0,
     },
     instrumentationHook: true,
+    // Link-preview cards read Fraunces from disk, which file tracing can't see.
+    outputFileTracingIncludes: {
+      '/**/opengraph-image*': ['./src/lib/og/fonts/*.woff'],
+    },
   },
   images: {
     // Every recipe cover lives in our own bucket: new and edited recipes mirror

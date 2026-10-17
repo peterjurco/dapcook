@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildRecipeJsonLd } from '@/lib/recipes/recipe-json-ld'
 import { mockTranslate } from '@/test/mockMessages'
 import type { Recipe } from '@/types/database'
-import SharedRecipePage, { dynamic, metadata } from './page'
+import SharedRecipePage, { dynamic, generateMetadata } from './page'
 
 const recipe = {
   id: 'recipe-1',
@@ -113,7 +113,13 @@ describe('SharedRecipePage', () => {
     expect(mocks.notFound).toHaveBeenCalledOnce()
   })
 
-  it('exports noindex and nofollow metadata', () => {
+  it('titles the page after the shared recipe and keeps it out of search', async () => {
+    setQueryResult(recipe)
+
+    const metadata = await generateMetadata({ params: { token: 'public-token' } })
+
+    expect(metadata.title).toBe('Tomato < Pasta | dapcook')
+    expect(metadata.openGraph).toMatchObject({ title: 'Tomato < Pasta', description: 'Fast pasta' })
     expect(metadata.robots).toEqual({ index: false, follow: false })
   })
 
