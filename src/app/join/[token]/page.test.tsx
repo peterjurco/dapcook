@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import JoinPage from './page'
+import JoinPage, { generateMetadata } from './page'
 import { mockTranslate } from '@/test/mockMessages'
 
 vi.mock('next-intl/server', () => ({
@@ -37,6 +37,15 @@ describe('JoinPage', () => {
     expect(heading).toHaveClass('font-fraunces')
     expect(heading.querySelector('span')).toHaveClass('text-emerald-700')
     expect(screen.getByRole('button', { name: /sign in with google to accept/i })).toBeInTheDocument()
+  })
+
+  it('names the household in link previews', async () => {
+    rpcMock.mockResolvedValueOnce({ data: [{ name: 'The Jurcos', members: [] }] })
+
+    const metadata = await generateMetadata({ params: { token: 'token-1' } })
+
+    expect(metadata.title).toBe('Join The Jurcos on dapcook')
+    expect(metadata.openGraph).toMatchObject({ title: 'Join The Jurcos on dapcook' })
   })
 
   it('shows the expired error when the invite is invalid', async () => {

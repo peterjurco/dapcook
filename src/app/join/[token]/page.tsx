@@ -1,14 +1,18 @@
+import type { Metadata } from 'next'
 import { signInWithGoogleForJoin } from '@/lib/auth/actions'
-import { createClient } from '@/lib/supabase/server'
+import { getInviteDetails } from '@/lib/households/invite-details'
+import { inviteMetadata } from '@/lib/og/metadata'
 import { getTranslations } from 'next-intl/server'
+
+export async function generateMetadata({ params }: { params: { token: string } }): Promise<Metadata> {
+  return inviteMetadata(await getInviteDetails(params.token))
+}
 
 export default async function JoinPage({ params }: { params: { token: string } }) {
   const { token } = params
-  const supabase = createClient()
   const t = await getTranslations('auth')
 
-  const { data } = await supabase.rpc('get_household_invite_details', { token })
-  const household = data?.[0] ?? null
+  const household = await getInviteDetails(token)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

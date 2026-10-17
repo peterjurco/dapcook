@@ -54,9 +54,17 @@ describe('isPublicPath', () => {
     expect(mocks.createServerClient).not.toHaveBeenCalled()
   })
 
+  it.each(['/opengraph-image', '/join/invite-token/opengraph-image', '/s/public-token/opengraph-image'])(
+    'lets link-preview crawlers fetch %s without a session',
+    (pathname) => {
+      expect(canBypassAuth(pathname)).toBe(true)
+    }
+  )
+
   it('does not bypass Supabase Auth for login or authenticated routes', () => {
     expect(canBypassAuth('/login')).toBe(false)
     expect(canBypassAuth('/recipes')).toBe(false)
+    expect(canBypassAuth('/recipes/opengraph-image-ideas/edit')).toBe(false)
   })
 })
 

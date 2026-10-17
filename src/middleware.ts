@@ -22,7 +22,9 @@ export function canBypassAuth(pathname: string): boolean {
     pathname === '/robots.txt' ||
     pathname === '/manifest.webmanifest' ||
     pathname === '/s' ||
-    pathname.startsWith('/s/')
+    pathname.startsWith('/s/') ||
+    // Link-preview cards, fetched by chat-app crawlers without a session.
+    /(^|\/)(opengraph|twitter)-image(-\w+)?$/.test(pathname)
   )
 }
 

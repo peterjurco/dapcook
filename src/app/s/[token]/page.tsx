@@ -3,20 +3,21 @@ import { unstable_noStore as noStore } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { RecipeView } from '@/components/recipe/RecipeView'
+import { sharedRecipeMetadata } from '@/lib/og/metadata'
 import { buildRecipeJsonLd } from '@/lib/recipes/recipe-json-ld'
+import { getSharedRecipe } from '@/lib/recipes/shared-recipe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { buildTagMeta, type Taxonomy } from '@/lib/tags/taxonomy'
-import type { Recipe } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Shared recipe | dapcook',
-  robots: { index: false, follow: false },
-}
-
 interface Props {
   params: { token: string }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  noStore()
+  return sharedRecipeMetadata(await getSharedRecipe(params.token))
 }
 
 export default async function SharedRecipePage({ params }: Props) {
@@ -26,18 +27,10 @@ export default async function SharedRecipePage({ params }: Props) {
   // resolve — ambient resolution correctly falls back to English.
   const locale = await getLocale()
   const t = await getTranslations({ locale, namespace: 'recipes' })
+  const typedRecipe = await getSharedRecipe(params.token)
+  if (!typedRecipe) notFound()
+
   const supabase = createAdminClient()
-  const { data: recipe, error } = await supabase
-    .from('recipes')
-    .select('*')
-    .eq('share_token', params.token)
-    .eq('is_archived', false)
-    .maybeSingle()
-
-  if (error) throw new Error('Unable to load shared recipe')
-  if (!recipe) notFound()
-
-  const typedRecipe = recipe as Recipe
   const jsonLd = buildRecipeJsonLd(typedRecipe)
 
   const [{ data: tagsMeta }, { data: groups }] = await Promise.all([
