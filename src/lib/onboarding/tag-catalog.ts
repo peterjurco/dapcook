@@ -20,6 +20,7 @@ export const TAG_CATALOG: TagCatalogGroup[] = [
     tags: [
       { en: 'Breakfast', sk: 'Raňajky' },
       { en: 'Brunch', sk: 'Brunch' },
+      { en: 'Main dish', sk: 'Hlavné jedlo' },
       { en: 'Soup', sk: 'Polievka' },
       { en: 'Salad', sk: 'Šalát' },
       { en: 'Dessert', sk: 'Dezert' },
