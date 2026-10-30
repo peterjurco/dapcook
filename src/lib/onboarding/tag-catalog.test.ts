@@ -5,7 +5,7 @@ import { locales } from '@/i18n/config'
 
 describe('TAG_CATALOG', () => {
   it('offers the agreed groups in order', () => {
-    expect(TAG_CATALOG.map((g) => g.id)).toEqual(['course', 'cuisine', 'diet', 'ingredient'])
+    expect(TAG_CATALOG.map((g) => g.id)).toEqual(['course', 'cuisine', 'diet'])
   })
 
   it('offers the agreed diet tags', () => {
@@ -13,10 +13,7 @@ describe('TAG_CATALOG', () => {
       { en: 'Vegetarian', sk: 'Vegetariánske' },
       { en: 'Vegan', sk: 'Vegánske' },
       { en: 'Gluten-free', sk: 'Bezlepkové' },
-      { en: 'Dairy-free', sk: 'Bezmliečne' },
       { en: 'Lactose-free', sk: 'Bezlaktózové' },
-      { en: 'High-protein', sk: 'Proteín' },
-      { en: 'Keto', sk: 'Keto' },
     ])
   })
 
