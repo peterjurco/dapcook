@@ -30,10 +30,7 @@ export async function transformRecipe(
   // Short-circuit: nothing to do
   const needsTranslation = !!targetLanguage
   const needsUnitConversion = !!targetUnits
-  console.log('[transform-recipe] targetLanguage:', targetLanguage, '| needsTranslation:', needsTranslation)
-  console.log('[transform-recipe] targetUnits:', targetUnits, '| needsUnitConversion:', needsUnitConversion)
   if (!needsTranslation && !needsUnitConversion) {
-    console.log('[transform-recipe] short-circuiting — no transformation needed')
     return content
   }
 
@@ -59,8 +56,6 @@ ${JSON.stringify(content, null, 2)}
 
 Return ONLY valid JSON matching the exact same structure. No other text.`
 
-  console.log('[transform-recipe] prompt:', prompt)
-
   const response = await client.messages.create({
     model: 'claude-sonnet-4-5-20250929',
     max_tokens: 8192,
@@ -72,18 +67,17 @@ Return ONLY valid JSON matching the exact same structure. No other text.`
   }
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  console.log('[transform-recipe] AI response:', text)
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
-    console.error('[transform-recipe] No JSON in AI response, returning original')
+    console.error('[transform-recipe] No JSON in AI response, returning original. Excerpt:', text.slice(0, 200))
     return content
   }
 
   let parsed: RecipeContent
   try {
     parsed = JSON.parse(jsonMatch[0]) as RecipeContent
-  } catch {
-    console.error('[transform-recipe] Failed to parse AI JSON, returning original')
+  } catch (err) {
+    console.error('[transform-recipe] Failed to parse AI JSON, returning original:', err, 'Excerpt:', text.slice(0, 200))
     return content
   }
 
