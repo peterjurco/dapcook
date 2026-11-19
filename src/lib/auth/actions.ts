@@ -13,8 +13,8 @@ import { defaultLocale, isLocale } from '@/i18n/config'
 import { safeNextPath } from './safe-next-path'
 
 export async function signInWithGoogle(redirectTo?: string) {
-  const supabase = createClient()
-  const origin = getOrigin()
+  const supabase = await createClient()
+  const origin = await getOrigin()
 
   const next = safeNextPath(redirectTo, '')
   const callbackUrl = next
@@ -36,7 +36,7 @@ export async function signInWithGoogle(redirectTo?: string) {
 }
 
 export async function signInWithGoogleForJoin(token: string) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   cookieStore.set('pending_invite_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -45,8 +45,8 @@ export async function signInWithGoogleForJoin(token: string) {
     path: '/',
   })
 
-  const supabase = createClient()
-  const origin = getOrigin()
+  const supabase = await createClient()
+  const origin = await getOrigin()
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -63,13 +63,13 @@ export async function signInWithGoogleForJoin(token: string) {
 }
 
 export async function signOut() {
-  const supabase = createClient()
+  const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/login')
 }
 
 export async function createHousehold(name: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const user = await getCurrentUser()
 
@@ -133,7 +133,7 @@ export async function createHousehold(name: string) {
 }
 
 export async function joinHousehold(invite: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const user = await getCurrentUser()
 

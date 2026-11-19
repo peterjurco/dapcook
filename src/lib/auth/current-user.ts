@@ -23,7 +23,7 @@ export interface CurrentUser {
  * round trip to the auth server on every single call.
  */
 export const getCurrentUser = perRequest(async (): Promise<CurrentUser | null> => {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase.auth.getClaims()
 
   const claims = data?.claims
@@ -36,7 +36,7 @@ export const getCurrentProfile = perRequest(async (): Promise<Profile | null> =>
   const user = await getCurrentUser()
   if (!user) return null
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   return (data as Profile | null) ?? null
 })

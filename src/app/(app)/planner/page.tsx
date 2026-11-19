@@ -5,10 +5,11 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 interface PlannerPageProps {
-  searchParams: { week?: string }
+  searchParams: Promise<{ week?: string }>
 }
 
-export default async function PlannerPage({ searchParams }: PlannerPageProps) {
+export default async function PlannerPage(props: PlannerPageProps) {
+  const searchParams = await props.searchParams;
   const startDay = await getHouseholdWeekStartDay()
   const weekStart = searchParams.week
     ? parseWeekParam(searchParams.week, startDay)
@@ -33,7 +34,7 @@ async function getDefaultWeek(startDay: WeekStartDay): Promise<Date> {
   const householdId = await getCurrentHouseholdId()
   if (!householdId) return currentWeekStart
 
-  const { data: latest } = await createClient()
+  const { data: latest } = await (await createClient())
     .from('meal_slots')
     .select('date')
     .eq('household_id', householdId)

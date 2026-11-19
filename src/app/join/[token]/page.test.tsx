@@ -29,7 +29,7 @@ describe('JoinPage', () => {
       data: [{ name: 'The Jurcos', members: [] }],
     })
 
-    render(await JoinPage({ params: { token: 'token-1' } }))
+    render(await JoinPage({ params: Promise.resolve({ token: 'token-1' }) }))
 
     expect(screen.getByText('The Jurcos')).toBeInTheDocument()
     const heading = screen.getByRole('heading', { level: 1 })
@@ -42,7 +42,7 @@ describe('JoinPage', () => {
   it('names the household in link previews', async () => {
     rpcMock.mockResolvedValueOnce({ data: [{ name: 'The Jurcos', members: [] }] })
 
-    const metadata = await generateMetadata({ params: { token: 'token-1' } })
+    const metadata = await generateMetadata({ params: Promise.resolve({ token: 'token-1' }) })
 
     expect(metadata.title).toBe('Join The Jurcos on dapcook')
     expect(metadata.openGraph).toMatchObject({ title: 'Join The Jurcos on dapcook' })
@@ -51,7 +51,7 @@ describe('JoinPage', () => {
   it('shows the expired error when the invite is invalid', async () => {
     rpcMock.mockResolvedValueOnce({ data: null })
 
-    render(await JoinPage({ params: { token: 'bad-token' } }))
+    render(await JoinPage({ params: Promise.resolve({ token: 'bad-token' }) }))
 
     expect(screen.getByText(/invite link is invalid or has expired/i)).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()

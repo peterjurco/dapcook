@@ -8,11 +8,10 @@ const nextConfig = {
     staleTimes: {
       dynamic: 0,
     },
-    instrumentationHook: true,
-    // Link-preview cards read Fraunces from disk, which file tracing can't see.
-    outputFileTracingIncludes: {
-      '/**/opengraph-image*': ['./src/lib/og/fonts/*.woff'],
-    },
+  },
+  // Link-preview cards read Fraunces from disk, which file tracing can't see.
+  outputFileTracingIncludes: {
+    '/**/opengraph-image*': ['./src/lib/og/fonts/*.woff'],
   },
   images: {
     // Every recipe cover lives in our own bucket: new and edited recipes mirror
@@ -44,13 +43,6 @@ const nextConfig = {
         ],
       },
     ]
-  },
-  webpack(config) {
-    // posthog-node lazily imports this optional peer for its email feature,
-    // which we don't use. The import is guarded at runtime, but webpack still
-    // tries to resolve it and fails the build, so stub it out.
-    config.resolve.alias = { ...config.resolve.alias, '@react-email/render': false }
-    return config
   },
 }
 

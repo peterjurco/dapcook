@@ -53,7 +53,7 @@ function req(body?: unknown) {
   } as any)
 }
 
-const params = { params: { id: 'g1' } }
+const params = { params: Promise.resolve({ id: 'g1' }) }
 
 /**
  * The nth query builder handed out for `table`. Index by name rather than by
@@ -79,20 +79,20 @@ beforeEach(() => {
 
 describe('PATCH /api/tag-groups/[id]', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ user: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PATCH(req({ name: 'x' }), params)
     expect(res.status).toBe(401)
   })
 
   it('returns 400 when the body has no updatable field', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PATCH(req({}), params)
     expect(res.status).toBe(400)
   })
 
   it('updates the name, trimmed', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ name: '  Course  ' }), params)
     expect(res.status).toBe(200)
@@ -105,7 +105,7 @@ describe('PATCH /api/tag-groups/[id]', () => {
 
   it('updates name and position together', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     await PATCH(req({ name: 'Course', position: 2 }), params)
 
@@ -114,14 +114,14 @@ describe('PATCH /api/tag-groups/[id]', () => {
   })
 
   it('rejects an empty name', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PATCH(req({ name: '   ' }), params)
     expect(res.status).toBe(400)
   })
 
   it('treats position 0 as a provided value, not a missing one', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     await PATCH(req({ position: 0 }), params)
 
@@ -131,7 +131,7 @@ describe('PATCH /api/tag-groups/[id]', () => {
 
   it('returns 404 when the group does not exist or belongs to another household', async () => {
     const supabase = makeSupabase({ groupResult: { data: null, error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ name: 'x' }), params)
     expect(res.status).toBe(404)
@@ -141,7 +141,7 @@ describe('PATCH /api/tag-groups/[id]', () => {
 describe('DELETE /api/tag-groups/[id]', () => {
   it('returns 204 and deletes only from tag_groups', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await DELETE(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,7 +164,7 @@ describe('DELETE /api/tag-groups/[id]', () => {
   })
 
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ user: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await DELETE(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       new NextRequest('http://localhost/api/tag-groups/g1', { method: 'DELETE' } as any),

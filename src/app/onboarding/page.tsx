@@ -9,7 +9,8 @@ import { selectionFromSavedTags } from '@/lib/onboarding/tag-catalog'
 import { inviteUrl } from '@/lib/utils/invite'
 import { getOrigin } from '@/lib/auth/getOrigin'
 
-export default async function OnboardingPage({ searchParams }: { searchParams: { joined?: string; welcome?: string } }) {
+export default async function OnboardingPage(props: { searchParams: Promise<{ joined?: string; welcome?: string }> }) {
+  const searchParams = await props.searchParams;
   const profile = await getCurrentProfile()
   const locale = isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale
 
@@ -17,7 +18,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
     return <OnboardingWizard key="new" initialStep="language" locale={locale} />
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Set by auth/callback after an invite is accepted.
   if (searchParams.joined === '1') {
@@ -66,7 +67,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
         weekStartDay: household.week_start_day,
       }}
       categories={categories ?? []}
-      inviteUrl={inviteUrl(getOrigin(), household.invite_token)}
+      inviteUrl={inviteUrl((await getOrigin()), household.invite_token)}
       tags={selectionFromSavedTags(savedTags, locale)}
     />
   )

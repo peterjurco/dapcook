@@ -64,6 +64,6 @@ describe('forgetOnboardingStep', () => {
   it('invalidates that household’s cache entry', () => {
     forgetOnboardingStep('house-1')
 
-    expect(mocks.revalidateTag).toHaveBeenCalledWith(onboardingCacheTag('house-1'))
+    expect(mocks.revalidateTag).toHaveBeenCalledWith(onboardingCacheTag('house-1'), { expire: 0 })
   })
 })

@@ -50,14 +50,14 @@ beforeEach(() => {
 
 describe('PATCH /api/profile', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ user: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PATCH(req({ default_recipe_filter: ['main'] }))
     expect(res.status).toBe(401)
   })
 
   it('stores the default filter for the current user only', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ default_recipe_filter: ['main', 'italian'] }))
     expect(res.status).toBe(200)
@@ -69,7 +69,7 @@ describe('PATCH /api/profile', () => {
 
   it('accepts an empty array to clear the default', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ default_recipe_filter: [] }))
     expect(res.status).toBe(200)
@@ -79,20 +79,20 @@ describe('PATCH /api/profile', () => {
   })
 
   it('returns 400 when default_recipe_filter is not an array of strings', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PATCH(req({ default_recipe_filter: 'main' }))
     expect(res.status).toBe(400)
   })
 
   it('returns 400 when the body has no updatable field', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PATCH(req({}))
     expect(res.status).toBe(400)
   })
 
   it('stores a valid ui_language for the current user only', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ ui_language: 'sk' }))
     expect(res.status).toBe(200)
@@ -103,14 +103,14 @@ describe('PATCH /api/profile', () => {
   })
 
   it('returns 400 when ui_language is not a recognized locale', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PATCH(req({ ui_language: 'fr' }))
     expect(res.status).toBe(400)
   })
 
   it('updates both fields when both are provided', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ default_recipe_filter: ['main'], ui_language: 'en' }))
     expect(res.status).toBe(200)
@@ -121,7 +121,7 @@ describe('PATCH /api/profile', () => {
 
   it('marks a tour seen through the idempotent RPC without a profile update', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ tour_seen: 'plan-recipe' }))
     expect(res.status).toBe(200)
@@ -134,7 +134,7 @@ describe('PATCH /api/profile', () => {
     ['a non-string value', 123],
   ])('rejects %s before any write', async (_label, tourSeen) => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ ui_language: 'en', tour_seen: tourSeen }))
     expect(res.status).toBe(400)
@@ -144,7 +144,7 @@ describe('PATCH /api/profile', () => {
 
   it('applies the profile update and marks the tour seen for a mixed payload', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ ui_language: 'sk', tour_seen: 'plan-recipe' }))
     expect(res.status).toBe(200)
@@ -157,7 +157,7 @@ describe('PATCH /api/profile', () => {
   it('returns 500 when the RPC fails', async () => {
     const supabase = makeSupabase()
     supabase.rpc.mockResolvedValue({ error: { message: 'boom' } })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await PATCH(req({ tour_seen: 'shopping-list' }))
     expect(res.status).toBe(500)

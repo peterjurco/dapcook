@@ -43,5 +43,5 @@ export function needsOnboarding(status: OnboardingStatus, userId: string): boole
 }
 
 export function forgetOnboardingStep(householdId: string): void {
-  revalidateTag(onboardingCacheTag(householdId))
+  revalidateTag(onboardingCacheTag(householdId), { expire: 0 })
 }

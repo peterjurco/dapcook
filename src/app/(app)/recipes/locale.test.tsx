@@ -106,7 +106,7 @@ describe('recipe pages — interface language', () => {
     })
 
     it('renders the detail page in Slovak', async () => {
-      render(await RecipeDetailPage({ params: { id: 'recipe-1' } }))
+      render(await RecipeDetailPage({ params: Promise.resolve({ id: 'recipe-1' }) }))
 
       expect(screen.getByText('Suroviny')).toBeInTheDocument()
       expect(screen.getByText('Postup')).toBeInTheDocument()
@@ -117,7 +117,7 @@ describe('recipe pages — interface language', () => {
     })
 
     it('renders the edit page in Slovak', async () => {
-      render(await EditRecipePage({ params: { id: 'recipe-1' } }))
+      render(await EditRecipePage({ params: Promise.resolve({ id: 'recipe-1' }) }))
 
       expect(screen.getByText('Upraviť recept')).toBeInTheDocument()
       expect(screen.getByText('Späť na recept')).toBeInTheDocument()
@@ -137,7 +137,7 @@ describe('recipe pages — interface language', () => {
     })
 
     it('falls back to English', async () => {
-      render(await RecipeDetailPage({ params: { id: 'recipe-1' } }))
+      render(await RecipeDetailPage({ params: Promise.resolve({ id: 'recipe-1' }) }))
 
       expect(screen.getByText('Ingredients')).toBeInTheDocument()
       expect(screen.getByText('Edit')).toBeInTheDocument()

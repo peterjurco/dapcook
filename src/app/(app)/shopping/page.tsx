@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
 
 export default async function ShoppingPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 

@@ -51,7 +51,7 @@ function req(id: string, body: unknown) {
   })
 }
 
-const params = { params: { id: 'r-1' } }
+const params = { params: Promise.resolve({ id: 'r-1' }) }
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -60,25 +60,25 @@ beforeEach(() => {
 
 describe('POST /api/recipes/[id]/transform', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ user: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req('r-1', { targetLanguage: 'sk' }), params)
     expect(res.status).toBe(401)
   })
 
   it('returns 404 when recipe not found', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ recipe: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ recipe: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req('r-1', { targetLanguage: 'sk' }), params)
     expect(res.status).toBe(404)
   })
 
   it('returns 400 for invalid targetLanguage', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req('r-1', { targetLanguage: 'klingon' }), params)
     expect(res.status).toBe(400)
   })
 
   it('calls transformRecipe with recipe content and options', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     await POST(req('r-1', { targetLanguage: 'sk', targetUnits: 'metric' }), params)
 
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
@@ -95,7 +95,7 @@ describe('POST /api/recipes/[id]/transform', () => {
   })
 
   it('returns 200 with updated recipe on success', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const transformed: RecipeContent = {
       title: 'Cestoviny',
       description: 'Chutné',
@@ -130,7 +130,7 @@ describe('POST /api/recipes/[id]/transform', () => {
         throw new Error(`Unexpected table: ${table}`)
       }),
     }
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req('r-1', { targetLanguage: 'sk' }), params)
     expect(res.status).toBe(500)
   })

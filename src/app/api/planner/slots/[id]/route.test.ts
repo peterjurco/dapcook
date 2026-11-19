@@ -22,7 +22,7 @@ import { PUT } from './route'
 
 const put = (body: unknown) =>
   PUT(new NextRequest('http://localhost/api/planner/slots/s-1', { method: 'PUT', body: JSON.stringify(body) }), {
-    params: { id: 's-1' },
+    params: Promise.resolve({ id: 's-1' }),
   })
 
 beforeEach(() => {

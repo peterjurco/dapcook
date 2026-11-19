@@ -81,7 +81,7 @@ vi.mock('@/components/recipe/DeleteRecipeButton', () => ({
 
 describe('RecipeDetailPage', () => {
   it('shows add to plan instead of delete in read mode', async () => {
-    render(await RecipeDetailPage({ params: { id: 'recipe-1' } }))
+    render(await RecipeDetailPage({ params: Promise.resolve({ id: 'recipe-1' }) }))
 
     expect(screen.getByRole('button', { name: /add to plan/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()

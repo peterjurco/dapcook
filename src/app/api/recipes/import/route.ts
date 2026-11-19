@@ -24,7 +24,7 @@ function encode(data: ImportEvent): Uint8Array {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) {
     const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })
