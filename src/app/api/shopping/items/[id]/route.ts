@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { TablesUpdate } from '@/types/database'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
 
@@ -42,7 +43,7 @@ export async function PATCH(
     sort_order?: number
   }
 
-  const updates: Record<string, unknown> = {}
+  const updates: TablesUpdate<'shopping_items'> = {}
   if (body.is_checked !== undefined) updates.is_checked = body.is_checked
   if (body.name !== undefined) updates.name = body.name.trim()
   if (body.quantity !== undefined) updates.quantity = body.quantity

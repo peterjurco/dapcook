@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { TablesUpdate } from '@/types/database'
 import { VALID_LANGUAGE_CODES } from '@/lib/constants/languages'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
@@ -24,7 +25,7 @@ export async function PATCH(request: NextRequest) {
     week_start_day?: unknown
   }
 
-  const updates: Record<string, unknown> = {}
+  const updates: TablesUpdate<'households'> = {}
   if (body.preferred_units !== undefined) {
     if (!['metric', 'imperial'].includes(body.preferred_units)) {
       return NextResponse.json({ error: 'Invalid preferred_units' }, { status: 400 })

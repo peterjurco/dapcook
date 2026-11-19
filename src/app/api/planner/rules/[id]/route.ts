@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { Json, TablesUpdate } from '@/types/database'
 import { getCurrentUser } from '@/lib/auth/current-user'
 
 export async function PUT(
@@ -13,11 +14,11 @@ export async function PUT(
   const body = await request.json() as {
     rule_type?: string
     label?: string
-    config?: Record<string, unknown>
+    config?: Json
     is_active?: boolean
   }
 
-  const update: Record<string, unknown> = {}
+  const update: TablesUpdate<'planner_rules'> = {}
   if (body.rule_type !== undefined) update.rule_type = body.rule_type
   if (body.label !== undefined) update.label = body.label.trim()
   if (body.config !== undefined) update.config = body.config

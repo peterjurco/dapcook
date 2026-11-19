@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { TablesUpdate } from '@/types/database'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
 
@@ -15,7 +16,7 @@ export async function PATCH(
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
   const body = await request.json() as { name?: string; color?: string | null; sort_order?: number }
-  const updates: Record<string, unknown> = {}
+  const updates: TablesUpdate<'shopping_categories'> = {}
   if (body.name !== undefined) updates.name = body.name.trim()
   if (body.color !== undefined) updates.color = body.color
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order

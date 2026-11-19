@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { TablesUpdate } from '@/types/database'
 import { parseDateString, spanFitsWeek } from '@/lib/utils/week'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getHouseholdWeekStartDay } from '@/lib/auth/household'
@@ -19,7 +20,7 @@ export async function PUT(
     span_days?: number
   }
 
-  const update: Record<string, unknown> = {}
+  const update: TablesUpdate<'meal_slots'> = {}
   if (body.date !== undefined) {
     if (!parseDateString(body.date)) return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
     update.date = body.date

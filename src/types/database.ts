@@ -531,6 +531,9 @@ export interface Database {
 export type Tables<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T]['Row']
 
+export type TablesUpdate<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Update']
+
 export type Household = Tables<'households'>
 export type Profile = Tables<'profiles'>
 export type TagGroup = Tables<'tag_groups'>
