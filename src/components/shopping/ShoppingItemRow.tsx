@@ -9,7 +9,8 @@ import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 interface Props {
   item: ShoppingItem
   recipeNames: Record<string, string>
-  onCheck: (id: string, checked: boolean) => void
+  /** May resolve to false when the change wasn't saved; the row then shows the item unchecked again. */
+  onCheck: (id: string, checked: boolean) => void | Promise<boolean>
   /** May return a Promise — ShoppingItemRow awaits it for new (pending) items. */
   onUpdate: (id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) => void | Promise<void>
   onDelete: (id: string) => void
@@ -59,7 +60,11 @@ export function ShoppingItemRow({
       setEditing(false)
       setExitState('crossed')
       setTimeout(() => setExitState('collapsing'), 350)
-      setTimeout(() => onCheck(item.id, true), 600)
+      setTimeout(async () => {
+        // When the save fails fast, React batches the check and its undo into one
+        // render, so this row is never unmounted and must reset itself.
+        if ((await onCheck(item.id, true)) === false) setExitState('idle')
+      }, 600)
     } else {
       setExitState('idle')
       onCheck(item.id, false)

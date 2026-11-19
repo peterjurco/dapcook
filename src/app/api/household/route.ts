@@ -9,7 +9,7 @@ import { forgetOnboardingStep } from '@/lib/onboarding/status'
 import { isWeekStartDay } from '@/lib/utils/week'
 
 export async function PATCH(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

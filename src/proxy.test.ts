@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
-import { canBypassAuth, isPublicPath, middleware } from './middleware'
+import { canBypassAuth, isPublicPath, proxy } from './proxy'
 
 const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
@@ -48,7 +48,7 @@ describe('isPublicPath', () => {
   it.each(['/s', '/s/public-token', '/robots.txt', '/manifest.webmanifest'])('does not initialize Supabase Auth for %s', async (pathname) => {
     mocks.createServerClient.mockClear()
 
-    const response = await middleware(new NextRequest(`https://dapcook.test${pathname}`))
+    const response = await proxy(new NextRequest(`https://dapcook.test${pathname}`))
 
     expect(response.status).toBe(200)
     expect(mocks.createServerClient).not.toHaveBeenCalled()
@@ -68,7 +68,7 @@ describe('isPublicPath', () => {
   })
 })
 
-describe('middleware session handling', () => {
+describe('proxy session handling', () => {
   beforeEach(() => {
     mocks.createServerClient.mockReset()
     mocks.getClaims.mockReset()
@@ -78,7 +78,7 @@ describe('middleware session handling', () => {
   it('verifies the session locally instead of asking the auth server', async () => {
     session({ sub: 'user-1' })
 
-    await middleware(request('/recipes'))
+    await proxy(request('/recipes'))
 
     expect(mocks.getClaims).toHaveBeenCalledTimes(1)
     expect(mocks.getUser).not.toHaveBeenCalled()
@@ -87,7 +87,7 @@ describe('middleware session handling', () => {
   it('lets a signed-in visitor through to a protected route', async () => {
     session({ sub: 'user-1' })
 
-    const response = await middleware(request('/recipes'))
+    const response = await proxy(request('/recipes'))
 
     expect(response.status).toBe(200)
   })
@@ -95,7 +95,7 @@ describe('middleware session handling', () => {
   it('sends an unauthenticated visitor to login, remembering where they were going', async () => {
     session(null)
 
-    const response = await middleware(request('/planner'))
+    const response = await proxy(request('/planner'))
 
     expect(response.status).toBe(307)
     expect(response.headers.get('location')).toBe('https://dapcook.test/login?next=%2Fplanner')
@@ -104,7 +104,7 @@ describe('middleware session handling', () => {
   it('sends a signed-in visitor from the root to their recipes', async () => {
     session({ sub: 'user-1' })
 
-    const response = await middleware(request('/'))
+    const response = await proxy(request('/'))
 
     expect(response.headers.get('location')).toBe('https://dapcook.test/recipes')
   })
@@ -112,7 +112,7 @@ describe('middleware session handling', () => {
   it('sends an unauthenticated visitor from the root to login', async () => {
     session(null)
 
-    const response = await middleware(request('/'))
+    const response = await proxy(request('/'))
 
     expect(response.headers.get('location')).toBe('https://dapcook.test/login')
   })
@@ -120,7 +120,7 @@ describe('middleware session handling', () => {
   it('sends a signed-in visitor away from the login page', async () => {
     session({ sub: 'user-1' })
 
-    const response = await middleware(request('/login'))
+    const response = await proxy(request('/login'))
 
     expect(response.headers.get('location')).toBe('https://dapcook.test/recipes')
   })
@@ -131,7 +131,7 @@ describe('middleware session handling', () => {
     })
     mocks.getClaims.mockResolvedValue({ data: null, error: new Error('Invalid JWT signature') })
 
-    const response = await middleware(request('/recipes'))
+    const response = await proxy(request('/recipes'))
 
     expect(response.status).toBe(307)
     expect(response.headers.get('location')).toBe('https://dapcook.test/login?next=%2Frecipes')

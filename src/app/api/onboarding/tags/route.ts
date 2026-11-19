@@ -45,7 +45,7 @@ function parseGroups(value: unknown): TagGroupPayload[] | null {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
 /** Deletes the named groups that no longer hold any tag; returns an error message on failure. */
 async function deleteEmptyGroups(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   householdId: string,
   names: string[]
 ): Promise<string | null> {

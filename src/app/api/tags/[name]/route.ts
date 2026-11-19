@@ -3,11 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId } from '@/lib/auth/household'
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { name: string } }
-) {
-  const supabase = createClient()
+export async function PATCH(request: NextRequest, props: { params: Promise<{ name: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -51,11 +49,9 @@ export async function PATCH(
   return NextResponse.json({ ok: true })
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { name: string } }
-) {
-  const supabase = createClient()
+export async function DELETE(_request: NextRequest, props: { params: Promise<{ name: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

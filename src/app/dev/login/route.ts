@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: linkError?.message ?? 'No token' }, { status: 500 })
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: session, error: verifyError } = await supabase.auth.verifyOtp({
     type: 'magiclink',
     token_hash: tokenHash,

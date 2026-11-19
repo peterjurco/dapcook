@@ -25,7 +25,13 @@ updates:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
     groups:
-      # One PR a week for all non-breaking bumps, split by risk.
+      # Packages that must stay on matching versions. Listed first: a package
+      # goes to the first group it matches.
+      nextjs:
+        patterns: ['next', 'eslint-config-next', '@next/*']
+      react:
+        patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
+      # One PR a week for all other non-breaking bumps, split by risk.
       production-minor-patch:
         dependency-type: production
         update-types: [minor, patch]
@@ -40,23 +46,8 @@ updates:
         patterns: ['vitest', '@vitest/*', '@vitejs/*', 'jsdom', '@testing-library/*']
         update-types: [major]
     ignore:
-      # The Next 14 → 16 / React 18 → 19 / ESLint 9 migration is one planned
-      # piece of work (staging first), not something to land as separate
-      # Dependabot PRs that each fail on their own. Remove these entries once
-      # that migration has landed.
-      - dependency-name: next
-        update-types: [version-update:semver-major]
-      - dependency-name: eslint-config-next
-        update-types: [version-update:semver-major]
+      # ESLint 10: wait until eslint-config-next supports it.
       - dependency-name: eslint
-        update-types: [version-update:semver-major]
-      - dependency-name: react
-        update-types: [version-update:semver-major]
-      - dependency-name: react-dom
-        update-types: [version-update:semver-major]
-      - dependency-name: '@types/react'
-        update-types: [version-update:semver-major]
-      - dependency-name: '@types/react-dom'
         update-types: [version-update:semver-major]
       # Tailwind 4 is a rewrite of the config format; also a planned migration.
       - dependency-name: tailwindcss

@@ -136,7 +136,9 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     return () => { supabase.removeChannel(channel) }
   }, [list])
 
-  async function handleCheck(id: string, checked: boolean) {
+  // Resolves to whether the server saved the change, so the row can undo its
+  // check-off animation when it didn't.
+  async function handleCheck(id: string, checked: boolean): Promise<boolean> {
     if (checked) trackMilestone(posthog, 'shopping_item_checked')
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: checked } : item))
     let saved = false
@@ -152,11 +154,12 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
     }
     if (saved) {
       setCheckFailed(false)
-      return
+      return true
     }
     // Undo, so the screen never shows an item as done that the server still lists.
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, is_checked: !checked } : item))
     setCheckFailed(true)
+    return false
   }
 
   async function handleUpdate(id: string, changes: Partial<Pick<ShoppingItem, 'name' | 'quantity' | 'unit' | 'category'>>) {

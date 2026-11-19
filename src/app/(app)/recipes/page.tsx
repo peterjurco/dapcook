@@ -5,7 +5,7 @@ import { RECIPE_LIST_COLUMNS, type RecipeListItem } from '@/lib/recipes/list-col
 import { getCurrentUser } from '@/lib/auth/current-user'
 
 export default async function RecipesPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
 
   const [{ data: recipes }, { data: tagsMeta }, { data: groups }, { data: profile }] = await Promise.all([

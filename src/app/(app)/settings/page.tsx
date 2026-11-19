@@ -20,7 +20,7 @@ import { inviteUrl } from '@/lib/utils/invite'
 import { getOrigin } from '@/lib/auth/getOrigin'
 
 export default async function SettingsPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const t = await getTranslations('settings')
 
   const user = await getCurrentUser()
@@ -130,7 +130,7 @@ export default async function SettingsPage() {
             <p className="text-xs text-gray-400 mb-2">
               {t('page.inviteLinkHelp')}
             </p>
-            <InviteLink url={inviteUrl(getOrigin(), household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
+            <InviteLink url={inviteUrl((await getOrigin()), household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
           </div>
         </div>
       </section>

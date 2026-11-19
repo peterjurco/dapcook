@@ -63,15 +63,15 @@ beforeEach(() => {
 
 describe('GET /api/recipes', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ user: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await GET(req('/api/recipes'))
     expect(res.status).toBe(401)
   })
 
   it('returns recipes list for authenticated user', async () => {
     const recipes = [{ id: 'r1', title: 'Pasta' }]
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ recipesResult: { data: recipes, error: null } }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase({ recipesResult: { data: recipes, error: null } }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await GET(req('/api/recipes'))
     expect(res.status).toBe(200)
@@ -80,7 +80,7 @@ describe('GET /api/recipes', () => {
 
   it('applies search filter on the normalized title', async () => {
     const supabase = makeSupabase({ recipesResult: { data: [], error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
     await GET(req('/api/recipes?search=pasta'))
     const qb = supabase.from.mock.results[0].value
     expect(qb.ilike).toHaveBeenCalledWith('title_normalized', '%pasta%')
@@ -88,7 +88,7 @@ describe('GET /api/recipes', () => {
 
   it('strips diacritics and lowercases the search term', async () => {
     const supabase = makeSupabase({ recipesResult: { data: [], error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
     await GET(req(`/api/recipes?search=${encodeURIComponent('Café')}`))
     const qb = supabase.from.mock.results[0].value
     expect(qb.ilike).toHaveBeenCalledWith('title_normalized', '%cafe%')
@@ -96,15 +96,15 @@ describe('GET /api/recipes', () => {
 
   it('applies tag filter', async () => {
     const supabase = makeSupabase({ recipesResult: { data: [], error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
     await GET(req('/api/recipes?tag=vegan'))
     const qb = supabase.from.mock.results[0].value
     expect(qb.contains).toHaveBeenCalledWith('tags', ['vegan'])
   })
 
   it('returns 500 when DB query fails', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ recipesResult: { data: null, error: { message: 'db error' } } }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase({ recipesResult: { data: null, error: { message: 'db error' } } }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await GET(req('/api/recipes'))
     expect(res.status).toBe(500)
@@ -113,14 +113,14 @@ describe('GET /api/recipes', () => {
 
 describe('POST /api/recipes', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ user: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req('/api/recipes', { method: 'POST', body: JSON.stringify({ title: 'Test' }) }))
     expect(res.status).toBe(401)
   })
 
   it('returns 403 when user has no household', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ profileResult: { data: { household_id: null }, error: null } }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase({ profileResult: { data: { household_id: null }, error: null } }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await POST(req('/api/recipes', {
       method: 'POST',
@@ -130,7 +130,7 @@ describe('POST /api/recipes', () => {
   })
 
   it('returns 400 when title is missing', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req('/api/recipes', {
       method: 'POST',
       body: JSON.stringify({ description: 'no title here' }),
@@ -149,7 +149,7 @@ describe('POST /api/recipes', () => {
       if (table === 'recipes') return makeQB({ data: created, error: null })
       throw new Error(`Unexpected: ${table}`)
     })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await POST(req('/api/recipes', {
       method: 'POST',
@@ -168,7 +168,7 @@ describe('POST /api/recipes', () => {
         throw new Error(`Unexpected: ${table}`)
       }),
     }
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     await POST(req('/api/recipes', {
       method: 'POST',
@@ -214,7 +214,7 @@ describe('POST /api/recipes cover images', () => {
 
   it('saves the mirrored cover instead of the third-party URL', async () => {
     const supabase = makeSupabase({ insertResult: { data: { id: 'r-1' }, error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as never)
+    vi.mocked(createClient).mockResolvedValue(supabase as never)
     storeCoverImage.mockResolvedValue('https://project.supabase.co/storage/v1/object/public/recipe-images/abc.jpg')
 
     await POST(post({ image_url: 'https://static01.nyt.com/cover.jpg' }))
@@ -226,7 +226,7 @@ describe('POST /api/recipes cover images', () => {
   })
 
   it('does not try to mirror a recipe saved without a cover', async () => {
-    vi.mocked(createClient).mockReturnValue(
+    vi.mocked(createClient).mockResolvedValue(
       makeSupabase({ insertResult: { data: { id: 'r-1' }, error: null } }) as never
     )
 
@@ -243,7 +243,7 @@ describe('GET /api/recipes payload', () => {
 
   it('asks only for the columns a list renders, not the whole row', async () => {
     const supabase = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(supabase as never)
+    vi.mocked(createClient).mockResolvedValue(supabase as never)
 
     await GET(req('/api/recipes'))
 

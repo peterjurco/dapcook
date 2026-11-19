@@ -6,11 +6,9 @@ import type { Json } from '@/types/database'
 import { VALID_LANGUAGE_CODES } from '@/lib/constants/languages'
 import { getCurrentUser } from '@/lib/auth/current-user'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const supabase = createClient()
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

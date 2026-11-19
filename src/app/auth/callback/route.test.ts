@@ -38,7 +38,7 @@ function makeSupabase(householdId: string | null, inviteRows: unknown[] = []) {
 }
 
 function useSupabase(supabase: ReturnType<typeof makeSupabase>) {
-  vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+  vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 }
 
 function callback({ next, cookie }: { next?: string; cookie?: string } = {}) {
