@@ -23,6 +23,16 @@ Two modes, decided by the size of the change:
 
 After finishing any implementation, push so the deployment picks it up.
 
+## Dependencies
+
+- `package-lock.json` is committed and must stay in sync with `package.json` — CI runs `npm ci`, which fails otherwise.
+  Change dependencies with `npm install <pkg>` / `npm uninstall <pkg>`, never by hand-editing `package.json` alone.
+- **Dependabot** (`.github/dependabot.yml`) opens grouped minor/patch PRs every Monday against `main`. Merge them
+  when CI (`.github/workflows/ci.yml`) and the Vercel preview are green.
+- **Major upgrades** are big features: branch, test on staging, then merge the branch into `main`. The Next/React/ESLint/
+  Tailwind majors are ignored in `dependabot.yml` until that migration lands — remove the ignores afterwards.
+- Run `npm audit` before releases. A fix that needs a major bump follows the rule above, not `npm audit fix --force`.
+
 ## Database migrations
 
 Add SQL to `supabase/migrations`. Staging applies pending migrations by itself

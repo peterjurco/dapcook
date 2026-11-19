@@ -1,0 +1,77 @@
+# Dependabot version updates. Security updates are switched on separately in
+# GitHub: Settings → Code security → Dependabot alerts + Dependabot security updates.
+#
+# PRs target main (the default branch). Each one gets a Vercel preview and a CI
+# run (.github/workflows/ci.yml); merge when both are green. Once merged, the
+# change reaches staging on its own via sync-staging.yml.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Bratislava
+    # Don't take a release in its first days: most malicious or broken
+    # publishes are caught and pulled within that window.
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+    open-pull-requests-limit: 10
+    labels: [dependencies]
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      # One PR a week for all non-breaking bumps, split by risk.
+      production-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+      development-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+      # Packages that must move together when they do take a major.
+      supabase:
+        patterns: ['@supabase/*']
+        update-types: [major]
+      testing:
+        patterns: ['vitest', '@vitest/*', '@vitejs/*', 'jsdom', '@testing-library/*']
+        update-types: [major]
+    ignore:
+      # The Next 14 → 16 / React 18 → 19 / ESLint 9 migration is one planned
+      # piece of work (staging first), not something to land as separate
+      # Dependabot PRs that each fail on their own. Remove these entries once
+      # that migration has landed.
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint-config-next
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+      - dependency-name: '@types/react'
+        update-types: [version-update:semver-major]
+      - dependency-name: '@types/react-dom'
+        update-types: [version-update:semver-major]
+      # Tailwind 4 is a rewrite of the config format; also a planned migration.
+      - dependency-name: tailwindcss
+        update-types: [version-update:semver-major]
+      # Track the Node major the app runs on, not the newest one.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies]
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']
