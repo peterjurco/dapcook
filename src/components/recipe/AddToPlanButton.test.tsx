@@ -27,6 +27,9 @@ vi.mock('posthog-js/react', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // The picker remembers the last week it planned into (addToPlan:lastWeek) and
+  // reopens there; don't let one test's placement steer the next test's default.
+  localStorage.clear()
   global.fetch = vi.fn().mockResolvedValue({ ok: true } as Response)
 })
 
