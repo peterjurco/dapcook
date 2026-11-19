@@ -18,17 +18,14 @@ export function isPublicPath(pathname: string): boolean {
 }
 
 export function canBypassAuth(pathname: string): boolean {
-  return (
-    pathname === '/robots.txt' ||
-    pathname === '/manifest.webmanifest' ||
-    pathname === '/s' ||
-    pathname.startsWith('/s/') ||
-    // Link-preview cards, fetched by chat-app crawlers without a session.
-    /(^|\/)(opengraph|twitter)-image(-\w+)?$/.test(pathname)
-  )
+  return (pathname === '/robots.txt' ||
+  pathname === '/manifest.webmanifest' ||
+  pathname === '/s' ||
+  pathname.startsWith('/s/') || // Link-preview cards, fetched by chat-app crawlers without a session.
+  /(^|\/)(opengraph|twitter)-image(-\w+)?$/.test(pathname));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   if (canBypassAuth(pathname)) return NextResponse.next({ request })
 

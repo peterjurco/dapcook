@@ -80,7 +80,7 @@ describe('SharedRecipePage', () => {
   it('queries an exact token and requires is_archived=false', async () => {
     setQueryResult(recipe)
 
-    await SharedRecipePage({ params: { token: 'public-token' } })
+    await SharedRecipePage({ params: Promise.resolve({ token: 'public-token' }) })
 
     expect(mocks.from).toHaveBeenCalledWith('recipes')
     expect(mocks.select).toHaveBeenCalledWith('*')
@@ -92,7 +92,7 @@ describe('SharedRecipePage', () => {
   it('renders RecipeView and Recipe JSON-LD for an active token', async () => {
     setQueryResult(recipe)
 
-    const { container } = render(await SharedRecipePage({ params: { token: 'public-token' } }))
+    const { container } = render(await SharedRecipePage({ params: Promise.resolve({ token: 'public-token' }) }))
 
     expect(container.querySelector('main')).toHaveClass('min-h-dvh', 'bg-gray-50', 'text-gray-900')
     expect(screen.getByTestId('recipe-view')).toHaveAttribute('data-recipe-id', recipe.id)
@@ -108,7 +108,7 @@ describe('SharedRecipePage', () => {
   it('calls notFound for an unknown token', async () => {
     setQueryResult(null)
 
-    await expect(SharedRecipePage({ params: { token: 'missing-token' } })).rejects.toThrow('not found')
+    await expect(SharedRecipePage({ params: Promise.resolve({ token: 'missing-token' }) })).rejects.toThrow('not found')
 
     expect(mocks.notFound).toHaveBeenCalledOnce()
   })
@@ -116,7 +116,7 @@ describe('SharedRecipePage', () => {
   it('titles the page after the shared recipe and keeps it out of search', async () => {
     setQueryResult(recipe)
 
-    const metadata = await generateMetadata({ params: { token: 'public-token' } })
+    const metadata = await generateMetadata({ params: Promise.resolve({ token: 'public-token' }) })
 
     expect(metadata.title).toBe('Tomato < Pasta | dapcook')
     expect(metadata.openGraph).toMatchObject({ title: 'Tomato < Pasta', description: 'Fast pasta' })
@@ -126,7 +126,7 @@ describe('SharedRecipePage', () => {
   it('forces dynamic rendering and disables the server cache', async () => {
     setQueryResult(recipe)
 
-    await SharedRecipePage({ params: { token: 'public-token' } })
+    await SharedRecipePage({ params: Promise.resolve({ token: 'public-token' }) })
 
     expect(dynamic).toBe('force-dynamic')
     expect(mocks.noStore).toHaveBeenCalledOnce()

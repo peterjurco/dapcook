@@ -63,7 +63,7 @@ Return ONLY valid JSON matching the exact same structure. No other text.`
   })
 
   if (householdId) {
-    void logAiUsage(createClient(), householdId, 'recipe_transform', response.usage)
+    void logAiUsage(await createClient(), householdId, 'recipe_transform', response.usage)
   }
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''

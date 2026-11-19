@@ -34,18 +34,18 @@ beforeEach(() => vi.clearAllMocks())
 
 describe('GET /api/recipes/ingredient-search', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null).client as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null).client as unknown as Awaited<ReturnType<typeof createClient>>)
     expect((await get('garlic')).status).toBe(401)
   })
 
   it('returns 400 for a term shorter than two characters', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ id: 'u1' }).client as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ id: 'u1' }).client as unknown as Awaited<ReturnType<typeof createClient>>)
     expect((await get(' c ')).status).toBe(400)
   })
 
   it('matches ingredient names ignoring case and diacritics, and only non-archived recipes', async () => {
     const { client, qb } = makeSupabase({ id: 'u1' })
-    vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(client as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await get('CESNAK')
     expect(res.status).toBe(200)
@@ -56,12 +56,12 @@ describe('GET /api/recipes/ingredient-search', () => {
   })
 
   it('matches the name only, not the unit or notes', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ id: 'u1' }).client as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ id: 'u1' }).client as unknown as Awaited<ReturnType<typeof createClient>>)
     expect(await (await get('garlic')).json()).toEqual({ ids: [] })
   })
 
   it('matches a diacritics-free query against an accented ingredient name', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ id: 'u1' }).client as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ id: 'u1' }).client as unknown as Awaited<ReturnType<typeof createClient>>)
     expect(await (await get('česnak')).json()).toEqual({ ids: ['r1'] })
   })
 
@@ -71,8 +71,8 @@ describe('GET /api/recipes/ingredient-search', () => {
       { id: 'bad2', ingredients: [null, { name: 42 }] },
       { id: 'good', ingredients: [{ id: 'i1', quantity: 1, unit: 'ks', name: 'Garlic', notes: '' }] },
     ]
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ id: 'u1' }, { data: malformedRows, error: null }).client as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase({ id: 'u1' }, { data: malformedRows, error: null }).client as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await get('garlic')
     expect(res.status).toBe(200)
@@ -80,8 +80,8 @@ describe('GET /api/recipes/ingredient-search', () => {
   })
 
   it('returns 500 when the query fails', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase({ id: 'u1' }, { data: null, error: { message: 'boom' } }).client as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase({ id: 'u1' }, { data: null, error: { message: 'boom' } }).client as unknown as Awaited<ReturnType<typeof createClient>>
     )
     expect((await get('garlic')).status).toBe(500)
   })

@@ -84,7 +84,7 @@ ${JSON.stringify(inputItems, null, 2)}`
     messages: [{ role: 'user', content: prompt }],
   })
 
-  void logAiUsage(createClient(), householdId, 'shopping_smart', response.usage)
+  void logAiUsage(await createClient(), householdId, 'shopping_smart', response.usage)
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)

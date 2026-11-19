@@ -1,6 +1,6 @@
 import type { createClient } from '@/lib/supabase/server'
 
-type Supabase = ReturnType<typeof createClient>
+type Supabase = Awaited<ReturnType<typeof createClient>>
 
 /**
  * Every tag name the household uses — on non-archived recipes or in the

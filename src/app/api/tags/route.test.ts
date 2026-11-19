@@ -53,7 +53,7 @@ describe('GET /api/tags', () => {
       recipesResult: { data: [{ tags: ['main', 'quick'] }, { tags: ['main'] }], error: null },
       tagsResult: { data: [{ name: 'main', color: '#ef4444', group_id: 'g-course' }], error: null },
     })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await GET()
     expect(res.status).toBe(200)
@@ -68,7 +68,7 @@ describe('GET /api/tags', () => {
       recipesResult: { data: [], error: null },
       tagsResult: { data: [{ name: 'orphan', color: null, group_id: 'g-course' }], error: null },
     })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await GET()
     expect(await res.json()).toEqual([

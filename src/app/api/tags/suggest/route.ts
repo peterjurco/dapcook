@@ -10,7 +10,7 @@ const MAX_INGREDIENT_NAMES = 40
 const MAX_INGREDIENT_NAME_CHARS = 100
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

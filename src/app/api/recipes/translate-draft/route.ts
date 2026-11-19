@@ -9,7 +9,7 @@ import type { RecipeContent } from '@/lib/ai/transform-recipe'
 import { getCurrentUser } from '@/lib/auth/current-user'
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) {
     const t = await getTranslations({ locale: defaultLocale, namespace: 'errors' })

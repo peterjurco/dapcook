@@ -100,7 +100,7 @@ Rules:
   })
 
   if (householdId) {
-    void logAiUsage(createClient(), householdId, 'recipe_parse', response.usage)
+    void logAiUsage(await createClient(), householdId, 'recipe_parse', response.usage)
   }
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''

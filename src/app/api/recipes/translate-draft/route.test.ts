@@ -48,19 +48,19 @@ function req(body: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+  vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
 })
 
 describe('POST /api/recipes/translate-draft', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req({ content: {} }))
     expect(res.status).toBe(401)
   })
 
   it('returns 403 when user has no household', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, { household_id: null }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, { household_id: null }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await POST(req({ content: {} }))
     expect(res.status).toBe(403)

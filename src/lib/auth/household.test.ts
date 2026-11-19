@@ -81,7 +81,7 @@ describe('forgetHouseholdId', () => {
   it('drops just that user’s entry when their household changes', () => {
     forgetHouseholdId('user-1')
 
-    expect(mocks.revalidateTag).toHaveBeenCalledWith(householdCacheTag('user-1'))
+    expect(mocks.revalidateTag).toHaveBeenCalledWith(householdCacheTag('user-1'), { expire: 0 })
     expect(householdCacheTag('user-1')).not.toBe(householdCacheTag('user-2'))
   })
 })

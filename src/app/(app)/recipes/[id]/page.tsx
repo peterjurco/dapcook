@@ -11,13 +11,14 @@ import { buildTagMeta, type Taxonomy } from '@/lib/tags/taxonomy'
 import type { Recipe } from '@/types/database'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export default async function RecipeDetailPage({ params }: Props) {
+export default async function RecipeDetailPage(props: Props) {
+  const params = await props.params;
   const locale = await getLocale()
   const t = await getTranslations({ locale, namespace: 'recipes' })
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const [{ data: recipe, error }, { data: tagsMeta }, { data: groups }] = await Promise.all([
     supabase.from('recipes').select('*').eq('id', params.id).single(),

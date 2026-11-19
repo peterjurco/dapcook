@@ -39,7 +39,7 @@ function req(body: unknown) {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.stubEnv('TAG_SUGGEST_USE_AI', 'true')
-  vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+  vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
   householdIdMock.mockResolvedValue('hh-1')
   vi.mocked(loadHouseholdTagNames).mockResolvedValue(['dinner', 'pasta'])
   vi.mocked(suggestTags).mockResolvedValue({ existing: ['dinner'], new: 'mexické' })
@@ -51,7 +51,7 @@ afterEach(() => {
 
 describe('POST /api/tags/suggest', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req({ title: 'Burrito' }))
     expect(res.status).toBe(401)
     expect(loadHouseholdTagNames).not.toHaveBeenCalled()

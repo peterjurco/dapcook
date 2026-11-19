@@ -47,7 +47,7 @@ export const getCurrentHouseholdId = perRequest(async (): Promise<string | null>
  * request reads the new value instead of a stale one.
  */
 export function forgetHouseholdId(userId: string): void {
-  revalidateTag(householdCacheTag(userId))
+  revalidateTag(householdCacheTag(userId), { expire: 0 })
 }
 
 /**
@@ -58,7 +58,7 @@ export function forgetHouseholdId(userId: string): void {
 export const getHouseholdWeekStartDay = perRequest(async (): Promise<WeekStartDay> => {
   const householdId = await getCurrentHouseholdId()
   if (!householdId) return 'monday'
-  const { data } = await createClient()
+  const { data } = await (await createClient())
     .from('households')
     .select('week_start_day')
     .eq('id', householdId)

@@ -7,11 +7,12 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
 
 interface Props {
-  searchParams: { week?: string }
+  searchParams: Promise<{ week?: string }>
 }
 
-export default async function ShoppingGeneratePage({ searchParams }: Props) {
-  const supabase = createClient()
+export default async function ShoppingGeneratePage(props: Props) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 

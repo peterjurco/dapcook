@@ -48,29 +48,29 @@ function req() {
 beforeEach(() => {
   vi.clearAllMocks()
   householdIdMock.mockResolvedValue('hh-1')
-  vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+  vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
 })
 
 describe('DELETE /api/shopping/list/[listId]/items', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
-    const res = await DELETE(req(), { params: { listId: 'list-1' } })
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>)
+    const res = await DELETE(req(), { params: Promise.resolve({ listId: 'list-1' }) })
     expect(res.status).toBe(401)
   })
 
   it('returns 404 when list does not belong to household', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ id: 'user-1' }, null) as unknown as ReturnType<typeof createClient>)
-    const res = await DELETE(req(), { params: { listId: 'list-1' } })
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ id: 'user-1' }, null) as unknown as Awaited<ReturnType<typeof createClient>>)
+    const res = await DELETE(req(), { params: Promise.resolve({ listId: 'list-1' }) })
     expect(res.status).toBe(404)
   })
 
   it('deletes all items for the list and returns 204', async () => {
-    const res = await DELETE(req(), { params: { listId: 'list-1' } })
+    const res = await DELETE(req(), { params: Promise.resolve({ listId: 'list-1' }) })
     expect(res.status).toBe(204)
   })
 
   it('forgets which weeks were added, so the next add does not ask', async () => {
-    await DELETE(req(), { params: { listId: 'list-1' } })
+    await DELETE(req(), { params: Promise.resolve({ listId: 'list-1' }) })
     expect(listUpdate).toHaveBeenCalledWith({ generated_weeks: [] })
     expect(listUpdateEq).toHaveBeenCalledWith('id', 'list-1')
   })
@@ -78,7 +78,7 @@ describe('DELETE /api/shopping/list/[listId]/items', () => {
   it('still returns 204 when resetting the weeks fails', async () => {
     listUpdateEq.mockResolvedValueOnce({ error: { message: 'column does not exist' } })
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    const res = await DELETE(req(), { params: { listId: 'list-1' } })
+    const res = await DELETE(req(), { params: Promise.resolve({ listId: 'list-1' }) })
     expect(res.status).toBe(204)
   })
 })

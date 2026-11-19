@@ -105,7 +105,7 @@ function getDoneEvent(events: ImportEvent[]) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+  vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
   vi.mocked(scrapeRecipe).mockResolvedValue({ raw: rawScraped } as Awaited<ReturnType<typeof scrapeRecipe>>)
   vi.mocked(parseRecipeData).mockResolvedValue(parsedParts)
   vi.mocked(transformRecipe).mockImplementation(async (content) => content)
@@ -113,7 +113,7 @@ beforeEach(() => {
 
 describe('POST /api/recipes/import', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req({ url: 'https://example.com' }))
     expect(res.status).toBe(401)
   })
@@ -199,7 +199,7 @@ describe('POST /api/recipes/import', () => {
       if (table === 'tags') return makeSelectChain([{ name: 'dinner' }])
       return defaultFrom(table)
     })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
     vi.mocked(parseRecipeData).mockResolvedValue({
       ...parsedParts,
       suggestedTags: { existing: ['pasta'], new: 'italian' },
@@ -240,16 +240,16 @@ describe('POST /api/recipes/import', () => {
   })
 
   it('skips transformRecipe when household has no preferences', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, null) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, null) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     await POST(req({ url: 'https://example.com/pasta' }))
     expect(vi.mocked(transformRecipe)).not.toHaveBeenCalled()
   })
 
   it('emits translating step and calls transformRecipe when translation_enabled', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await POST(req({ url: 'https://example.com/pasta' }))
     const events = await collectEvents(res)
@@ -266,8 +266,8 @@ describe('POST /api/recipes/import', () => {
 
   it('passes targetUnits alongside targetLanguage when units differ', async () => {
     vi.mocked(parseRecipeData).mockResolvedValue(imperialParts)
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     await collectEvents(await POST(req({ url: 'https://example.com/pasta' })))
     expect(vi.mocked(transformRecipe)).toHaveBeenCalledWith(
@@ -279,8 +279,8 @@ describe('POST /api/recipes/import', () => {
 
   it('calls transformRecipe with only targetUnits when recipe is already in preferred language', async () => {
     vi.mocked(parseRecipeData).mockResolvedValue(imperialParts)
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, { preferred_language: 'en', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, { preferred_language: 'en', preferred_units: 'metric', translation_enabled: true }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     vi.mocked(scrapeRecipe).mockResolvedValue({
       raw: rawScraped,
@@ -308,8 +308,8 @@ describe('POST /api/recipes/import', () => {
       steps: [],
       notes: null,
     })
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await POST(req({ url: 'https://example.com/pasta' }))
     const done = getDoneEvent(await collectEvents(res))
@@ -319,8 +319,8 @@ describe('POST /api/recipes/import', () => {
 
   it('includes translationError in done event when transformRecipe throws', async () => {
     vi.mocked(transformRecipe).mockRejectedValue(new Error('429 rate_limit'))
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, { preferred_language: 'sk', preferred_units: 'metric', translation_enabled: true }) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await POST(req({ url: 'https://example.com/pasta' }))
     const done = getDoneEvent(await collectEvents(res))

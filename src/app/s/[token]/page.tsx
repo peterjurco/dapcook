@@ -12,15 +12,17 @@ import { buildTagMeta, type Taxonomy } from '@/lib/tags/taxonomy'
 export const dynamic = 'force-dynamic'
 
 interface Props {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   noStore()
   return sharedRecipeMetadata(await getSharedRecipe(params.token))
 }
 
-export default async function SharedRecipePage({ params }: Props) {
+export default async function SharedRecipePage(props: Props) {
+  const params = await props.params;
   noStore()
 
   // No authenticated user here, so there's no real locale preference to
@@ -47,5 +49,5 @@ export default async function SharedRecipePage({ params }: Props) {
       />
       <RecipeView recipe={typedRecipe} mode="public" taxonomy={taxonomy} locale={locale} t={t} />
     </main>
-  )
+  );
 }
