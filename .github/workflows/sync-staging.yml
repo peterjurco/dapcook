@@ -22,7 +22,7 @@ jobs:
       contents: write
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: staging
           fetch-depth: 0
@@ -47,7 +47,7 @@ jobs:
 
       - name: Report a conflict
         if: failure() && steps.merge.outputs.merged == 'conflict'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const title = 'staging is out of sync with main'
