@@ -77,7 +77,7 @@ beforeEach(() => {
 describe('POST /api/shopping/items', () => {
   it('persists and returns the client-generated item id', async () => {
     const { client, insert } = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(client as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const response = await POST(request({
       id: itemId,
@@ -92,7 +92,7 @@ describe('POST /api/shopping/items', () => {
 
   it('rejects an invalid client-generated item id', async () => {
     const { client, insert } = makeSupabase()
-    vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(client as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const response = await POST(request({
       id: 'not-a-uuid',

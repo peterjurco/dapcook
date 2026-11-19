@@ -57,7 +57,7 @@ describe('OnboardingPage', () => {
   it('starts a user without a household at the language step', async () => {
     mocks.getCurrentProfile.mockResolvedValue({ household_id: null, ui_language: 'en' })
 
-    const result = await OnboardingPage({ searchParams: {} })
+    const result = await OnboardingPage({ searchParams: Promise.resolve({}) })
 
     expect(result.props.initialStep).toBe('language')
     expect(result.props.locale).toBe('en')
@@ -77,7 +77,7 @@ describe('OnboardingPage', () => {
     }
     mocks.categories = [{ id: 'cat-1' }]
 
-    const result = await OnboardingPage({ searchParams: {} })
+    const result = await OnboardingPage({ searchParams: Promise.resolve({}) })
 
     expect(result.props.initialStep).toBe('tags')
     expect(result.props.locale).toBe('sk')
@@ -107,7 +107,7 @@ describe('OnboardingPage', () => {
       { name: 'loose', group_id: null },
     ]
 
-    const result = await OnboardingPage({ searchParams: {} })
+    const result = await OnboardingPage({ searchParams: Promise.resolve({}) })
 
     expect(result.props.tags).toEqual({
       selected: { course: ['Soup'], diet: ['Paleo'] },
@@ -125,7 +125,7 @@ describe('OnboardingPage', () => {
       preferred_units: 'metric',
     }
 
-    await expect(OnboardingPage({ searchParams: {} })).rejects.toThrow('REDIRECT:/recipes')
+    await expect(OnboardingPage({ searchParams: Promise.resolve({}) })).rejects.toThrow('REDIRECT:/recipes')
   })
 
   it('sends a member who is not the household creator to recipes', async () => {
@@ -138,7 +138,7 @@ describe('OnboardingPage', () => {
       preferred_units: 'metric',
     }
 
-    await expect(OnboardingPage({ searchParams: {} })).rejects.toThrow('REDIRECT:/recipes')
+    await expect(OnboardingPage({ searchParams: Promise.resolve({}) })).rejects.toThrow('REDIRECT:/recipes')
   })
 
   it('starts at the done screen when the stored step is no longer known', async () => {
@@ -151,7 +151,7 @@ describe('OnboardingPage', () => {
       preferred_units: 'metric',
     }
 
-    const result = await OnboardingPage({ searchParams: {} })
+    const result = await OnboardingPage({ searchParams: Promise.resolve({}) })
 
     expect(result.props.initialStep).toBe('done')
   })
@@ -160,7 +160,7 @@ describe('OnboardingPage', () => {
     mocks.getCurrentProfile.mockResolvedValue({ id: 'user-2', household_id: 'hh-1', ui_language: 'en' })
     mocks.household = { name: 'The Jurcos', onboarding_step: null, created_by: 'user-1' }
 
-    const result = await OnboardingPage({ searchParams: { joined: '1' } })
+    const result = await OnboardingPage({ searchParams: Promise.resolve({ joined: '1' }) })
 
     expect(result.props.householdName).toBe('The Jurcos')
     expect(result.props.initialStep).toBe('language')
@@ -170,7 +170,7 @@ describe('OnboardingPage', () => {
     mocks.getCurrentProfile.mockResolvedValue({ id: 'user-2', household_id: 'hh-1', ui_language: 'sk' })
     mocks.household = { name: 'The Jurcos', onboarding_step: null, created_by: 'user-1' }
 
-    const result = await OnboardingPage({ searchParams: { joined: '1', welcome: '1' } })
+    const result = await OnboardingPage({ searchParams: Promise.resolve({ joined: '1', welcome: '1' }) })
 
     expect(result.props.initialStep).toBe('done')
   })
@@ -178,7 +178,7 @@ describe('OnboardingPage', () => {
   it('ignores the joined flag for a user without a household', async () => {
     mocks.getCurrentProfile.mockResolvedValue({ household_id: null, ui_language: 'en' })
 
-    const result = await OnboardingPage({ searchParams: { joined: '1' } })
+    const result = await OnboardingPage({ searchParams: Promise.resolve({ joined: '1' }) })
 
     expect(result.props.initialStep).toBe('language')
   })

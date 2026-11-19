@@ -94,7 +94,7 @@ Return a JSON object with EXACTLY this structure, no other text:
       messages: [{ role: 'user', content: prompt }],
     })
 
-    void logAiUsage(createClient(), householdId, 'tag_suggest', response.usage)
+    void logAiUsage(await createClient(), householdId, 'tag_suggest', response.usage)
 
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
     const jsonMatch = text.match(/\{[\s\S]*\}/)

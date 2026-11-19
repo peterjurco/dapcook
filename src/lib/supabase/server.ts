@@ -2,8 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/database'
 
-export function createClient() {
-  const cookieStore = cookies()
+export async function createClient() {
+  const cookieStore = await cookies()
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +19,7 @@ export function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Called from a Server Component — middleware handles session refresh
+            // Called from a Server Component — src/proxy.ts handles session refresh
           }
         },
       },

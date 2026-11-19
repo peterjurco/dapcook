@@ -40,7 +40,7 @@ function makeSupabase(user: typeof mockUser | null = mockUser, fromFn?: (table: 
   }
 }
 
-const params = { params: { id: 'r-1' } }
+const params = { params: Promise.resolve({ id: 'r-1' }) }
 
 function req(url: string, opts?: Record<string, unknown>) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,21 +51,21 @@ beforeEach(() => vi.clearAllMocks())
 
 describe('GET /api/recipes/[id]', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await GET(req('/api/recipes/r-1'), params)
     expect(res.status).toBe(401)
   })
 
   it('returns recipe when found', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await GET(req('/api/recipes/r-1'), params)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(mockRecipe)
   })
 
   it('returns 404 when recipe not found', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, () => makeQB({ data: null, error: { message: 'Not found' } })) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, () => makeQB({ data: null, error: { message: 'Not found' } })) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await GET(req('/api/recipes/r-1'), params)
     expect(res.status).toBe(404)
@@ -74,15 +74,15 @@ describe('GET /api/recipes/[id]', () => {
 
 describe('PUT /api/recipes/[id]', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await PUT(req('/api/recipes/r-1', { method: 'PUT', body: JSON.stringify({ title: 'New' }) }), params)
     expect(res.status).toBe(401)
   })
 
   it('returns updated recipe', async () => {
     const updated = { ...mockRecipe, title: 'Updated Pasta' }
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, () => makeQB({ data: updated, error: null })) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, () => makeQB({ data: updated, error: null })) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await PUT(req('/api/recipes/r-1', {
       method: 'PUT',
@@ -93,8 +93,8 @@ describe('PUT /api/recipes/[id]', () => {
   })
 
   it('returns 404 when recipe not found', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, () => makeQB({ data: null, error: { message: 'Not found' } })) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, () => makeQB({ data: null, error: { message: 'Not found' } })) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await PUT(req('/api/recipes/r-1', {
       method: 'PUT',
@@ -105,7 +105,7 @@ describe('PUT /api/recipes/[id]', () => {
 
   it('only sends provided fields to update', async () => {
     const supabase = makeSupabase(mockUser, () => makeQB({ data: mockRecipe, error: null }))
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     await PUT(req('/api/recipes/r-1', {
       method: 'PUT',
@@ -121,21 +121,21 @@ describe('PUT /api/recipes/[id]', () => {
 
 describe('DELETE /api/recipes/[id]', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase(null) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await DELETE(req('/api/recipes/r-1'), params)
     expect(res.status).toBe(401)
   })
 
   it('soft-deletes recipe and returns 204', async () => {
     const supabase = makeSupabase(mockUser, () => makeQB({ data: null, error: null }))
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await DELETE(req('/api/recipes/r-1'), params)
     expect(res.status).toBe(204)
   })
 
   it('sets is_archived=true on soft delete', async () => {
     const supabase = makeSupabase(mockUser, () => makeQB({ data: null, error: null }))
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     await DELETE(req('/api/recipes/r-1'), params)
 
@@ -146,8 +146,8 @@ describe('DELETE /api/recipes/[id]', () => {
   })
 
   it('returns 500 on DB error', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, () => makeQB({ data: null, error: { message: 'db error' } })) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, () => makeQB({ data: null, error: { message: 'db error' } })) as unknown as Awaited<ReturnType<typeof createClient>>
     )
     const res = await DELETE(req('/api/recipes/r-1'), params)
     expect(res.status).toBe(500)

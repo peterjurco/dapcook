@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: t('queryTooShort') }, { status: 400 })
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase.from('recipes').select('id, ingredients').eq('is_archived', false)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

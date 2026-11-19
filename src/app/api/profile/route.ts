@@ -8,7 +8,7 @@ import { isTourId } from '@/lib/tours/ids'
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 
 export async function PATCH(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

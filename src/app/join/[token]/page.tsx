@@ -4,11 +4,13 @@ import { getInviteDetails } from '@/lib/households/invite-details'
 import { inviteMetadata } from '@/lib/og/metadata'
 import { getTranslations } from 'next-intl/server'
 
-export async function generateMetadata({ params }: { params: { token: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const params = await props.params;
   return inviteMetadata(await getInviteDetails(params.token))
 }
 
-export default async function JoinPage({ params }: { params: { token: string } }) {
+export default async function JoinPage(props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
   const { token } = params
   const t = await getTranslations('auth')
 

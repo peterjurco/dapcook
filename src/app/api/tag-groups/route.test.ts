@@ -76,14 +76,14 @@ beforeEach(() => {
 
 describe('GET /api/tag-groups', () => {
   it('returns 401 when unauthenticated', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase({ user: null }) as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase({ user: null }) as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await GET()
     expect(res.status).toBe(401)
   })
 
   it('returns 403 when the user has no household', async () => {
     householdIdMock.mockResolvedValue(null)
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await GET()
     expect(res.status).toBe(403)
   })
@@ -91,7 +91,7 @@ describe('GET /api/tag-groups', () => {
   it('returns the household groups ordered by position', async () => {
     const groups = [{ id: 'g1', name: 'Course', position: 0 }]
     const supabase = makeSupabase({ groupsResult: { data: groups, error: null } })
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await GET()
     expect(res.status).toBe(200)
@@ -104,7 +104,7 @@ describe('GET /api/tag-groups', () => {
 
 describe('POST /api/tag-groups', () => {
   it('returns 400 when name is missing', async () => {
-    vi.mocked(createClient).mockReturnValue(makeSupabase() as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(makeSupabase() as unknown as Awaited<ReturnType<typeof createClient>>)
     const res = await POST(req('/api/tag-groups', { method: 'POST', body: JSON.stringify({}) }))
     expect(res.status).toBe(400)
   })
@@ -119,7 +119,7 @@ describe('POST /api/tag-groups', () => {
         throw new Error(`Unexpected table: ${table}`)
       }),
     }
-    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>)
+    vi.mocked(createClient).mockResolvedValue(supabase as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const res = await POST(req('/api/tag-groups', {
       method: 'POST',

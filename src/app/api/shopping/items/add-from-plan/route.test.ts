@@ -64,7 +64,7 @@ function makeSupabase({
     auth: authMock({ id: 'user-1' }),
     from: vi.fn((table: keyof typeof fromMap) => fromMap[table]),
   }
-  vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>)
+  vi.mocked(createClient).mockResolvedValue(client as unknown as Awaited<ReturnType<typeof createClient>>)
   return { itemsInsert, categoriesInsert, listsInsert, listUpdate, listUpdateEq, fromMap }
 }
 

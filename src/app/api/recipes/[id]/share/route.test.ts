@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server'
 import { authMock } from '@/test/authMock'
 
 const mockUser = { id: 'user-1' }
-const params = { params: { id: 'r-1' } }
+const params = { params: Promise.resolve({ id: 'r-1' }) }
 
 type QueryResult = {
   data: unknown
@@ -61,8 +61,8 @@ beforeEach(() => {
 
 describe('POST /api/recipes/[id]/share', () => {
   it('returns 401 for unauthenticated POST', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(null) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -71,8 +71,8 @@ describe('POST /api/recipes/[id]/share', () => {
   })
 
   it('returns 404 when POST cannot select the recipe through RLS', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, [{ data: null, error: null }]) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, [{ data: null, error: null }]) as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -84,8 +84,8 @@ describe('POST /api/recipes/[id]/share', () => {
     const supabase = makeSupabase(mockUser, [
       { data: { id: 'r-1', share_token: null, is_archived: true }, error: null },
     ])
-    vi.mocked(createClient).mockReturnValue(
-      supabase as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      supabase as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -99,8 +99,8 @@ describe('POST /api/recipes/[id]/share', () => {
     const supabase = makeSupabase(mockUser, [
       { data: { id: 'r-1', share_token: 'existing-token' }, error: null },
     ])
-    vi.mocked(createClient).mockReturnValue(
-      supabase as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      supabase as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -119,8 +119,8 @@ describe('POST /api/recipes/[id]/share', () => {
       { data: { id: 'r-1', share_token: null }, error: null },
       { data: { share_token: 'token-one' }, error: null },
     ])
-    vi.mocked(createClient).mockReturnValue(
-      supabase as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      supabase as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -142,8 +142,8 @@ describe('POST /api/recipes/[id]/share', () => {
       { data: null, error: null },
       { data: { share_token: null, is_archived: true }, error: null },
     ])
-    vi.mocked(createClient).mockReturnValue(
-      supabase as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      supabase as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -159,8 +159,8 @@ describe('POST /api/recipes/[id]/share', () => {
       { data: null, error: { code: '23505', message: 'duplicate key' } },
       { data: { share_token: 'token-two' }, error: null },
     ])
-    vi.mocked(createClient).mockReturnValue(
-      supabase as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      supabase as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -180,13 +180,13 @@ describe('POST /api/recipes/[id]/share', () => {
   })
 
   it('returns 500 after three token collisions', async () => {
-    vi.mocked(createClient).mockReturnValue(
+    vi.mocked(createClient).mockResolvedValue(
       makeSupabase(mockUser, [
         { data: { id: 'r-1', share_token: null }, error: null },
         { data: null, error: { code: '23505', message: 'duplicate key' } },
         { data: null, error: { code: '23505', message: 'duplicate key' } },
         { data: null, error: { code: '23505', message: 'duplicate key' } },
-      ]) as unknown as ReturnType<typeof createClient>
+      ]) as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await POST(req('POST'), params)
@@ -198,8 +198,8 @@ describe('POST /api/recipes/[id]/share', () => {
 
 describe('DELETE /api/recipes/[id]/share', () => {
   it('returns 401 for unauthenticated DELETE', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(null) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(null) as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await DELETE(req('DELETE'), params)
@@ -209,8 +209,8 @@ describe('DELETE /api/recipes/[id]/share', () => {
 
   it('clears an active token and returns 204', async () => {
     const supabase = makeSupabase(mockUser, [{ data: { id: 'r-1' }, error: null }])
-    vi.mocked(createClient).mockReturnValue(
-      supabase as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      supabase as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await DELETE(req('DELETE'), params)
@@ -221,8 +221,8 @@ describe('DELETE /api/recipes/[id]/share', () => {
   })
 
   it('returns 404 when DELETE cannot update the recipe through RLS', async () => {
-    vi.mocked(createClient).mockReturnValue(
-      makeSupabase(mockUser, [{ data: null, error: null }]) as unknown as ReturnType<typeof createClient>
+    vi.mocked(createClient).mockResolvedValue(
+      makeSupabase(mockUser, [{ data: null, error: null }]) as unknown as Awaited<ReturnType<typeof createClient>>
     )
 
     const response = await DELETE(req('DELETE'), params)

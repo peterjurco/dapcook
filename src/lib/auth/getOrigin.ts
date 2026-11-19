@@ -10,8 +10,8 @@ function isLocal(host: string): boolean {
  * localhost — instead of a single build-time URL. Falls back to NEXT_PUBLIC_SITE_URL
  * when there are no request headers (e.g. outside a request context).
  */
-export function getOrigin(): string {
-  const h = headers()
+export async function getOrigin(): Promise<string> {
+  const h = await headers()
   const host = h.get('x-forwarded-host') ?? h.get('host')
   if (host) {
     const proto = h.get('x-forwarded-proto') ?? (isLocal(host) ? 'http' : 'https')

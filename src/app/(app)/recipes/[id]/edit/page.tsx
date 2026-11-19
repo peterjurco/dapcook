@@ -7,12 +7,13 @@ import { RecipeForm } from '@/components/recipe/RecipeForm'
 import type { Recipe } from '@/types/database'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export default async function EditRecipePage({ params }: Props) {
+export default async function EditRecipePage(props: Props) {
+  const params = await props.params;
   const t = await getTranslations('recipes')
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: recipe, error } = await supabase
     .from('recipes')
