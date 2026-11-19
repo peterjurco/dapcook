@@ -29,8 +29,8 @@ After finishing any implementation, push so the deployment picks it up.
   Change dependencies with `npm install <pkg>` / `npm uninstall <pkg>`, never by hand-editing `package.json` alone.
 - **Dependabot** (`.github/dependabot.yml`) opens grouped minor/patch PRs every Monday against `main`. Merge them
   when CI (`.github/workflows/ci.yml`) and the Vercel preview are green.
-- **Major upgrades** are big features: branch, test on staging, then merge the branch into `main`. The Next/React/ESLint/
-  Tailwind majors are ignored in `dependabot.yml` until that migration lands — remove the ignores afterwards.
+- **Major upgrades** are big features: branch, test on staging, then merge the branch into `main`. The ESLint, Tailwind
+  and `@types/node` majors are ignored in `dependabot.yml` until someone plans them — remove an ignore once it's done.
 - Run `npm audit` before releases. A fix that needs a major bump follows the rule above, not `npm audit fix --force`.
 
 ## Database migrations
