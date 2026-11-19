@@ -9,6 +9,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
+    "test:ci": "vitest run --exclude \"**/*.integration.test.ts\"",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "backfill:covers": "node --env-file=.env.local scripts/backfill-recipe-covers.ts"
