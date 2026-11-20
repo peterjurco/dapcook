@@ -52,6 +52,12 @@ updates:
       # Tailwind 4 is a rewrite of the config format; also a planned migration.
       - dependency-name: tailwindcss
         update-types: [version-update:semver-major]
+      # linkedom stays pinned to 0.16.11: 0.17+ requires an ESM-only css-select,
+      # which breaks recipe import on Vercel's runtime (no require() of ESM).
+      # src/lib/scraper/readability.test.ts guards this; lift the pin when it
+      # passes on a newer linkedom.
+      - dependency-name: linkedom
+        versions: ['>=0.17.0']
       # Track the Node major the app runs on, not the newest one.
       - dependency-name: '@types/node'
         update-types: [version-update:semver-major]

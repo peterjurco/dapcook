@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom/vitest'
 
 // jsdom doesn't implement ResizeObserver. Components that measure their own
 // size (RecipeTagStrip, and @dnd-kit/sortable internally) need at least a
