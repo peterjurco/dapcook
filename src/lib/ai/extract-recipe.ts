@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
+import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages'
 import { createClient } from '@/lib/supabase/server'
 import { logAiUsage } from './log-usage'
+import { parseJsonFromText } from './json-response'
 
 export interface ExtractedRecipeContent {
   rawIngredients: string[]
@@ -12,18 +14,13 @@ const client = new Anthropic()
 // Recipe article text rarely needs more than this to contain the full ingredient
 // list and instructions; caps cost on unusually long blog posts (long personal
 // backstories, imperfectly-filtered related-post blocks, etc).
-const MAX_ARTICLE_CHARS = 6000
+export const MAX_ARTICLE_CHARS = 6000
 
-export async function extractRecipeFromContent(
-  articleText: string,
-  sourceUrl: string,
-  householdId?: string
-): Promise<ExtractedRecipeContent | null> {
-  // Guard: skip Claude call unless explicitly enabled
-  if (process.env.RECIPE_IMPORT_USE_AI !== 'true') {
-    return null
-  }
-
+/**
+ * The exact request sent to Claude for a page's article text. Exported so the
+ * local eval tool (/dev/evals) runs the same prompt production does.
+ */
+export function buildExtractRecipeRequest(articleText: string): MessageCreateParamsNonStreaming {
   const truncatedArticleText = articleText.slice(0, MAX_ARTICLE_CHARS)
 
   const prompt = `The text below is the main article content of a web page. Determine whether it contains a cooking recipe.
@@ -43,11 +40,41 @@ Rules:
 - If the text is not a recipe, or has no clear ingredient list or steps, return {"rawIngredients": [], "rawSteps": []}
 - Ignore unrelated content such as comments, related-post links, or navigation text`
 
-  const response = await client.messages.create({
+  return {
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
-  })
+  }
+}
+
+/** Normalises the model's parsed JSON; null means "no usable recipe". */
+export function toExtractedRecipe(value: unknown): ExtractedRecipeContent | null {
+  const obj = (value ?? {}) as { rawIngredients?: unknown; rawSteps?: unknown }
+  const clean = (list: unknown) =>
+    Array.isArray(list)
+      ? list.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
+      : []
+  const rawIngredients = clean(obj.rawIngredients)
+  const rawSteps = clean(obj.rawSteps)
+
+  if (rawIngredients.length === 0 || rawSteps.length === 0) {
+    return null
+  }
+
+  return { rawIngredients, rawSteps }
+}
+
+export async function extractRecipeFromContent(
+  articleText: string,
+  sourceUrl: string,
+  householdId?: string
+): Promise<ExtractedRecipeContent | null> {
+  // Guard: skip Claude call unless explicitly enabled
+  if (process.env.RECIPE_IMPORT_USE_AI !== 'true') {
+    return null
+  }
+
+  const response = await client.messages.create(buildExtractRecipeRequest(articleText))
 
   if (householdId) {
     void logAiUsage(await createClient(), householdId, 'recipe_extract', response.usage)
@@ -55,24 +82,11 @@ Rules:
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    console.error(`[extract-recipe] No JSON found in Claude response for ${sourceUrl}`)
+  const parsed = parseJsonFromText(text)
+  if (!parsed.ok) {
+    console.error(`[extract-recipe] ${parsed.error} in Claude response for ${sourceUrl}`)
     return null
   }
 
-  try {
-    const parsed = JSON.parse(jsonMatch[0]) as { rawIngredients: string[]; rawSteps: string[] }
-    const rawIngredients = (parsed.rawIngredients ?? []).map((s) => s.trim()).filter(Boolean)
-    const rawSteps = (parsed.rawSteps ?? []).map((s) => s.trim()).filter(Boolean)
-
-    if (rawIngredients.length === 0 || rawSteps.length === 0) {
-      return null
-    }
-
-    return { rawIngredients, rawSteps }
-  } catch (err) {
-    console.error(`[extract-recipe] Failed to parse Claude JSON response for ${sourceUrl}:`, err)
-    return null
-  }
+  return toExtractedRecipe(parsed.value)
 }

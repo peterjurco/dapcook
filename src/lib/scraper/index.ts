@@ -21,7 +21,8 @@ export interface ScrapeOptions {
   onExtracting?: () => void
 }
 
-export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Promise<ScrapeResult> {
+/** Fetches a recipe page's HTML the way the importer does; throws on a non-2xx response. */
+export async function fetchPageHtml(url: string): Promise<string> {
   const response = await fetch(url, {
     headers: {
       // Mimic a real browser to avoid blocks
@@ -47,20 +48,27 @@ export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Pr
     throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`)
   }
 
-  const html = await response.text()
-  const $ = cheerio.load(html)
+  return response.text()
+}
 
-  // Grab page language from <html lang="..."> (BCP-47, e.g. "sk", "en-US")
-  const detectedLanguage = $('html').attr('lang') ?? $('html').attr('xml:lang') ?? undefined
-
-  // Collect all JSON-LD script tag contents
+/** Collects the contents of every JSON-LD script tag on the page. */
+export function collectJsonLd($: cheerio.CheerioAPI): string[] {
   const jsonLdContents: string[] = []
   $('script[type="application/ld+json"]').each((_, el) => {
     const content = $(el).html()
     if (content) jsonLdContents.push(content)
   })
+  return jsonLdContents
+}
 
-  const jsonLdResult = parseJsonLd(jsonLdContents, url)
+export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Promise<ScrapeResult> {
+  const html = await fetchPageHtml(url)
+  const $ = cheerio.load(html)
+
+  // Grab page language from <html lang="..."> (BCP-47, e.g. "sk", "en-US")
+  const detectedLanguage = $('html').attr('lang') ?? $('html').attr('xml:lang') ?? undefined
+
+  const jsonLdResult = parseJsonLd(collectJsonLd($), url)
   if (jsonLdResult && !jsonLdResult.partial) {
     return { raw: jsonLdResult, detectedLanguage }
   }
