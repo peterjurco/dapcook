@@ -49,6 +49,10 @@ updates:
       # ESLint 10: wait until eslint-config-next supports it.
       - dependency-name: eslint
         update-types: [version-update:semver-major]
+      # TypeScript majors: 7 (the Go port) drops the JS compiler API that
+      # typescript-eslint and next build rely on. Revisit once both support it.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
       # Tailwind 4 is a rewrite of the config format; also a planned migration.
       - dependency-name: tailwindcss
         update-types: [version-update:semver-major]
