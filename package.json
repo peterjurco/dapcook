@@ -26,7 +26,7 @@
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "linkedom": "0.18.15",
+    "linkedom": "0.16.11",
     "lucide-react": "^1.73.0",
     "next": "^16.4.6",
     "next-intl": "^4.14.4",
