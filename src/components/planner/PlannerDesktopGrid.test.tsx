@@ -73,7 +73,11 @@ describe('PlannerDesktopGrid', () => {
     renderGrid([recipeSlot({ id: 'a', date: '2026-06-10', span_days: 1, title: 'Kurča' })])
     const buttons = screen.getAllByRole('button', { name: /add meal to/i })
     // Each add affordance lives in a positioned grid cell; row 1 = empty day, row 2 = under a meal.
-    const cells = buttons.map((b) => (b.closest('[style*="grid-row"]') as HTMLElement)?.style.gridRow)
+    // Walk up to the cell by its style, not attribute text: jsdom (like browsers)
+    // serializes grid-row + grid-column as the grid-area shorthand.
+    const gridRowOf = (el: HTMLElement | null): string | undefined =>
+      !el ? undefined : el.style.gridRow || gridRowOf(el.parentElement)
+    const cells = buttons.map(gridRowOf)
     // Day 3 (has a meal) → its add cell is row 2; the rest (empty) → row 1.
     expect(cells.filter((r) => r === '1')).toHaveLength(6)
     expect(cells.filter((r) => r === '2')).toHaveLength(1)
