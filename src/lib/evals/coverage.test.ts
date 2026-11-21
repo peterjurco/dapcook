@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { coverage } from './coverage'
+import { coverage, detectInputProblem } from './coverage'
 
 describe('coverage', () => {
   it('finds lines even when Readability ran list items together', () => {
@@ -12,6 +12,14 @@ describe('coverage', () => {
     const text = 'Panenku nakrájame na hrubšie medailóniky.'
     expect(coverage(['500 g bravčovej panenky', 'Panenku nakrájame na hrubšie medailóniky.'], text))
       .toEqual({ total: 2, found: 1, missing: ['500 g bravčovej panenky'] })
+  })
+
+  it('describes what the input is missing, or returns null when it is complete', () => {
+    const reference = { source: 'JSON-LD', data: { rawIngredients: ['500 g panenky', '1 vajce'], rawSteps: ['Opečieme.'] } }
+    expect(detectInputProblem('Opečieme.', reference))
+      .toBe("The article text is missing 2 of 2 ingredients from the page's JSON-LD.")
+    expect(detectInputProblem('500 g panenky, 1 vajce. Opečieme.', reference)).toBeNull()
+    expect(detectInputProblem('anything', null)).toBeNull()
   })
 
   it('ignores blank lines', () => {

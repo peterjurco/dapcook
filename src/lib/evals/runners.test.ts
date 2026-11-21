@@ -70,6 +70,8 @@ describe('extract-recipe eval runner', () => {
       data: { rawIngredients: ['6 cups apples'], rawSteps: ['Bake.'] },
     })
     expect(await runner.loadReference!({ url: URL })).toEqual(prepared.reference)
+    // The article text has everything the JSON-LD has, so the input is usable.
+    expect(prepared.inputProblem).toBeNull()
   })
 
   it('records that a page without JSON-LD has no reference', async () => {

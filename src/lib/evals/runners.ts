@@ -6,6 +6,7 @@ import { parseJsonFromText } from '@/lib/ai/json-response'
 import { collectJsonLd, fetchPageHtml } from '@/lib/scraper'
 import { parseJsonLd } from '@/lib/scraper/jsonld'
 import { extractArticleContent } from '@/lib/scraper/readability'
+import { detectInputProblem } from './coverage'
 import { newId } from './store'
 import type { EvalCase, EvalReference, EvalRun, PromptId } from './types'
 
@@ -18,7 +19,7 @@ import type { EvalCase, EvalReference, EvalRun, PromptId } from './types'
 interface PromptRunner {
   prepare(
     source: Record<string, string>
-  ): Promise<Pick<EvalCase, 'label' | 'source' | 'input' | 'meta' | 'reference'>>
+  ): Promise<Pick<EvalCase, 'label' | 'source' | 'input' | 'meta' | 'reference' | 'inputProblem'>>
   buildRequest(input: EvalCase['input']): MessageCreateParamsNonStreaming
   loadReference?(source: EvalCase['source']): Promise<EvalReference | null>
 }
@@ -65,6 +66,7 @@ const extractRecipe: PromptRunner = {
       source: { url },
       input: { articleText, sourceUrl: url },
       reference: jsonLdReference(jsonLd),
+      inputProblem: detectInputProblem(articleText, jsonLdReference(jsonLd)),
       meta: {
         pageTitle: article.title,
         detectedLanguage: $('html').attr('lang') ?? null,

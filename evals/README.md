@@ -18,17 +18,18 @@ prompt has its own page:
 2. **Run the prompt** once or several times. Every run is kept. Runs call the
    real Anthropic API with the production request (`ANTHROPIC_API_KEY` from
    `.env.local`), so they cost money.
-3. **Judge each run against the input, not the web page**, and add notes:
-   - ✓ **Correct**: the output matches the article text.
-   - ✗ **Model wrong**: the article text had it, the model missed or mangled it. These are prompt problems.
-   - ⚠ **Bad input**: the output is wrong because the article text was (e.g. Readability dropped the
-     ingredients). These are pipeline problems, not prompt problems.
+3. **Judge each run against the input, not the web page**: ✓ correct / ✗ incorrect, plus notes.
 
-   When the page has JSON-LD recipe data, the case page checks it against the article text
-   automatically ("0 of 5 ingredients…"), so you can see which of the two it is.
+**Bad inputs.** Before anything runs, the case page checks whether the input is a fair
+test of the prompt: when the page has JSON-LD recipe data, it checks every ingredient and
+step is in the article text. If something is missing (Readability dropped the recipe
+box, say), the input is flagged as bad: it can't be run, isn't counted, and is listed
+under **⚠ Bad inputs** as a pipeline bug instead of eval data. Pages without JSON-LD
+need a glance at the article text, and a click on "Mark input as bad" if it's broken.
+The flag can be undone if the automatic check got it wrong.
 
 The prompt page lists every input and its runs, with filters for incorrect, correct,
-unrated and noted runs.
+unrated and noted runs, plus a separate tab of bad inputs.
 
 ## Format
 
@@ -43,9 +44,11 @@ One JSON file per input: `evals/data/<prompt>/<caseId>.json` (see
   skip the model), truncation.
 - `reference`: the page's own answer (its JSON-LD recipe), used for the input check;
   `null` when the page has none.
+- `inputProblem`: why the input is unusable, or null. **Leave cases with an
+  `inputProblem` out of evals.**
 - `runs[]`: for each call, the full `request` (model, max_tokens, rendered prompt),
   the untouched `rawText` reply, the parsed `output`, usage, `verdict`
-  (`correct` / `incorrect` / `bad-input`) and `notes`.
+  (`correct` / `incorrect`) and `notes`.
 
 Because every run stores its own request, runs from before and after a prompt
 change stay distinguishable.

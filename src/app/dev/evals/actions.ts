@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { detectInputProblem } from '@/lib/evals/coverage'
 import { getPromptInfo } from '@/lib/evals/prompts'
 import { executeRun, getRunner } from '@/lib/evals/runners'
 import { createCase, deleteCase, getCase, listCases, newId, updateCase } from '@/lib/evals/store'
@@ -56,6 +57,7 @@ export async function runCaseAction(promptParam: string, caseId: string, times: 
   const count = Math.min(Math.max(Math.floor(times), 1), 10)
   const evalCase = await getCase(prompt, caseId)
   if (!evalCase) throw new Error('Case not found')
+  if (evalCase.inputProblem) throw new Error('This input is marked as bad, so runs on it would not count')
 
   const runs = await Promise.all(Array.from({ length: count }, () => executeRun(evalCase)))
   runs.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -90,7 +92,17 @@ export async function loadReferenceAction(promptParam: string, caseId: string): 
   const runner = getRunner(prompt)
   if (!evalCase || !runner.loadReference) throw new Error('Nothing to load')
   const reference = await runner.loadReference(evalCase.source)
-  await updateCase(prompt, caseId, (c) => { c.reference = reference })
+  await updateCase(prompt, caseId, (c) => {
+    c.reference = reference
+    c.inputProblem ||= detectInputProblem(String(c.input.articleText ?? ''), reference)
+  })
+  revalidatePath(base(prompt), 'layout')
+}
+
+/** Flags the input as unusable for prompt evals (problem text), or clears the flag (null). */
+export async function setInputProblemAction(promptParam: string, caseId: string, problem: string | null): Promise<void> {
+  const prompt = assertDev(promptParam)
+  await updateCase(prompt, caseId, (c) => { c.inputProblem = problem?.trim() || null })
   revalidatePath(base(prompt), 'layout')
 }
 

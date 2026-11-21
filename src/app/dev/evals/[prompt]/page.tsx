@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 import { getPromptInfo } from '@/lib/evals/prompts'
 import { listCases } from '@/lib/evals/store'
-import { countRuns, filterCases, parseRunFilter, RUN_FILTERS, type RunFilter } from '@/lib/evals/filter'
+import { countRuns, filterCases, isUsable, parseRunFilter, RUN_FILTERS, type RunFilter } from '@/lib/evals/filter'
 import { NewCaseForm } from '../_components/NewCaseForm'
 import { VerdictBadge } from '../_components/VerdictBadge'
 
@@ -11,8 +11,7 @@ export const dynamic = 'force-dynamic'
 
 const FILTER_LABELS: Record<RunFilter, string> = {
   all: 'All',
-  incorrect: 'Model wrong',
-  'bad-input': 'Bad input',
+  incorrect: 'Incorrect',
   correct: 'Correct',
   unrated: 'Unrated',
   notes: 'With notes',
@@ -27,7 +26,7 @@ export default async function PromptPage({
   searchParams,
 }: {
   params: Promise<{ prompt: string }>
-  searchParams: Promise<{ filter?: string | string[] }>
+  searchParams: Promise<{ filter?: string | string[]; view?: string | string[] }>
 }) {
   const { prompt } = await params
   const info = getPromptInfo(prompt)
@@ -53,10 +52,20 @@ export default async function PromptPage({
     )
   }
 
-  const filter = parseRunFilter((await searchParams).filter)
-  const cases = await listCases(info.id)
+  const query = await searchParams
+  const showBadInputs = query.view === 'bad-inputs'
+  const filter = parseRunFilter(query.filter)
+  const all = await listCases(info.id)
+  // Bad inputs are pipeline bugs, not eval data: kept out of the counts and the run lists.
+  const cases = all.filter(isUsable)
+  const badInputs = all.filter((c) => !isUsable(c))
   const counts = countRuns(cases)
   const rows = filterCases(cases, filter)
+  const pill = (active: boolean) =>
+    cn(
+      'rounded-full border px-3 py-1 text-xs',
+      active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+    )
 
   return (
     <div>
@@ -73,21 +82,50 @@ export default async function PromptPage({
             <Link
               key={f}
               href={f === 'all' ? `/dev/evals/${info.id}` : `/dev/evals/${info.id}?filter=${f}`}
-              aria-current={f === filter ? 'page' : undefined}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs',
-                f === filter
-                  ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
-              )}
+              aria-current={!showBadInputs && f === filter ? 'page' : undefined}
+              className={pill(!showBadInputs && f === filter)}
             >
               {FILTER_LABELS[f]} <span className="opacity-60">{counts[f]}</span>
             </Link>
           ))}
+          <Link
+            href={`/dev/evals/${info.id}?view=bad-inputs`}
+            aria-current={showBadInputs ? 'page' : undefined}
+            className={cn(pill(showBadInputs), 'ml-2')}
+          >
+            ⚠ Bad inputs <span className="opacity-60">{badInputs.length}</span>
+          </Link>
         </nav>
       </div>
 
-      {rows.length === 0 ? (
+      {showBadInputs ? (
+        badInputs.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+            No bad inputs.
+          </p>
+        ) : (
+          <>
+            <p className="mb-3 text-sm text-gray-600">
+              Inputs where the pipeline lost part of the recipe before the model saw it. They aren&apos;t eval data;
+              they&apos;re bugs to fix in the scraper.
+            </p>
+            <ul className="space-y-2">
+              {badInputs.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href={`/dev/evals/${info.id}/${c.id}`}
+                    className="block rounded-lg border border-amber-200 bg-white p-3 hover:bg-amber-50"
+                  >
+                    <div className="font-medium">{c.label}</div>
+                    {typeof c.source.url === 'string' && <div className="truncate text-xs text-gray-500">{c.source.url}</div>}
+                    <div className="mt-1 text-sm text-amber-900">{c.inputProblem}</div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )
+      ) : rows.length === 0 ? (
         <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
           {cases.length === 0 ? 'No inputs yet. Add a URL above.' : `No ${FILTER_LABELS[filter].toLowerCase()} runs.`}
         </p>
@@ -97,7 +135,6 @@ export default async function PromptPage({
             const caseHref = `/dev/evals/${info.id}/${evalCase.id}`
             const incorrect = evalCase.runs.filter((r) => r.verdict === 'incorrect').length
             const correct = evalCase.runs.filter((r) => r.verdict === 'correct').length
-            const badInput = evalCase.runs.filter((r) => r.verdict === 'bad-input').length
             return (
               <li key={evalCase.id} className="rounded-lg border border-gray-200 bg-white">
                 <Link href={caseHref} className="block rounded-t-lg p-3 hover:bg-gray-50">
@@ -107,7 +144,6 @@ export default async function PromptPage({
                       {evalCase.runs.length} {evalCase.runs.length === 1 ? 'run' : 'runs'}
                       {correct > 0 && <span className="ml-2 text-emerald-700">✓ {correct}</span>}
                       {incorrect > 0 && <span className="ml-2 text-red-700">✗ {incorrect}</span>}
-                      {badInput > 0 && <span className="ml-2 text-amber-700">⚠ {badInput}</span>}
                     </span>
                   </div>
                   {typeof evalCase.source.url === 'string' && (

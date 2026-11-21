@@ -10,7 +10,6 @@ import { VERDICTS } from './VerdictBadge'
 const VERDICT_ON: Record<Verdict, string> = {
   correct: 'border-emerald-700 bg-emerald-700 text-white',
   incorrect: 'border-red-700 bg-red-700 text-white',
-  'bad-input': 'border-amber-600 bg-amber-600 text-white',
 }
 
 type Tab = 'pretty' | 'raw' | 'request'
@@ -57,7 +56,6 @@ export function RunCard({
         'scroll-mt-4 rounded-lg border bg-white target:ring-2 target:ring-emerald-500',
         run.verdict === 'correct' && 'border-emerald-300',
         run.verdict === 'incorrect' && 'border-red-300',
-        run.verdict === 'bad-input' && 'border-amber-300',
         run.verdict === null && 'border-gray-200'
       )}
     >

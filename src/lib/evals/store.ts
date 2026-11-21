@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'fs/promises'
 import { randomBytes } from 'crypto'
 import path from 'path'
+import { detectInputProblem } from './coverage'
 import type { EvalCase, PromptId } from './types'
 
 // One pretty-printed JSON file per case: evals/data/<prompt>/<caseId>.json.
@@ -10,6 +11,26 @@ export function dataDir(): string {
 }
 
 const SAFE_ID = /^[a-z0-9-]+$/
+
+/**
+ * Early files marked bad inputs per run (verdict "bad-input"). It's a property
+ * of the input, so move it there.
+ */
+function migrate(evalCase: EvalCase): EvalCase {
+  const legacy = evalCase.runs.filter((r) => (r.verdict as string) === 'bad-input')
+  if (legacy.length > 0) {
+    evalCase.inputProblem ||=
+      detectInputProblem(String(evalCase.input.articleText ?? ''), evalCase.reference) ||
+      legacy.map((r) => r.notes.trim()).find(Boolean) ||
+      'Marked as bad input on a run.'
+    for (const run of legacy) run.verdict = null
+  }
+  return evalCase
+}
+
+function parseCase(json: string): EvalCase {
+  return migrate(JSON.parse(json) as EvalCase)
+}
 
 function casePath(prompt: PromptId, caseId: string): string {
   if (!SAFE_ID.test(prompt) || !SAFE_ID.test(caseId)) throw new Error(`Invalid id: ${prompt}/${caseId}`)
@@ -33,14 +54,14 @@ export async function listCases(prompt: PromptId): Promise<EvalCase[]> {
   const cases = await Promise.all(
     files
       .filter((f) => f.endsWith('.json'))
-      .map(async (f) => JSON.parse(await readFile(path.join(dir, f), 'utf8')) as EvalCase)
+      .map(async (f) => parseCase(await readFile(path.join(dir, f), 'utf8')))
   )
   return cases.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
 export async function getCase(prompt: PromptId, caseId: string): Promise<EvalCase | null> {
   try {
-    return JSON.parse(await readFile(casePath(prompt, caseId), 'utf8')) as EvalCase
+    return parseCase(await readFile(casePath(prompt, caseId), 'utf8'))
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null
     throw err

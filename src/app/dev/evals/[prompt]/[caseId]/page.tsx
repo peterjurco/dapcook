@@ -96,12 +96,20 @@ export default async function CasePage({ params }: { params: Promise<{ prompt: s
 
         {/* Right: the runs, judged against the input on the left. */}
         <div className="min-w-0 space-y-4">
-          <RunControls prompt={info.id} caseId={evalCase.id} hasRuns={evalCase.runs.length > 0} />
-          <p className="text-xs text-gray-500">
-            Judge each output against the input on the left, not the web page. ✓ Correct: it matches the input.
-            ✗ Model wrong: the input had it, the model missed or mangled it. ⚠ Bad input: the output is wrong because
-            the input was.
-          </p>
+          {evalCase.inputProblem ? (
+            <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              This input is marked as bad, so it isn&apos;t run or judged. Runs from before it was marked stay
+              below for reference, but they don&apos;t count.
+            </p>
+          ) : (
+            <>
+              <RunControls prompt={info.id} caseId={evalCase.id} hasRuns={evalCase.runs.length > 0} />
+              <p className="text-xs text-gray-500">
+                Judge each output against the input on the left, not the web page: ✓ Correct if it matches the input,
+                ✗ Incorrect if the input had it and the model missed or mangled it.
+              </p>
+            </>
+          )}
           {runs.length === 0 ? (
             <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
               No runs yet.

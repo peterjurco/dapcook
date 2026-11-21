@@ -68,6 +68,14 @@ describe('eval store', () => {
     expect(await readdir(path.join(dir, 'extract-recipe'))).toEqual([`${c.id}.json`])
   })
 
+  it('moves an old run-level "bad-input" verdict onto the case', async () => {
+    const c = makeCase({ runs: [{ ...makeRun('r1'), verdict: 'bad-input' as never, notes: 'no ingredients' }] })
+    await createCase(c)
+    const saved = await getCase('extract-recipe', c.id)
+    expect(saved?.inputProblem).toBe('no ingredients')
+    expect(saved?.runs[0].verdict).toBeNull()
+  })
+
   it('deletes a case', async () => {
     const c = makeCase()
     await createCase(c)

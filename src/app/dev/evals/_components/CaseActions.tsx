@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { deleteCaseAction, loadReferenceAction, runCaseAction } from '../actions'
+import { deleteCaseAction, loadReferenceAction, runCaseAction, setInputProblemAction } from '../actions'
 
 export function RunControls({ prompt, caseId, hasRuns }: { prompt: string; caseId: string; hasRuns: boolean }) {
   const [times, setTimes] = useState(1)
@@ -71,6 +71,30 @@ export function LoadReferenceButton({ prompt, caseId }: { prompt: string; caseId
       </button>
       {error && <p role="alert" className="mt-1 text-sm text-red-700">{error}</p>}
     </>
+  )
+}
+
+/** Flags the input as bad (asks for the reason) or, when flagged, clears it. */
+export function InputProblemButton({ prompt, caseId, flagged }: { prompt: string; caseId: string; flagged: boolean }) {
+  const [pending, startTransition] = useTransition()
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() => {
+        if (flagged) {
+          startTransition(() => setInputProblemAction(prompt, caseId, null))
+          return
+        }
+        const reason = window.prompt('What is wrong with the input? (e.g. "ingredients missing")')
+        if (reason !== null) {
+          startTransition(() => setInputProblemAction(prompt, caseId, reason || 'Marked as bad input.'))
+        }
+      }}
+      className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
+    >
+      {flagged ? 'Input is fine after all' : '⚠ Mark input as bad'}
+    </button>
   )
 }
 

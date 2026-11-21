@@ -42,7 +42,7 @@ describe('eval filters', () => {
   })
 
   it('counts runs per filter', () => {
-    expect(countRuns(cases)).toEqual({ all: 3, incorrect: 1, 'bad-input': 0, correct: 1, unrated: 1, notes: 1 })
+    expect(countRuns(cases)).toEqual({ all: 3, incorrect: 1, correct: 1, unrated: 1, notes: 1 })
   })
 
   it('points repeated outputs at the first run that produced them', () => {
