@@ -2,7 +2,6 @@ import * as cheerio from 'cheerio'
 import { parseJsonLd } from './jsonld'
 import { parseMetaFallback } from './meta'
 import { extractArticleContent } from './readability'
-import { fetchWordPressPostHtml } from './wordpress'
 import { extractRecipeFromContent } from '@/lib/ai/extract-recipe'
 import type { RecipeDraft } from '@/types/recipe'
 
@@ -22,9 +21,6 @@ export interface ScrapeOptions {
   onExtracting?: () => void
 }
 
-/** Statuses a bot challenge or WAF block answers with — worth retrying via the WordPress API. */
-const BLOCKED_STATUSES = new Set([403, 429, 503])
-
 export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Promise<ScrapeResult> {
   const response = await fetch(url, {
     headers: {
@@ -37,7 +33,6 @@ export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Pr
     signal: AbortSignal.timeout(15_000),
   })
 
-  let html: string
   if (!response.ok) {
     // Diagnostic logging for blocked/failed fetches (e.g. Cloudflare bot protection
     // rejecting Vercel's serverless IP) — visible in Vercel's function logs, since we
@@ -49,14 +44,10 @@ export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Pr
       cfMitigated: response.headers.get('cf-mitigated'),
       bodySnippet: bodySnippet.slice(0, 500),
     })
-    // A blocked WordPress blog usually still serves the post through its REST API.
-    const wordPressHtml = BLOCKED_STATUSES.has(response.status) ? await fetchWordPressPostHtml(url) : null
-    if (!wordPressHtml) throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`)
-    html = wordPressHtml
-  } else {
-    html = await response.text()
+    throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`)
   }
 
+  const html = await response.text()
   const $ = cheerio.load(html)
 
   // Grab page language from <html lang="..."> (BCP-47, e.g. "sk", "en-US")
