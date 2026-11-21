@@ -65,6 +65,16 @@ describe('extract-recipe eval runner', () => {
     stubFetch(page({ jsonLd: `<script type="application/ld+json">${ld}</script>` }))
     const prepared = await runner.prepare({ url: URL })
     expect(prepared.meta).toMatchObject({ jsonLd: 'complete', productionCallsModel: false })
+    expect(prepared.reference).toEqual({
+      source: 'JSON-LD',
+      data: { rawIngredients: ['6 cups apples'], rawSteps: ['Bake.'] },
+    })
+    expect(await runner.loadReference!({ url: URL })).toEqual(prepared.reference)
+  })
+
+  it('records that a page without JSON-LD has no reference', async () => {
+    stubFetch(page())
+    expect((await runner.prepare({ url: URL })).reference).toBeNull()
   })
 
   it('rejects invalid URLs without fetching', async () => {

@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic'
 
 const FILTER_LABELS: Record<RunFilter, string> = {
   all: 'All',
-  incorrect: 'Incorrect',
+  incorrect: 'Model wrong',
+  'bad-input': 'Bad input',
   correct: 'Correct',
   unrated: 'Unrated',
   notes: 'With notes',
@@ -96,6 +97,7 @@ export default async function PromptPage({
             const caseHref = `/dev/evals/${info.id}/${evalCase.id}`
             const incorrect = evalCase.runs.filter((r) => r.verdict === 'incorrect').length
             const correct = evalCase.runs.filter((r) => r.verdict === 'correct').length
+            const badInput = evalCase.runs.filter((r) => r.verdict === 'bad-input').length
             return (
               <li key={evalCase.id} className="rounded-lg border border-gray-200 bg-white">
                 <Link href={caseHref} className="block rounded-t-lg p-3 hover:bg-gray-50">
@@ -105,6 +107,7 @@ export default async function PromptPage({
                       {evalCase.runs.length} {evalCase.runs.length === 1 ? 'run' : 'runs'}
                       {correct > 0 && <span className="ml-2 text-emerald-700">✓ {correct}</span>}
                       {incorrect > 0 && <span className="ml-2 text-red-700">✗ {incorrect}</span>}
+                      {badInput > 0 && <span className="ml-2 text-amber-700">⚠ {badInput}</span>}
                     </span>
                   </div>
                   {typeof evalCase.source.url === 'string' && (
@@ -117,7 +120,7 @@ export default async function PromptPage({
                       <li key={run.id}>
                         <Link href={`${caseHref}#run-${run.id}`} className="flex gap-3 px-3 py-2 text-sm hover:bg-gray-50">
                           <span className="w-12 shrink-0 text-xs leading-5 text-gray-500">Run {number}</span>
-                          <VerdictBadge verdict={run.verdict} className="h-fit shrink-0" />
+                          <VerdictBadge verdict={run.verdict} className="h-fit w-28 shrink-0 justify-center" />
                           <span className="min-w-0 flex-1">
                             {run.error && <span className="text-red-700">API error: {run.error}</span>}
                             {run.notes ? (

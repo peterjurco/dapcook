@@ -83,6 +83,17 @@ export async function setNotesAction(promptParam: string, caseId: string, runId:
   revalidatePath(base(prompt), 'layout')
 }
 
+/** Loads the page's reference answer for an input added before references existed. */
+export async function loadReferenceAction(promptParam: string, caseId: string): Promise<void> {
+  const prompt = assertDev(promptParam)
+  const evalCase = await getCase(prompt, caseId)
+  const runner = getRunner(prompt)
+  if (!evalCase || !runner.loadReference) throw new Error('Nothing to load')
+  const reference = await runner.loadReference(evalCase.source)
+  await updateCase(prompt, caseId, (c) => { c.reference = reference })
+  revalidatePath(base(prompt), 'layout')
+}
+
 export async function deleteRunAction(promptParam: string, caseId: string, runId: string): Promise<void> {
   const prompt = assertDev(promptParam)
   await updateCase(prompt, caseId, (c) => { c.runs = c.runs.filter((r) => r.id !== runId) })

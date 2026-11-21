@@ -5,6 +5,13 @@ import { cn } from '@/lib/utils/cn'
 import type { EvalRun, Verdict } from '@/lib/evals/types'
 import { deleteRunAction, setNotesAction, setVerdictAction } from '../actions'
 import { JsonView } from './JsonView'
+import { VERDICTS } from './VerdictBadge'
+
+const VERDICT_ON: Record<Verdict, string> = {
+  correct: 'border-emerald-700 bg-emerald-700 text-white',
+  incorrect: 'border-red-700 bg-red-700 text-white',
+  'bad-input': 'border-amber-600 bg-amber-600 text-white',
+}
 
 type Tab = 'pretty' | 'raw' | 'request'
 
@@ -50,6 +57,7 @@ export function RunCard({
         'scroll-mt-4 rounded-lg border bg-white target:ring-2 target:ring-emerald-500',
         run.verdict === 'correct' && 'border-emerald-300',
         run.verdict === 'incorrect' && 'border-red-300',
+        run.verdict === 'bad-input' && 'border-amber-300',
         run.verdict === null && 'border-gray-200'
       )}
     >
@@ -110,36 +118,24 @@ export function RunCard({
       </div>
 
       <footer className="flex flex-col gap-2 border-t border-gray-100 px-4 py-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-gray-500">Verdict</span>
-          <button
-            type="button"
-            aria-pressed={run.verdict === 'correct'}
-            disabled={pending}
-            onClick={() => setVerdict('correct')}
-            className={cn(
-              'rounded-md border px-3 py-1 text-sm',
-              run.verdict === 'correct'
-                ? 'border-emerald-700 bg-emerald-700 text-white'
-                : 'border-gray-300 text-gray-700 hover:border-emerald-600 hover:text-emerald-700'
-            )}
-          >
-            ✓ Correct
-          </button>
-          <button
-            type="button"
-            aria-pressed={run.verdict === 'incorrect'}
-            disabled={pending}
-            onClick={() => setVerdict('incorrect')}
-            className={cn(
-              'rounded-md border px-3 py-1 text-sm',
-              run.verdict === 'incorrect'
-                ? 'border-red-700 bg-red-700 text-white'
-                : 'border-gray-300 text-gray-700 hover:border-red-600 hover:text-red-700'
-            )}
-          >
-            ✗ Incorrect
-          </button>
+          {VERDICTS.map(({ value, label, hint }) => (
+            <button
+              key={value}
+              type="button"
+              title={hint}
+              aria-pressed={run.verdict === value}
+              disabled={pending}
+              onClick={() => setVerdict(value)}
+              className={cn(
+                'rounded-md border px-3 py-1 text-sm',
+                run.verdict === value ? VERDICT_ON[value] : 'border-gray-300 text-gray-700 hover:border-gray-500'
+              )}
+            >
+              {label}
+            </button>
+          ))}
           <span className="ml-auto text-xs text-gray-400">
             {pending ? 'Saving…' : notes !== savedNotes ? 'Unsaved notes' : ''}
           </span>

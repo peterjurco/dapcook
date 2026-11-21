@@ -6,6 +6,7 @@ import { findDuplicateOutputs, numberRuns } from '@/lib/evals/filter'
 import { humanizeKey } from '../../_components/JsonView'
 import { RunCard } from '../../_components/RunCard'
 import { DeleteCaseButton, RunControls } from '../../_components/CaseActions'
+import { InputCheck } from '../../_components/InputCheck'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,9 @@ function MetaValue({ value }: { value: unknown }) {
   return <>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</>
 }
 
+// The text the model is judged against gets the room; short fields (the URL) stay folded.
+const PRIMARY_INPUT_MIN_CHARS = 200
+
 export default async function CasePage({ params }: { params: Promise<{ prompt: string; caseId: string }> }) {
   const { prompt, caseId } = await params
   const info = getPromptInfo(prompt)
@@ -28,6 +32,9 @@ export default async function CasePage({ params }: { params: Promise<{ prompt: s
   const duplicates = findDuplicateOutputs(evalCase)
   const runs = numberRuns(evalCase).reverse()
   const url = typeof evalCase.source.url === 'string' ? evalCase.source.url : null
+  const inputs = Object.entries(evalCase.input)
+  const primary = inputs.filter(([, v]) => typeof v === 'string' && v.length >= PRIMARY_INPUT_MIN_CHARS)
+  const secondary = inputs.filter((entry) => !primary.includes(entry))
 
   return (
     <div>
@@ -47,51 +54,72 @@ export default async function CasePage({ params }: { params: Promise<{ prompt: s
         <DeleteCaseButton prompt={info.id} caseId={evalCase.id} runCount={evalCase.runs.length} />
       </header>
 
-      <section className="mb-6 rounded-lg border border-gray-200 bg-white">
-        <h2 className="border-b border-gray-100 px-4 py-2 text-sm font-semibold">Input</h2>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 px-4 py-3 text-sm sm:grid-cols-4">
-          {Object.entries(evalCase.meta).map(([key, value]) => (
-            <div key={key} className="min-w-0">
-              <dt className="text-xs text-gray-500">{humanizeKey(key)}</dt>
-              <dd className="truncate"><MetaValue value={value} /></dd>
-            </div>
-          ))}
-        </dl>
-        {Object.entries(evalCase.input).map(([key, value]) => (
-          <details key={key} className="border-t border-gray-100 px-4 py-2">
-            <summary className="cursor-pointer text-sm text-gray-700">
-              {humanizeKey(key)}
-              {typeof value === 'string' && <span className="ml-2 text-xs text-gray-400">{value.length} chars</span>}
-            </summary>
-            <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-50 p-3 font-mono text-xs">
-              {typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
-            </pre>
-          </details>
-        ))}
-      </section>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        {/* Left: what the model saw. Sticky so it stays next to whichever run is being judged. */}
+        <section className="rounded-lg border border-gray-200 bg-white lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-2rem)] lg:flex-col">
+          <h2 className="border-b border-gray-100 px-4 py-2 text-sm font-semibold">Input: what the model sees</h2>
+          <div className="space-y-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-auto">
+            {info.id === 'extract-recipe' && <InputCheck evalCase={evalCase} />}
 
-      <div className="mb-4">
-        <RunControls prompt={info.id} caseId={evalCase.id} hasRuns={evalCase.runs.length > 0} />
-      </div>
+            {primary.map(([key, value]) => (
+              <div key={key}>
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {humanizeKey(key)} <span className="font-normal normal-case text-gray-400">{String(value).length} chars</span>
+                </h3>
+                <pre className="whitespace-pre-wrap break-words rounded bg-gray-50 p-3 font-mono text-xs leading-relaxed">
+                  {String(value)}
+                </pre>
+              </div>
+            ))}
 
-      {runs.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
-          No runs yet.
-        </p>
-      ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {runs.map(({ run, number }) => (
-            <RunCard
-              key={run.id}
-              prompt={info.id}
-              caseId={evalCase.id}
-              run={run}
-              number={number}
-              duplicateOf={duplicates.get(run.id)}
-            />
-          ))}
+            <details className="text-sm">
+              <summary className="cursor-pointer text-gray-600">Details</summary>
+              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                {Object.entries(evalCase.meta).map(([key, value]) => (
+                  <div key={key} className="min-w-0">
+                    <dt className="text-xs text-gray-500">{humanizeKey(key)}</dt>
+                    <dd className="truncate"><MetaValue value={value} /></dd>
+                  </div>
+                ))}
+                {secondary.map(([key, value]) => (
+                  <div key={key} className="col-span-2 min-w-0">
+                    <dt className="text-xs text-gray-500">{humanizeKey(key)}</dt>
+                    <dd className="break-all font-mono text-xs">
+                      {typeof value === 'string' ? value : JSON.stringify(value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          </div>
+        </section>
+
+        {/* Right: the runs, judged against the input on the left. */}
+        <div className="min-w-0 space-y-4">
+          <RunControls prompt={info.id} caseId={evalCase.id} hasRuns={evalCase.runs.length > 0} />
+          <p className="text-xs text-gray-500">
+            Judge each output against the input on the left, not the web page. ✓ Correct: it matches the input.
+            ✗ Model wrong: the input had it, the model missed or mangled it. ⚠ Bad input: the output is wrong because
+            the input was.
+          </p>
+          {runs.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+              No runs yet.
+            </p>
+          ) : (
+            runs.map(({ run, number }) => (
+              <RunCard
+                key={run.id}
+                prompt={info.id}
+                caseId={evalCase.id}
+                run={run}
+                number={number}
+                duplicateOf={duplicates.get(run.id)}
+              />
+            ))
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

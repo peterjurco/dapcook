@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { deleteCaseAction, runCaseAction } from '../actions'
+import { deleteCaseAction, loadReferenceAction, runCaseAction } from '../actions'
 
 export function RunControls({ prompt, caseId, hasRuns }: { prompt: string; caseId: string; hasRuns: boolean }) {
   const [times, setTimes] = useState(1)
@@ -44,6 +44,33 @@ export function RunControls({ prompt, caseId, hasRuns }: { prompt: string; caseI
       <span className="text-xs text-gray-500">Calls the Anthropic API (paid).</span>
       {error && <p role="alert" className="w-full text-sm text-red-700">{error}</p>}
     </div>
+  )
+}
+
+export function LoadReferenceButton({ prompt, caseId }: { prompt: string; caseId: string }) {
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => {
+          setError(null)
+          startTransition(async () => {
+            try {
+              await loadReferenceAction(prompt, caseId)
+            } catch (err) {
+              setError(err instanceof Error ? err.message : String(err))
+            }
+          })
+        }}
+        className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-60"
+      >
+        {pending ? 'Fetching page…' : 'Load recipe data'}
+      </button>
+      {error && <p role="alert" className="mt-1 text-sm text-red-700">{error}</p>}
+    </>
   )
 }
 

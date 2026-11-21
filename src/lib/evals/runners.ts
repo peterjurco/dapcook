@@ -7,27 +7,47 @@ import { collectJsonLd, fetchPageHtml } from '@/lib/scraper'
 import { parseJsonLd } from '@/lib/scraper/jsonld'
 import { extractArticleContent } from '@/lib/scraper/readability'
 import { newId } from './store'
-import type { EvalCase, EvalRun, PromptId } from './types'
+import type { EvalCase, EvalReference, EvalRun, PromptId } from './types'
 
 // Each prompt plugs into the eval tool with two pieces:
 //  - prepare: turn what the person typed into the prompt's input, by running
 //    the same pipeline production runs before the model call;
 //  - buildRequest: the production request builder for that input.
+//  - loadReference (optional): what the page itself says the answer is, so the
+//    person judging can tell a bad input from a bad model answer.
 interface PromptRunner {
-  prepare(source: Record<string, string>): Promise<Pick<EvalCase, 'label' | 'source' | 'input' | 'meta'>>
+  prepare(
+    source: Record<string, string>
+  ): Promise<Pick<EvalCase, 'label' | 'source' | 'input' | 'meta' | 'reference'>>
   buildRequest(input: EvalCase['input']): MessageCreateParamsNonStreaming
+  loadReference?(source: EvalCase['source']): Promise<EvalReference | null>
+}
+
+function parseUrl(raw: string | undefined): string {
+  const url = raw?.trim()
+  if (!url) throw new Error('Enter a URL')
+  try {
+    new URL(url)
+  } catch {
+    throw new Error('That is not a valid URL')
+  }
+  return url
+}
+
+type JsonLdRecipe = ReturnType<typeof parseJsonLd>
+
+/** The page's own recipe data, as the importer reads it, to compare against. */
+function jsonLdReference(jsonLd: JsonLdRecipe): EvalReference | null {
+  if (!jsonLd) return null
+  return {
+    source: jsonLd.partial ? 'JSON-LD (incomplete)' : 'JSON-LD',
+    data: { rawIngredients: jsonLd.rawIngredients, rawSteps: jsonLd.rawSteps },
+  }
 }
 
 const extractRecipe: PromptRunner = {
   async prepare(source) {
-    const url = source.url?.trim()
-    if (!url) throw new Error('Enter a URL')
-    try {
-      new URL(url)
-    } catch {
-      throw new Error('That is not a valid URL')
-    }
-
+    const url = parseUrl(source.url)
     const html = await fetchPageHtml(url)
     const $ = cheerio.load(html)
     const jsonLd = parseJsonLd(collectJsonLd($), url)
@@ -44,6 +64,7 @@ const extractRecipe: PromptRunner = {
       label: article.title || jsonLd?.title || url,
       source: { url },
       input: { articleText, sourceUrl: url },
+      reference: jsonLdReference(jsonLd),
       meta: {
         pageTitle: article.title,
         detectedLanguage: $('html').attr('lang') ?? null,
@@ -59,6 +80,11 @@ const extractRecipe: PromptRunner = {
   },
   buildRequest(input) {
     return buildExtractRecipeRequest(String(input.articleText ?? ''))
+  },
+  async loadReference(source) {
+    const url = parseUrl(typeof source.url === 'string' ? source.url : undefined)
+    const html = await fetchPageHtml(url)
+    return jsonLdReference(parseJsonLd(collectJsonLd(cheerio.load(html)), url))
   },
 }
 

@@ -1,6 +1,6 @@
 import type { EvalCase, EvalRun } from './types'
 
-export const RUN_FILTERS = ['all', 'incorrect', 'correct', 'unrated', 'notes'] as const
+export const RUN_FILTERS = ['all', 'incorrect', 'bad-input', 'correct', 'unrated', 'notes'] as const
 export type RunFilter = (typeof RUN_FILTERS)[number]
 
 export function parseRunFilter(value: string | string[] | undefined): RunFilter {
@@ -11,6 +11,7 @@ export function runMatches(run: EvalRun, filter: RunFilter): boolean {
   switch (filter) {
     case 'all': return true
     case 'incorrect': return run.verdict === 'incorrect'
+    case 'bad-input': return run.verdict === 'bad-input'
     case 'correct': return run.verdict === 'correct'
     case 'unrated': return run.verdict === null
     case 'notes': return run.notes.trim() !== ''

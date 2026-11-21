@@ -10,7 +10,19 @@ export type PromptId =
   | 'transform-recipe'
   | 'make-shopping-list'
 
-export type Verdict = 'correct' | 'incorrect'
+/**
+ * correct: the output is right for the input.
+ * incorrect: the model got it wrong: the input had what it needed.
+ * bad-input: the output is wrong because the input was (e.g. Readability
+ *   dropped the ingredients), so it says nothing about the prompt.
+ */
+export type Verdict = 'correct' | 'incorrect' | 'bad-input'
+
+/** What the page itself says the answer is, e.g. its JSON-LD recipe data. */
+export interface EvalReference {
+  source: string
+  data: Record<string, unknown>
+}
 
 export interface EvalRun {
   id: string
@@ -43,5 +55,7 @@ export interface EvalCase {
   input: Record<string, unknown>
   /** Diagnostics about how the input was produced (pipeline decisions, sizes). */
   meta: Record<string, unknown>
+  /** Reference answer from the page; null = the page has none, absent = not loaded yet. */
+  reference?: EvalReference | null
   runs: EvalRun[]
 }
