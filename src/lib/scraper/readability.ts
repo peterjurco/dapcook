@@ -23,6 +23,18 @@ const CHAR_THRESHOLD = 200
 // short, and we turn it off from the start. readability.test.ts guards it.
 type ReadabilityFlags = { _removeFlag(flag: number): void; FLAG_CLEAN_CONDITIONALLY: number }
 
+// textContent keeps the page source's indentation: on themodernproper.com 68%
+// of the article text was whitespace, which pushed the recipe past the model's
+// character cap (and was paid for as input tokens). Collapse runs of spaces and
+// tabs, trim each line and drop blank lines, keeping one line break between
+// lines so ingredients and steps stay on their own lines.
+export function collapseWhitespace(text: string): string {
+  return text
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/ ?\n\s*/g, '\n')
+    .trim()
+}
+
 // Uses linkedom instead of jsdom: Vercel's Node.js function runtime unconditionally
 // passes --no-experimental-require-module, disabling require() of ES modules
 // regardless of the selected Node.js version. jsdom (v26+) requires the ESM-only
@@ -43,7 +55,7 @@ export function extractArticleContent(html: string, url: string): ArticleContent
 
   if (!article) return null
 
-  const textContent = article.textContent?.trim() ?? ''
+  const textContent = collapseWhitespace(article.textContent ?? '')
   if (textContent.length < CHAR_THRESHOLD) return null
 
   return {

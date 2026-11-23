@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { extractArticleContent } from './readability'
+import { collapseWhitespace, extractArticleContent } from './readability'
 
 const URL = 'https://example.com/grandmas-apple-pie'
 
@@ -138,6 +138,13 @@ describe('extractArticleContent', () => {
     expect(result!.textContent).toContain('Podávame so strateným vajcom')
   })
 
+  it('collapses indentation whitespace but keeps one line per list item', () => {
+    const html = ARTICLE_HTML.replace(/<li>/g, '\n\t\t\t\t\t\t\t\t<li>          ')
+    const text = extractArticleContent(html, URL)!.textContent
+    expect(text).not.toMatch(/[ \t]{2,}|\n\s*\n/)
+    expect(text).toContain('\n6 cups thinly sliced apples\n3/4 cup white sugar\n')
+  })
+
   it('returns null when the page has no identifiable article content', () => {
     const result = extractArticleContent(NON_ARTICLE_HTML, URL)
     expect(result).toBeNull()
@@ -152,6 +159,13 @@ describe('extractArticleContent', () => {
     const result = extractArticleContent(LONG_ARTICLE_HTML, URL)
     expect(result).not.toBeNull()
     expect(result!.textContent.length).toBeGreaterThan(200)
+  })
+})
+
+describe('collapseWhitespace', () => {
+  it('turns runs of spaces, tabs and blank lines into single separators', () => {
+    expect(collapseWhitespace('  \n\t\tSuroviny \r\n\n\n   200 g   múky\u00a0\n\t \n Postup  '))
+      .toBe('Suroviny\n200 g múky\nPostup')
   })
 })
 
