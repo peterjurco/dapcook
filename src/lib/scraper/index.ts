@@ -76,12 +76,20 @@ export async function scrapeRecipe(url: string, options: ScrapeOptions = {}): Pr
       try {
         const extracted = await extractRecipeFromContent(article.textContent, url, options.householdId)
         if (extracted) {
+          // Prefer what the model read from the page, but keep a list the page's
+          // own data already had when the model came back without it (gymbeam.sk:
+          // JSON-LD has the ingredients but no steps).
+          const rawIngredients = extracted.rawIngredients.length ? extracted.rawIngredients : base.rawIngredients
+          const rawSteps = extracted.rawSteps.length ? extracted.rawSteps : base.rawSteps
+          const partial = rawIngredients.length === 0 || rawSteps.length === 0
           return {
             raw: {
               ...base,
-              rawIngredients: extracted.rawIngredients,
-              rawSteps: extracted.rawSteps,
-              partial: false,
+              rawIngredients,
+              rawSteps,
+              partial,
+              // The base reason ("only title and image") no longer holds once the
+              // model added something; the form falls back to its generic warning.
               partial_reason: undefined,
             },
             detectedLanguage,

@@ -9,10 +9,11 @@ export interface ExtractedRecipeContent {
 
 const client = new Anthropic()
 
-// Recipe article text rarely needs more than this to contain the full ingredient
-// list and instructions; caps cost on unusually long blog posts (long personal
-// backstories, imperfectly-filtered related-post blocks, etc).
-const MAX_ARTICLE_CHARS = 6000
+// Caps cost on unusually long blog posts (long personal backstories,
+// imperfectly-filtered related-post blocks, etc). Food blogs often put the recipe
+// after several thousand characters of story (delish.com: ~7,200), so this has
+// room for that; 12k chars is roughly 3k input tokens.
+const MAX_ARTICLE_CHARS = 12_000
 
 export async function extractRecipeFromContent(
   articleText: string,
@@ -66,7 +67,9 @@ Rules:
     const rawIngredients = (parsed.rawIngredients ?? []).map((s) => s.trim()).filter(Boolean)
     const rawSteps = (parsed.rawSteps ?? []).map((s) => s.trim()).filter(Boolean)
 
-    if (rawIngredients.length === 0 || rawSteps.length === 0) {
+    // One list can legitimately be empty when the page splits its recipe (e.g.
+    // ingredients only in JSON-LD); the caller fills the gap from other sources.
+    if (rawIngredients.length === 0 && rawSteps.length === 0) {
       return null
     }
 

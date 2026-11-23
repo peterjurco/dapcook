@@ -62,6 +62,12 @@ describe('extractRecipeFromContent', () => {
     expect(result).toBeNull()
   })
 
+  it('returns what it found when the page has only one of the two lists', async () => {
+    mockAnthropicResponse(JSON.stringify({ rawIngredients: [], rawSteps: ['Bake for 45 minutes.'] }))
+    const result = await extractRecipeFromContent(ARTICLE_TEXT, URL)
+    expect(result).toEqual({ rawIngredients: [], rawSteps: ['Bake for 45 minutes.'] })
+  })
+
   it('returns null when the response has no JSON', async () => {
     mockAnthropicResponse('Sorry, I cannot help with that.')
     const result = await extractRecipeFromContent(ARTICLE_TEXT, URL)
