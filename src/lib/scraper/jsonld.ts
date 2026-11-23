@@ -1,21 +1,14 @@
+import { decodeHTMLStrict } from 'entities'
 import type { RecipeDraft } from '@/types/recipe'
 
-// Decode common HTML entities found in malformed JSON-LD (e.g. kuchynalidla.sk)
+// Some sites HTML-escape the text inside their JSON-LD (kuchynalidla.sk:
+// "180 &deg;C", "nakr&aacute;jan&yacute;"). Decode every HTML entity, not a
+// hand-picked list: a missed one (e.g. &deg;) used to reach the recipe as-is.
+// Strict mode only decodes entities with their closing ";", so plain text like
+// "salt&pepper" is left alone. Non-breaking spaces become plain spaces, so
+// "200&nbsp;g" parses like "200 g".
 function decodeHtmlEntities(str: string): string {
-  const named: Record<string, string> = {
-    aacute: 'á', eacute: 'é', iacute: 'í', oacute: 'ó', uacute: 'ú',
-    yacute: 'ý', agrave: 'à', egrave: 'è', igrave: 'ì', ograve: 'ò',
-    ugrave: 'ù', acirc: 'â', ecirc: 'ê', icirc: 'î', ocirc: 'ô', ucirc: 'û',
-    atilde: 'ã', ntilde: 'ñ', otilde: 'õ', auml: 'ä', euml: 'ë', iuml: 'ï',
-    ouml: 'ö', uuml: 'ü', yuml: 'ÿ', aring: 'å', aelig: 'æ', ccedil: 'ç',
-    scaron: 'š', zcaron: 'ž', amp: '&', lt: '<', gt: '>', quot: '"',
-    nbsp: ' ', ndash: '–', mdash: '—', hellip: '…', ldquo: '"', rdquo: '"',
-    lsquo: '\u2018', rsquo: '\u2019',
-  }
-  return str
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
-    .replace(/&([a-z]+);/gi, (match, name) => named[name.toLowerCase()] ?? match)
+  return decodeHTMLStrict(str).replace(/\u00a0/g, ' ')
 }
 
 // Parse ISO 8601 duration to minutes: PT1H30M → 90
@@ -182,8 +175,8 @@ export function parseJsonLd(
     }
 
     return {
-      title: typeof recipe.name === 'string' ? recipe.name.trim() : 'Untitled Recipe',
-      description: typeof recipe.description === 'string' ? recipe.description.trim() : '',
+      title: typeof recipe.name === 'string' ? decodeHtmlEntities(recipe.name).trim() : 'Untitled Recipe',
+      description: typeof recipe.description === 'string' ? decodeHtmlEntities(recipe.description).trim() : '',
       source_url: sourceUrl,
       image_url: parseImage(recipe.image),
       prep_time_min: parseDuration(recipe.prepTime as string | undefined),
