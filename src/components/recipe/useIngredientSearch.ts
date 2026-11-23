@@ -13,6 +13,12 @@ interface IngredientSearch {
   error: boolean
 }
 
+interface SearchResult {
+  term: string
+  ids: Set<string> | null
+  error: boolean
+}
+
 /**
  * Asks the server which recipes contain an ingredient matching `term`.
  *
@@ -23,21 +29,17 @@ interface IngredientSearch {
 export function useIngredientSearch(term: string): IngredientSearch {
   const q = term.trim()
   const active = normalizeText(q).length >= MIN_INGREDIENT_TERM
-  const [ids, setIds] = useState<Set<string> | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  // The last answer from the server, for the term it answered. Everything
+  // the hook returns is derived from it and the current term.
+  const [result, setResult] = useState<SearchResult | null>(null)
+
+  // Emptying the term forgets the last answer, so the next search starts unfiltered.
+  if (!active && result !== null) setResult(null)
 
   useEffect(() => {
-    if (!active) {
-      setIds(null)
-      setLoading(false)
-      setError(false)
-      return
-    }
+    if (!active) return
 
     const controller = new AbortController()
-    setLoading(true)
-    setError(false)
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/recipes/ingredient-search?q=${encodeURIComponent(q)}`, {
@@ -45,14 +47,11 @@ export function useIngredientSearch(term: string): IngredientSearch {
         })
         if (!res.ok) throw new Error(`ingredient search failed: ${res.status}`)
         const body = (await res.json()) as { ids: string[] }
-        setIds(new Set(body.ids))
-        setError(false)
+        setResult({ term: q, ids: new Set(body.ids), error: false })
       } catch {
         if (controller.signal.aborted) return
-        setIds(null)
-        setError(true)
+        setResult({ term: q, ids: null, error: true })
       }
-      setLoading(false)
     }, INGREDIENT_SEARCH_DEBOUNCE_MS)
 
     return () => {
@@ -61,5 +60,7 @@ export function useIngredientSearch(term: string): IngredientSearch {
     }
   }, [q, active])
 
-  return active ? { ids, loading, error } : { ids: null, loading: false, error: false }
+  if (!active) return { ids: null, loading: false, error: false }
+  const loading = result?.term !== q
+  return { ids: result?.ids ?? null, loading, error: !loading && result?.error === true }
 }

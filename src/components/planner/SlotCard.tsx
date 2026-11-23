@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -11,6 +11,7 @@ import { ResizeHandle } from './ResizeHandle'
 import { ContinuedCue } from './ContinuedCue'
 import { useSpanResize } from './useSpanResize'
 import type { MealSlotWithRecipe } from '@/types/planner'
+import { useClientValue } from '@/lib/utils/use-client-value'
 import Image from 'next/image'
 
 interface SlotCardProps {
@@ -29,6 +30,20 @@ interface SlotCardProps {
   continued?: boolean
 }
 
+/** Portions last chosen for this recipe on the shopping page, if any. */
+function readSavedPortions(recipeId: string | null): number | null {
+  if (!recipeId) return null
+  try {
+    const raw = localStorage.getItem('recipe_portions')
+    if (!raw) return null
+    const data = JSON.parse(raw) as Record<string, number>
+    return data[recipeId] ?? null
+  } catch {
+    // ignore storage errors
+    return null
+  }
+}
+
 export function SlotCard({
   slot,
   onDelete,
@@ -42,20 +57,7 @@ export function SlotCard({
 }: SlotCardProps) {
   const t = useTranslations('planner')
   const [confirming, setConfirming] = useState(false)
-  const [savedPortions, setSavedPortions] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (!slot.recipe_id) return
-    try {
-      const raw = localStorage.getItem('recipe_portions')
-      if (raw) {
-        const data = JSON.parse(raw) as Record<string, number>
-        setSavedPortions(data[slot.recipe_id] ?? null)
-      }
-    } catch {
-      // ignore storage errors
-    }
-  }, [slot.recipe_id])
+  const savedPortions = useClientValue(() => readSavedPortions(slot.recipe_id), null)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: slot.id,

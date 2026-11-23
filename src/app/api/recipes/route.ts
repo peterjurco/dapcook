@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
 
   if (search) {
-    // eslint-disable-next-line no-misleading-character-class
     const normalized = search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     query = query.ilike('title_normalized', `%${normalized}%`)
   }

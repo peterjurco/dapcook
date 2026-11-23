@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { isTourId, type TourId } from '@/lib/tours/ids'
 import { TOURS } from './tours'
@@ -42,7 +42,9 @@ export function TourProvider({ initialSeen, children }: { initialSeen: string[];
   // Refs mirror state synchronously so two tours starting in one tick can't both win.
   const activeRef = useRef<ActiveTour | null>(null)
   const pathnameRef = useRef(pathname)
-  pathnameRef.current = pathname
+  useLayoutEffect(() => {
+    pathnameRef.current = pathname
+  }, [pathname])
 
   const setActive = useCallback((next: ActiveTour | null) => {
     activeRef.current = next

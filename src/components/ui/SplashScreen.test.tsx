@@ -3,7 +3,6 @@ import { render } from '@testing-library/react'
 import { SplashScreen, SPLASH_GATE_SCRIPT, SPLASH_SESSION_KEY } from './SplashScreen'
 
 function runGateScript() {
-  // eslint-disable-next-line no-new-func
   new Function(SPLASH_GATE_SCRIPT)()
 }
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Check, Copy, Link2Off, Share2, X } from 'lucide-react'
+import { useClientValue } from '@/lib/utils/use-client-value'
 
 interface ShareRecipeButtonProps {
   recipeId: string
@@ -16,7 +17,8 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
   const t = useTranslations('recipes')
   const [open, setOpen] = useState(false)
   const [shareToken, setShareToken] = useState(initialShareToken)
-  const [shareUrl, setShareUrl] = useState('')
+  // The URL the API returned when sharing was enabled here; preferred over building one.
+  const [createdShareUrl, setCreatedShareUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,11 +26,9 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
   const dialogRef = useRef<HTMLElement>(null)
   const wasOpenRef = useRef(false)
 
-  useEffect(() => {
-    setShareUrl((currentUrl) =>
-      shareToken ? currentUrl || `${window.location.origin}/s/${shareToken}` : '',
-    )
-  }, [shareToken])
+  // The origin is only known in the browser; the server renders no URL.
+  const origin = useClientValue(() => window.location.origin, '')
+  const shareUrl = !shareToken ? '' : createdShareUrl || (origin ? `${origin}/s/${shareToken}` : '')
 
   const close = useCallback(() => {
     if (loading) return
@@ -108,7 +108,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
 
       const data = (await response.json()) as { share_token: string; share_url: string }
       setShareToken(data.share_token)
-      setShareUrl(data.share_url)
+      setCreatedShareUrl(data.share_url)
     } catch {
       setError(t('share.genericError'))
     } finally {
@@ -126,7 +126,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
       if (response.status !== 204) throw new Error('Could not disable sharing')
 
       setShareToken(null)
-      setShareUrl('')
+      setCreatedShareUrl('')
     } catch {
       setError(t('share.genericError'))
     } finally {

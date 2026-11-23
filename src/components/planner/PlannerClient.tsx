@@ -23,6 +23,11 @@ import type { MealSlotWithRecipe, WeekData } from '@/types/planner'
 import type { WeekPlan } from '@/types/database'
 import type { RecipeListItem } from '@/lib/recipes/list-columns'
 
+async function fetchWeek(weekStartStr: string): Promise<WeekData | null> {
+  const res = await fetch(`/api/planner/week?week=${weekStartStr}`)
+  return res.ok ? (await res.json() as WeekData) : null
+}
+
 interface PlannerClientProps {
   weekStart: Date
 }
@@ -47,25 +52,29 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const loadWeek = useCallback(async () => {
-    const cached = getCachedWeekData(weekStartStr)
-    if (cached) {
-      setWeekPlan(cached.weekPlan)
-      setSlots(cached.slots)
+  // Switching weeks shows the cached copy straight away (or the skeleton), then refreshes it.
+  const [shownWeek, setShownWeek] = useState(weekStartStr)
+  if (shownWeek !== weekStartStr) {
+    setShownWeek(weekStartStr)
+    if (cachedWeekData) {
+      setWeekPlan(cachedWeekData.weekPlan)
+      setSlots(cachedWeekData.slots)
       setLoading(false)
     } else {
       setLoading(true)
     }
+  }
 
-    const res = await fetch(`/api/planner/week?week=${weekStartStr}`)
-    if (res.ok) {
-      const data = await res.json() as WeekData
+  const applyWeek = useCallback((data: WeekData | null) => {
+    if (data) {
       setCachedWeekData(weekStartStr, data)
       setWeekPlan(data.weekPlan)
       setSlots(data.slots)
     }
     setLoading(false)
   }, [weekStartStr])
+
+  const loadWeek = useCallback(() => fetchWeek(weekStartStr).then(applyWeek), [weekStartStr, applyWeek])
 
   const setSlotsAndCache = useCallback((update: (prev: MealSlotWithRecipe[]) => MealSlotWithRecipe[]) => {
     setSlots((prev) => {
@@ -76,8 +85,8 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
   }, [weekPlan, weekStartStr])
 
   useEffect(() => {
-    loadWeek()
-  }, [loadWeek])
+    void fetchWeek(weekStartStr).then(applyWeek)
+  }, [weekStartStr, applyWeek])
 
   const weekDays = getWeekDays(weekStart)
   const placed = placeInWeek(slots, weekStart)

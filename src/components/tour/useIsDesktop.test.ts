@@ -4,12 +4,19 @@ import { useIsDesktop } from './useIsDesktop'
 
 function stubMatchMedia(matches: boolean) {
   let listener: ((e: MediaQueryListEvent) => void) | null = null
-  vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({
+  // Like a real MediaQueryList, `matches` reflects the latest change.
+  const mql = {
     matches,
     addEventListener: (_: string, l: (e: MediaQueryListEvent) => void) => { listener = l },
     removeEventListener: vi.fn(),
-  }))
-  return { fire: (m: boolean) => listener?.({ matches: m } as MediaQueryListEvent) }
+  }
+  vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(mql))
+  return {
+    fire: (m: boolean) => {
+      mql.matches = m
+      listener?.({ matches: m } as MediaQueryListEvent)
+    },
+  }
 }
 
 afterEach(() => vi.unstubAllGlobals())
