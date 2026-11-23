@@ -37,10 +37,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
   }, [onClose])
 
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([])
-      return
-    }
+    if (!query.trim()) return
     const timer = setTimeout(async () => {
       setLoading(true)
       const res = await fetch(`/api/recipes?search=${encodeURIComponent(query)}`)
@@ -50,6 +47,11 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
     }, 250)
     return () => clearTimeout(timer)
   }, [query])
+
+  function onQueryChange(value: string) {
+    setQuery(value)
+    if (!value.trim()) setResults([])
+  }
 
   // Close on Escape
   useEffect(() => {
@@ -69,7 +71,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
           ref={inputRef}
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => onQueryChange(e.target.value)}
           placeholder={t('search.placeholder')}
           className="flex-1 text-sm text-gray-900 outline-none placeholder:text-gray-400"
         />

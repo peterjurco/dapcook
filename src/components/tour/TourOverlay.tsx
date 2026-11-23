@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { placeCard, GUTTER } from './placement'
@@ -19,6 +19,28 @@ function findTarget(target: string): HTMLElement | null {
   return null
 }
 
+/**
+ * The live element for `target`, as an external store over the DOM. Once found it is kept; if
+ * that node is replaced (re-render, data load), the store follows the new one.
+ */
+function createTargetStore(target: string) {
+  let current: HTMLElement | null = null
+  return {
+    subscribe(onChange: () => void) {
+      const observer = new MutationObserver(onChange)
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+      return () => observer.disconnect()
+    },
+    getSnapshot(): HTMLElement | null {
+      if (current?.isConnected) return current
+      current = findTarget(target) ?? current
+      return current
+    },
+  }
+}
+
+const noTarget = () => null
+
 interface TourOverlayProps {
   step: TourStep
   stepIndex: number
@@ -34,7 +56,8 @@ export function TourOverlay({ step, stepIndex, total, onNext, onMissing, onBack,
   const t = useTranslations('tour')
   const titleId = useId()
   const bodyId = useId()
-  const [target, setTarget] = useState<HTMLElement | null>(null)
+  const targetStore = useMemo(() => createTargetStore(step.target), [step.target])
+  const target = useSyncExternalStore(targetStore.subscribe, targetStore.getSnapshot, noTarget)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [cardHeight, setCardHeight] = useState(CARD_EST_HEIGHT)
@@ -49,34 +72,13 @@ export function TourOverlay({ step, stepIndex, total, onNext, onMissing, onBack,
     onMissingRef.current = onMissing
   })
 
-  // Resolve the target, waiting briefly for it to mount; never trap the user on a missing one.
-  // (The provider keys the overlay per step, so these resets only matter if step.target changes in place.)
+  // Wait briefly for the target to mount; never trap the user on a missing one.
+  // (The provider keys the overlay per step, so a new store only matters if step.target changes in place.)
   useEffect(() => {
-    setTarget(null)
-    setRect(null)
-    const found = findTarget(step.target)
-    if (found) {
-      setTarget(found)
-      return
-    }
-    const observer = new MutationObserver(() => {
-      const el = findTarget(step.target)
-      if (el) {
-        observer.disconnect()
-        clearTimeout(timer)
-        setTarget(el)
-      }
-    })
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
-    const timer = setTimeout(() => {
-      observer.disconnect()
-      onMissingRef.current()
-    }, TARGET_TIMEOUT_MS)
-    return () => {
-      observer.disconnect()
-      clearTimeout(timer)
-    }
-  }, [step.target])
+    if (target) return
+    const timer = setTimeout(() => onMissingRef.current(), TARGET_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [target, targetStore])
 
   // Keep the spotlight on the target through scrolling (any container) and resizes.
   useLayoutEffect(() => {
@@ -96,18 +98,6 @@ export function TourOverlay({ step, stepIndex, total, onNext, onMissing, onBack,
       resizeObserver?.disconnect()
     }
   }, [target])
-
-  // If the target node is replaced (re-render, data load), follow the live element.
-  useEffect(() => {
-    if (!target) return
-    const observer = new MutationObserver(() => {
-      if (target.isConnected) return
-      const el = findTarget(step.target)
-      if (el) setTarget(el)
-    })
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
-  }, [target, step.target])
 
   // Clicking the highlighted control is progress (e.g. tapping Plan or Edit).
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, type MutableRefObject } from 'react'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
@@ -9,16 +9,17 @@ import { PostHogPageView } from './PostHogPageView'
 
 function PostHogRuntime({
   children,
-  initialized,
+  claimFirstInit,
 }: {
   children: React.ReactNode
-  initialized: MutableRefObject<boolean>
+  /** True the first time it is called for this provider, false after. */
+  claimFirstInit: () => boolean
 }) {
   useLayoutEffect(() => {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
     if (!key) return
 
-    if (!initialized.current) {
+    if (claimFirstInit()) {
       posthog.init(key, {
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com',
         capture_pageview: false,
@@ -27,7 +28,6 @@ function PostHogRuntime({
           maskAllInputs: false,
         },
       })
-      initialized.current = true
     } else {
       posthog.set_config({
         autocapture: true,
@@ -45,7 +45,7 @@ function PostHogRuntime({
       })
       posthog.stopSessionRecording()
     }
-  }, [initialized])
+  }, [claimFirstInit])
 
   return (
     <PHProvider client={posthog}>
@@ -57,9 +57,15 @@ function PostHogRuntime({
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  // Lives here, not in PostHogRuntime, so it survives the runtime unmounting on a shared path.
   const initialized = useRef(false)
+  const claimFirstInit = useCallback(() => {
+    if (initialized.current) return false
+    initialized.current = true
+    return true
+  }, [])
 
   if (!isPostHogPath(pathname)) return children
 
-  return <PostHogRuntime initialized={initialized}>{children}</PostHogRuntime>
+  return <PostHogRuntime claimFirstInit={claimFirstInit}>{children}</PostHogRuntime>
 }

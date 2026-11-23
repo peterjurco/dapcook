@@ -4,8 +4,16 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import confetti from 'canvas-confetti'
 import { getBirthdayWindowISO } from '@/lib/utils/birthday'
+import { useClientValue } from '@/lib/utils/use-client-value'
 
 const STORAGE_KEY = 'birthday_shown'
+
+/** Today's birthday window (ISO date) if the overlay hasn't been dismissed for it yet. */
+function pendingBirthday(birthdayDate: string): string | null {
+  const iso = getBirthdayWindowISO(birthdayDate)
+  if (!iso || localStorage.getItem(STORAGE_KEY) === iso) return null
+  return iso
+}
 
 interface Props {
   birthdayDate: string
@@ -14,26 +22,25 @@ interface Props {
 
 export function BirthdayOverlay({ birthdayDate, birthdayMessage }: Props) {
   const t = useTranslations('common')
-  const [visible, setVisible] = useState(false)
+  // Depends on the clock and localStorage, so it is only known in the browser.
+  const pending = useClientValue(() => pendingBirthday(birthdayDate), null)
+  const [dismissed, setDismissed] = useState(false)
+  const visible = pending !== null && !dismissed
 
   useEffect(() => {
-    const iso = getBirthdayWindowISO(birthdayDate)
-    if (!iso) return
-    if (localStorage.getItem(STORAGE_KEY) === iso) return
-
-    setVisible(true)
+    if (pending === null) return
     confetti({
       particleCount: 160,
       spread: 90,
       origin: { y: 0.1 },
       zIndex: 60,
     })
-  }, [birthdayDate])
+  }, [pending])
 
   function dismiss() {
     const iso = getBirthdayWindowISO(birthdayDate)
     if (iso) localStorage.setItem(STORAGE_KEY, iso)
-    setVisible(false)
+    setDismissed(true)
   }
 
   if (!visible) return null

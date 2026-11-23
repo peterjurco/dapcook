@@ -24,6 +24,16 @@ function formatCost(inputTokens: number, outputTokens: number): string {
   return `$${cost.toFixed(4)}`
 }
 
+/** Whole minutes between `iso` and `now`, or null when there is no timestamp. */
+function minutesSince(iso: string | null, now: number): number | null {
+  return iso ? Math.floor((now - new Date(iso).getTime()) / 60_000) : null
+}
+
+/** The time of this request. A server component renders once per request, so reading the clock is safe here. */
+function requestTime(): number {
+  return Date.now()
+}
+
 export default async function AdminPage() {
   const locale = await getLocale()
   const t = await getTranslations('admin')
@@ -57,7 +67,8 @@ export default async function AdminPage() {
     emailsByHousehold.set(profile.household_id, list)
   }
 
-  const rows: HouseholdRow[] = (households ?? []).map((h) => ({
+  const now = requestTime()
+  const rows: HouseholdRow[] =(households ?? []).map((h) => ({
     id: h.id,
     name: h.name,
     created_at: h.created_at,
@@ -101,12 +112,7 @@ export default async function AdminPage() {
                   className="px-4 py-3 text-gray-600"
                   title={row.last_sign_in_at ?? undefined}
                 >
-                  {formatRelativeTime(
-                    row.last_sign_in_at
-                      ? Math.floor((Date.now() - new Date(row.last_sign_in_at).getTime()) / 60_000)
-                      : null,
-                    locale
-                  )}
+                  {formatRelativeTime(minutesSince(row.last_sign_in_at, now), locale)}
                 </td>
                 <td className="px-4 py-3 text-right text-gray-600 font-mono text-xs">
                   {formatTokens(row.total_input_tokens)} {t('table.tokensIn')} / {formatTokens(row.total_output_tokens)} {t('table.tokensOut')}

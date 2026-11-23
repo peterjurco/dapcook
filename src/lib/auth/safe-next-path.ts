@@ -9,7 +9,6 @@ const BASE = 'http://placeholder.invalid'
  */
 export function safeNextPath(value: string | null | undefined, fallback: string): string {
   if (!value || !value.startsWith('/') || value[1] === '/' || value[1] === '\\') return fallback
-  // eslint-disable-next-line no-control-regex
   if (/[\u0000-\u001f\u007f]/.test(value)) return fallback
   try {
     if (new URL(value, BASE).origin !== BASE) return fallback

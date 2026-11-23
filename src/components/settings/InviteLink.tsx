@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Copy, Check, Share2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useClientValue } from '@/lib/utils/use-client-value'
 
 interface Props {
   url: string
@@ -14,11 +15,7 @@ export function InviteLink({ url, shareText }: Props) {
   const t = useTranslations('settings')
   const [copied, setCopied] = useState(false)
   // Decided after mount: the server cannot know whether the browser can share.
-  const [canShare, setCanShare] = useState(false)
-
-  useEffect(() => {
-    setCanShare(typeof navigator.share === 'function')
-  }, [])
+  const canShare = useClientValue(() => typeof navigator.share === 'function', false)
 
   async function handleCopy() {
     await navigator.clipboard.writeText(url)
