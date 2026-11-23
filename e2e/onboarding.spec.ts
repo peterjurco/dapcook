@@ -30,6 +30,22 @@ test.describe('Onboarding', () => {
     expect(household).toEqual({ name: 'The Testers', onboarding_step: null, created_by: user.id })
   })
 
+  test('picks up where it left off after leaving mid-way', async ({ page }) => {
+    await page.goto('/onboarding')
+    await page.getByRole('button', { name: 'English' }).click()
+    await page.getByRole('button', { name: "Let's start" }).click()
+    await page.getByLabel('Household name').fill('Half-done household')
+    await page.getByRole('button', { name: 'Create household' }).click()
+    await page.getByRole('button', { name: 'Next', exact: true }).click() // translation → units
+    await page.getByRole('button', { name: 'Next', exact: true }).click() // units → week start
+    await expect(page.getByText('When does your week start?')).toBeVisible()
+
+    // Wandering off to the app sends an unfinished household back to the wizard, at the same step.
+    await page.goto('/recipes')
+    await expect(page).toHaveURL(/\/onboarding/)
+    await expect(page.getByText('When does your week start?')).toBeVisible()
+  })
+
   test('a new user joins an existing household with an invite link', async ({ page, user: newcomer, browser }) => {
     const owner = await createUser()
     const recipe = await createRecipe(owner, { title: 'Grandma’s goulash' })

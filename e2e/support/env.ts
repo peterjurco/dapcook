@@ -1,8 +1,10 @@
 import { execFileSync } from 'node:child_process'
 
 export const APP_PORT = 3001
-export const FAKE_ANTHROPIC_PORT = 3011
+export const FAKE_SERVICES_PORT = 3011
 export const APP_URL = `http://localhost:${APP_PORT}`
+/** The fake recipe website served by e2e/support/fake-services.ts. */
+export const FAKE_RECIPE_SITE = `http://localhost:${FAKE_SERVICES_PORT}/recipe-site`
 
 export interface LocalSupabase {
   url: string
