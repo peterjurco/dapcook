@@ -72,6 +72,56 @@ const LONG_ARTICLE_HTML = `
 </body></html>
 `
 
+// Shaped like a real WordPress recipe post (gymbeam.sk): the ingredient list sits
+// in a block-editor columns block next to a photo. Readability's default
+// "clean conditionally" pass dropped that block as link-heavy clutter (several
+// ingredients link to the shop), so the
+// model got the steps but no ingredients.
+const COLUMNS_RECIPE_HTML = `
+<!DOCTYPE html>
+<html lang="sk"><head><title>Zemiaková polievka so strateným vajcom</title></head>
+<body>
+<nav><a href="/">Domov</a><a href="/blog">Blog</a></nav>
+<article class="post">
+<h1>Zemiaková polievka so strateným vajcom</h1>
+<div class="entry-content">
+<p>Hľadáte sýtu a chutnú polievku, ktorú zvládnete ľahko uvariť? Táto krémová zemiaková polievka s fazuľou a strateným vajcom vás spoľahlivo zahreje počas chladnejšieho počasia.</p>
+<p>Vďaka bielej fazuli a stratenému vajcu obsahuje bielkoviny, zatiaľ čo koreňová zelenina dodá telu potrebné živiny. Jej príprava je jednoduchá a zvládne ju aj začiatočník.</p>
+<div class="wp-block-columns">
+<div class="wp-block-column">
+<h3>Na polievku budeme potrebovať:</h3>
+<ul class="wp-block-list">
+<li>1 l zeleninového vývaru (dá sa nahradiť <a href="/vyvar">hovädzím vývarom</a>)</li>
+<li>600 g zemiakov</li>
+<li>240 g bielej fazule</li>
+<li>100 ml smotany na varenie</li>
+<li>2 mrkvy</li>
+<li>1 pór</li>
+<li>1 PL <a href="/olivovy-olej">olivového oleja</a></li>
+<li>1 ČL <a href="/cesnak">sušeného cesnaku</a></li>
+<li>½ ČL <a href="/paprika">mletej papriky</a></li>
+<li><a href="/korenie">mleté čierne korenie podľa chuti</a></li>
+<li><a href="/sol">soľ</a> podľa chuti</li>
+</ul>
+<div style="height:20px" aria-hidden="true" class="wp-block-spacer"></div>
+<h3>Na podávanie budeme potrebovať:</h3>
+<ul class="wp-block-list">
+<li>5 vajec</li>
+<li>čerstvý kôpor</li>
+</ul>
+</div>
+<div class="wp-block-column"><figure><img src="/polievka.jpg" alt=""></figure></div>
+</div>
+<h3>Postup:</h3>
+<p>V hrnci rozohrejeme olivový olej a opečieme na ňom nadrobno nakrájaný pór. Keď pór zmäkne, pridáme mrkvu a na kocky nakrájané zemiaky.</p>
+<p>Všetko zalejeme vývarom a varíme približne 20 minút, kým zemiaky nezmäknú. Potom pridáme smotanu a fazuľu a polievku rozmixujeme.</p>
+<p>Podávame so strateným vajcom a čerstvým kôprom.</p>
+</div>
+</article>
+<footer>Copyright 2026</footer>
+</body></html>
+`
+
 describe('extractArticleContent', () => {
   it('extracts title and text content from a blog article', () => {
     const result = extractArticleContent(ARTICLE_HTML, URL)
@@ -79,6 +129,13 @@ describe('extractArticleContent', () => {
     expect(result!.title).toContain('Apple Pie')
     expect(result!.textContent).toContain('6 cups thinly sliced apples')
     expect(result!.textContent).toContain('Preheat oven to 425 degrees F')
+  })
+
+  it('keeps an ingredient list that sits in a columns block beside a photo', () => {
+    const result = extractArticleContent(COLUMNS_RECIPE_HTML, 'https://example.com/polievka')
+    expect(result!.textContent).toContain('600 g zemiakov')
+    expect(result!.textContent).toContain('1 pór')
+    expect(result!.textContent).toContain('Podávame so strateným vajcom')
   })
 
   it('returns null when the page has no identifiable article content', () => {
