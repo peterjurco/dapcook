@@ -49,6 +49,8 @@ Supabase SQL editor. Never edit `supabase/baseline.txt`.
   - The route returns 404 unless `NODE_ENV === 'development'`.
   - `next dev` listens on all interfaces, so anyone on the LAN can hit `/dev/login` — run
     `npm run dev -- -H localhost` on untrusted networks.
+- **AI eval tool:** http://localhost:3000/dev/evals (dev only) runs production prompts on saved inputs and
+  records judged outputs in `evals/data/` — see `evals/README.md`. Its "Run" button makes paid calls.
 - **No paid AI calls while testing:** do not trigger anything that calls the Anthropic API
   (AI recipe import, translation, shopping-list generation, "make smarter") unless the user
   explicitly asks. Tests must mock the SDK.

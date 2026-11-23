@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Brainstorming visual companion
 .superpowers/
+
+# Supabase CLI cache (the e2e config has its own .gitignore)
+/supabase/.temp/
