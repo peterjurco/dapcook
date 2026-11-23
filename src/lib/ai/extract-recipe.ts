@@ -67,7 +67,9 @@ Rules:
     const rawIngredients = (parsed.rawIngredients ?? []).map((s) => s.trim()).filter(Boolean)
     const rawSteps = (parsed.rawSteps ?? []).map((s) => s.trim()).filter(Boolean)
 
-    if (rawIngredients.length === 0 || rawSteps.length === 0) {
+    // One list can legitimately be empty when the page splits its recipe (e.g.
+    // ingredients only in JSON-LD); the caller fills the gap from other sources.
+    if (rawIngredients.length === 0 && rawSteps.length === 0) {
       return null
     }
 

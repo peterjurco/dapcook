@@ -146,6 +146,32 @@ describe('scrapeRecipe — extraction tier', () => {
     expect(raw.rawSteps.length).toBe(2)
   })
 
+  it('keeps JSON-LD ingredients when the model finds only the steps', async () => {
+    mockFetch(PARTIAL_JSONLD_HTML)
+    mockExtract.mockResolvedValue({
+      rawIngredients: [],
+      rawSteps: ['Cook the rice according to package instructions.', 'Mix with the remaining ingredients and bake for 20 minutes.'],
+    })
+
+    const { raw } = await scrapeRecipe(URL)
+
+    expect(raw.partial).toBe(false)
+    expect(raw.rawIngredients).toEqual(['1 cup rice', '2 cups water'])
+    expect(raw.rawSteps).toHaveLength(2)
+  })
+
+  it('stays partial, without the "only title and image" reason, when the model finds only steps and the page has nothing else', async () => {
+    mockFetch(ARTICLE_ONLY_HTML)
+    mockExtract.mockResolvedValue({ rawIngredients: [], rawSteps: ['Bake for 45 minutes, or until golden brown.'] })
+
+    const { raw } = await scrapeRecipe(URL)
+
+    expect(raw.partial).toBe(true)
+    expect(raw.partial_reason).toBeUndefined()
+    expect(raw.rawIngredients).toEqual([])
+    expect(raw.rawSteps).toEqual(['Bake for 45 minutes, or until golden brown.'])
+  })
+
   it('falls back to base (partial) result when AI extraction returns null', async () => {
     mockFetch(ARTICLE_ONLY_HTML)
     mockExtract.mockResolvedValue(null)
