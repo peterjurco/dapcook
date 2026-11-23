@@ -24,6 +24,7 @@ import { createServerClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
 import { DEFAULT_SHOPPING_CATEGORIES } from '@/lib/onboarding/defaults'
 import { TOUR_IDS } from '@/lib/tours/ids'
+import { SPLASH_SESSION_KEY } from '@/components/ui/SplashScreen'
 import { generateInviteToken } from '@/lib/utils/invite'
 import { APP_URL, localSupabase } from './env'
 
@@ -168,9 +169,25 @@ export async function signIn(context: BrowserContext, user: TestUser): Promise<v
   )
 }
 
+/**
+ * Marks the splash screen as already shown, so the app hides it (`html[data-splash=skip]`,
+ * see src/components/ui/SplashScreen.tsx). Without this its animation covers the first
+ * second of every page load and replays on every step of a trace.
+ */
+async function skipSplash(context: BrowserContext): Promise<void> {
+  await context.addInitScript((key) => {
+    try {
+      sessionStorage.setItem(key, '1')
+    } catch {
+      // No storage: the app shows the splash as it would for a real user.
+    }
+  }, SPLASH_SESSION_KEY)
+}
+
 /** A page in a fresh browser context signed in as `user` (or signed out when `user` is null). */
 export async function openAs(browser: Browser, user: TestUser | null): Promise<Page> {
   const context = await browser.newContext({ baseURL: APP_URL })
+  await skipSplash(context)
   if (user) await signIn(context, user)
   return context.newPage()
 }
@@ -313,6 +330,10 @@ export function thisMonday(offsetWeeks = 0): string {
 export const test = base.extend<{ household: boolean; skipTours: boolean; user: TestUser }>({
   household: [true, { option: true }],
   skipTours: [true, { option: true }],
+  context: async ({ context }, provide) => {
+    await skipSplash(context)
+    await provide(context)
+  },
   // `auto`: every test is signed in, whether or not it names `user`.
   // `provide` is Playwright's `use`, renamed so the React hooks lint rule leaves it alone.
   user: [
