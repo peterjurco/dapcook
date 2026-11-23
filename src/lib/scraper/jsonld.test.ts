@@ -263,6 +263,29 @@ describe('parseJsonLd', () => {
     expect(result!.rawSteps[0]).toBe('Pridajte nakrájaný cesnak.')
   })
 
+  it('decodes entities outside the common accented letters (kuchynalidla.sk)', () => {
+    const result = parseJsonLd(scripts({
+      '@type': 'Recipe', name: 'Kuracie sot&eacute; &amp; ry&zcaron;a',
+      description: 'R&yacute;chle jedlo na 30&nbsp;min&uacute;t',
+      recipeIngredient: ['&frac12; ly&zcaron;i&ccaron;ky soli', '200&nbsp;g ry&zcaron;e'],
+      recipeInstructions: [{ '@type': 'HowToStep', text: 'Vlo&zcaron;&iacute;me do r&uacute;ry vyhriatej na 180 &deg;C.' }],
+    }), URL)
+    expect(result!.title).toBe('Kuracie soté & ryža')
+    expect(result!.description).toBe('Rýchle jedlo na 30 minút')
+    expect(result!.rawIngredients).toEqual(['½ lyžičky soli', '200 g ryže'])
+    expect(result!.rawSteps).toEqual(['Vložíme do rúry vyhriatej na 180 °C.'])
+  })
+
+  it('leaves a bare ampersand that is not an entity alone', () => {
+    const result = parseJsonLd(scripts({
+      '@type': 'Recipe', name: 'Salt&pepper chicken',
+      recipeIngredient: ['salt&pepper to taste'],
+      recipeInstructions: ['Season.'],
+    }), URL)
+    expect(result!.title).toBe('Salt&pepper chicken')
+    expect(result!.rawIngredients).toEqual(['salt&pepper to taste'])
+  })
+
   // ── partial flag ──────────────────────────────────────────────────────────
 
   it('sets partial=true when both ingredients and steps are missing', () => {
