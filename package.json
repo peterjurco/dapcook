@@ -18,7 +18,7 @@
     "e2e:db:stop": "supabase stop --workdir e2e"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.10.0",
+    "@anthropic-ai/sdk": "^1.11.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -30,7 +30,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "linkedom": "0.16.11",
-    "lucide-react": "^1.74.0",
+    "lucide-react": "^1.77.0",
     "next": "^16.4.6",
     "next-intl": "^4.14.4",
     "nextjs-toploader": "^3.9.17",
@@ -41,7 +41,7 @@
     "react-markdown": "^10.1.0",
     "shadcn-ui": "^0.9.5",
     "sharp": "^0.35.5",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.7.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
