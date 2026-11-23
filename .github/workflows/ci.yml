@@ -1,4 +1,4 @@
-# Lint, type-check, unit tests and a production build for every pull request
+# Lint, type-check, unit tests, a production build and the e2e suite for every pull request
 # (Dependabot's included) and every push to main/staging. This is what makes
 # a Dependabot PR safe to merge: if it's green, the bump didn't break the app.
 name: CI
@@ -47,3 +47,37 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
           NEXT_TELEMETRY_DISABLED: 1
+
+  # Signed-in browser journeys against a production build, a local Supabase in
+  # Docker (every migration applied from scratch) and a fake Anthropic API.
+  # See e2e/README.md.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Start local Supabase
+        run: npm run e2e:db:start
+
+      - run: npm run test:e2e
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

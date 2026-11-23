@@ -12,7 +12,10 @@
     "test:ci": "vitest run --exclude \"**/*.integration.test.ts\"",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "backfill:covers": "node --env-file=.env.local scripts/backfill-recipe-covers.ts"
+    "backfill:covers": "node --env-file=.env.local scripts/backfill-recipe-covers.ts",
+    "e2e:db:start": "supabase start --workdir e2e",
+    "e2e:db:reset": "supabase db reset --workdir e2e",
+    "e2e:db:stop": "supabase stop --workdir e2e"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
@@ -55,6 +58,7 @@
     "eslint-config-next": "^16.4.6",
     "jsdom": "^29.0.0",
     "postcss": "^8",
+    "supabase": "^3.3.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "use-intl": "^4.14.4",
