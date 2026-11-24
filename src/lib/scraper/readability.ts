@@ -21,7 +21,24 @@ const CHAR_THRESHOLD = 200
 // model got the steps but no ingredients. Readability has no public option for
 // this; it turns the flag off itself as a last resort when the result is too
 // short, and we turn it off from the start. readability.test.ts guards it.
-type ReadabilityFlags = { _removeFlag(flag: number): void; FLAG_CLEAN_CONDITIONALLY: number }
+//
+// Readability also picks the article by scoring paragraphs, and gives a bonus
+// to blocks whose class or id says "article", "content", "post"... A recipe
+// written as bare lists next to an intro (fitrecepty.sk, varecha.pravda.sk)
+// scored near zero, so the intro won and the model got no ingredients or steps.
+// Recipe words get the same bonus, so the block holding intro, ingredients and
+// steps wins. Tried and rejected: scoring <li>s (fixed fitrecepty only by
+// picking the whole page, menu included) and also <ul>/<ol>s (lost
+// tinkinerecepty.sk's ingredients). Cost: on some sites a page-wide "recipe"
+// wrapper wins and brings clutter along (kuchynalidla.sk: shop teasers,
+// related recipes); the recipe itself stays complete.
+const RECIPE_CLASS_WORDS = 'recipe|ingredient|instruction|direction|surovin|postup'
+
+type ReadabilityInternals = {
+  _removeFlag(flag: number): void
+  FLAG_CLEAN_CONDITIONALLY: number
+  REGEXPS: { positive: RegExp } & Record<string, RegExp>
+}
 
 // textContent keeps the page source's indentation: on themodernproper.com 68%
 // of the article text was whitespace, which pushed the recipe past the model's
@@ -66,8 +83,12 @@ export function extractArticleContent(html: string, url: string): ArticleContent
   try {
     const { document } = parseHTML(html)
     const reader = new Readability(document, { charThreshold: CHAR_THRESHOLD })
-    const flags = reader as unknown as ReadabilityFlags
-    flags._removeFlag(flags.FLAG_CLEAN_CONDITIONALLY)
+    const internals = reader as unknown as ReadabilityInternals
+    internals._removeFlag(internals.FLAG_CLEAN_CONDITIONALLY)
+    internals.REGEXPS = {
+      ...internals.REGEXPS,
+      positive: new RegExp(`${internals.REGEXPS.positive.source}|${RECIPE_CLASS_WORDS}`, 'i'),
+    }
     article = reader.parse()
   } catch (err) {
     console.error(`[readability] Failed to parse article content for ${url}:`, err)
