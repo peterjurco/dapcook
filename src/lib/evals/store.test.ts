@@ -76,6 +76,17 @@ describe('eval store', () => {
     expect(saved?.runs[0].verdict).toBeNull()
   })
 
+  it('re-checks inputs the automatic check flagged, but not ones flagged by hand', async () => {
+    const reference = { source: 'JSON-LD', data: { rawIngredients: ['3/4 c. chicken broth'], rawSteps: ['Simmer the broth.'] } }
+    const input = { articleText: '3/4 cup chicken broth\nSimmer the broth.' }
+    const auto = makeCase({ input, reference, inputProblem: "The article text is missing 1 of 1 ingredients from the page's JSON-LD." })
+    const manual = makeCase({ input, reference, inputProblem: 'Ingredients are an image' })
+    await createCase(auto)
+    await createCase(manual)
+    expect((await getCase('extract-recipe', auto.id))?.inputProblem).toBeNull()
+    expect((await getCase('extract-recipe', manual.id))?.inputProblem).toBe('Ingredients are an image')
+  })
+
   it('deletes a case', async () => {
     const c = makeCase()
     await createCase(c)

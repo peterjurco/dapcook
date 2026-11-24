@@ -89,10 +89,19 @@ export function InputCheck({ evalCase }: { evalCase: EvalCase }) {
     )
   }
 
+  const text = String(evalCase.input.articleText ?? '')
+  const notFound =
+    coverage(strings(reference.data.rawIngredients), text).missing.length +
+    coverage(strings(reference.data.rawSteps), text).missing.length
+
   return (
     <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-      <p className="font-medium">✓ Input is complete</p>
-      <p className="mt-1">Everything in the page&apos;s recipe data reaches the model. A wrong output is the model&apos;s fault.</p>
+      <p className="font-medium">{notFound ? '✓ Input looks complete' : '✓ Input is complete'}</p>
+      <p className="mt-1">
+        {notFound
+          ? `${notFound} ${notFound === 1 ? 'line' : 'lines'} of the page's recipe data weren't found in the article text, usually because they're worded differently. Check them below before blaming the model for missing them.`
+          : "Everything in the page's recipe data reaches the model. A wrong output is the model's fault."}
+      </p>
       <ReferenceCoverage evalCase={evalCase} />
     </div>
   )

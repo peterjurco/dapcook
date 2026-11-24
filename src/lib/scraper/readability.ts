@@ -35,6 +35,27 @@ export function collapseWhitespace(text: string): string {
     .trim()
 }
 
+// Elements that start a new line when the page is rendered. textContent ignores
+// that: a recipe card written without whitespace between its <li>s came out as
+// "olive oil7 cups vegetable broth¾ cup diced shallots" (hellolittlehome.com),
+// leaving the model to guess where each ingredient ends.
+const BLOCK_ELEMENTS =
+  'address,article,aside,blockquote,dd,div,dl,dt,figcaption,figure,footer,h1,h2,h3,h4,h5,h6,header,hr,li,main,nav,ol,p,pre,section,table,tr,ul'
+
+/** Text of an HTML fragment with a line break around every block element and between table cells' rows. */
+export function htmlToText(html: string): string {
+  const { document } = parseHTML(`<!DOCTYPE html><html><body>${html}</body></html>`)
+  const newline = () => document.createTextNode('\n')
+  for (const br of [...document.querySelectorAll('br')]) br.parentNode?.replaceChild(newline(), br)
+  // Cells of one row stay on one line ("800 g" | "panenka bravčová").
+  for (const cell of [...document.querySelectorAll('td,th')]) cell.appendChild(document.createTextNode(' '))
+  for (const el of [...document.querySelectorAll(BLOCK_ELEMENTS)]) {
+    el.parentNode?.insertBefore(newline(), el)
+    el.appendChild(newline())
+  }
+  return document.body.textContent ?? ''
+}
+
 // Uses linkedom instead of jsdom: Vercel's Node.js function runtime unconditionally
 // passes --no-experimental-require-module, disabling require() of ES modules
 // regardless of the selected Node.js version. jsdom (v26+) requires the ESM-only
@@ -55,7 +76,7 @@ export function extractArticleContent(html: string, url: string): ArticleContent
 
   if (!article) return null
 
-  const textContent = collapseWhitespace(article.textContent ?? '')
+  const textContent = collapseWhitespace(article.content ? htmlToText(article.content) : article.textContent ?? '')
   if (textContent.length < CHAR_THRESHOLD) return null
 
   return {
