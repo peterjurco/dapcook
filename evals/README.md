@@ -60,3 +60,23 @@ form input into the prompt's input, and `buildRequest`, which should be the prod
 request builder exported from `src/lib/ai/*` (see `buildExtractRecipeRequest`).
 Then set `ready: true` in `src/lib/evals/prompts.ts` and give the page a form for that
 input.
+
+## Checking the scraper on real pages
+
+Every page the eval tool fetches is also saved, as raw HTML, to `evals/pages/`
+(next to `evals/data/`). The folder is git-ignored because the pages are
+third-party content and the repo is public. To see what a scraper change does
+across all of them, run this before and after the change:
+
+```bash
+npm run check:recipe-pages
+```
+
+It prints, per page, whether production calls the model at all (not when the
+JSON-LD is complete), the length of the text the model gets, and how many of
+the JSON-LD's ingredients and steps reach it.
+
+When a real page catches a bug, add a synthetic copy of it to
+`src/lib/scraper/recipe-pages.fixtures.ts`: the same HTML structure, but our
+own text. Check that it fails without the fix and passes with it, so the bug
+stays covered in CI without committing anyone's content.

@@ -10,6 +10,35 @@ export function dataDir(): string {
   return process.env.EVALS_DATA_DIR ?? path.join(process.cwd(), 'evals', 'data')
 }
 
+/**
+ * Raw HTML of every page the eval tool fetched, next to the data folder, for
+ * scripts/check-recipe-pages.ts. Git-ignored: it's third-party content.
+ */
+export function pagesDir(): string {
+  return path.join(path.dirname(dataDir()), 'pages')
+}
+
+/** "https://www.example.com/recipes/pesto-risotto/" → "example.com-recipes-pesto-risotto.html" */
+export function pageFileName(url: string): string {
+  const { hostname, pathname } = new URL(url)
+  const slug = `${hostname.replace(/^www\./, '')}${pathname}`
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120)
+  return `${slug}.html`
+}
+
+/** Keeps the latest fetch of a page. Never fails the caller: the copy is a convenience. */
+export async function savePageHtml(url: string, html: string): Promise<void> {
+  try {
+    await mkdir(pagesDir(), { recursive: true })
+    await writeFile(path.join(pagesDir(), pageFileName(url)), html, 'utf8')
+  } catch (err) {
+    console.error(`[evals] Could not save the page HTML for ${url}:`, err)
+  }
+}
+
 const SAFE_ID = /^[a-z0-9-]+$/
 
 /**

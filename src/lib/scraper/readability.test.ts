@@ -72,91 +72,7 @@ const LONG_ARTICLE_HTML = `
 </body></html>
 `
 
-// Shaped like a real WordPress recipe post (gymbeam.sk): the ingredient list sits
-// in a block-editor columns block next to a photo. Readability's default
-// "clean conditionally" pass dropped that block as link-heavy clutter (several
-// ingredients link to the shop), so the
-// model got the steps but no ingredients.
-const COLUMNS_RECIPE_HTML = `
-<!DOCTYPE html>
-<html lang="sk"><head><title>Zemiaková polievka so strateným vajcom</title></head>
-<body>
-<nav><a href="/">Domov</a><a href="/blog">Blog</a></nav>
-<article class="post">
-<h1>Zemiaková polievka so strateným vajcom</h1>
-<div class="entry-content">
-<p>Hľadáte sýtu a chutnú polievku, ktorú zvládnete ľahko uvariť? Táto krémová zemiaková polievka s fazuľou a strateným vajcom vás spoľahlivo zahreje počas chladnejšieho počasia.</p>
-<p>Vďaka bielej fazuli a stratenému vajcu obsahuje bielkoviny, zatiaľ čo koreňová zelenina dodá telu potrebné živiny. Jej príprava je jednoduchá a zvládne ju aj začiatočník.</p>
-<div class="wp-block-columns">
-<div class="wp-block-column">
-<h3>Na polievku budeme potrebovať:</h3>
-<ul class="wp-block-list">
-<li>1 l zeleninového vývaru (dá sa nahradiť <a href="/vyvar">hovädzím vývarom</a>)</li>
-<li>600 g zemiakov</li>
-<li>240 g bielej fazule</li>
-<li>100 ml smotany na varenie</li>
-<li>2 mrkvy</li>
-<li>1 pór</li>
-<li>1 PL <a href="/olivovy-olej">olivového oleja</a></li>
-<li>1 ČL <a href="/cesnak">sušeného cesnaku</a></li>
-<li>½ ČL <a href="/paprika">mletej papriky</a></li>
-<li><a href="/korenie">mleté čierne korenie podľa chuti</a></li>
-<li><a href="/sol">soľ</a> podľa chuti</li>
-</ul>
-<div style="height:20px" aria-hidden="true" class="wp-block-spacer"></div>
-<h3>Na podávanie budeme potrebovať:</h3>
-<ul class="wp-block-list">
-<li>5 vajec</li>
-<li>čerstvý kôpor</li>
-</ul>
-</div>
-<div class="wp-block-column"><figure><img src="/polievka.jpg" alt=""></figure></div>
-</div>
-<h3>Postup:</h3>
-<p>V hrnci rozohrejeme olivový olej a opečieme na ňom nadrobno nakrájaný pór. Keď pór zmäkne, pridáme mrkvu a na kocky nakrájané zemiaky.</p>
-<p>Všetko zalejeme vývarom a varíme približne 20 minút, kým zemiaky nezmäknú. Potom pridáme smotanu a fazuľu a polievku rozmixujeme.</p>
-<p>Podávame so strateným vajcom a čerstvým kôprom.</p>
-</div>
-</article>
-<footer>Copyright 2026</footer>
-</body></html>
-`
 
-// Shaped like fitrecepty.sk: the intro is a block of paragraphs, and the recipe
-// is bare lists (no <p> inside) in sibling blocks next to it. Readability scores
-// paragraphs, not list items, so the intro used to win and the model got no
-// ingredients or steps.
-const LIST_RECIPE_HTML = `
-<!DOCTYPE html>
-<html lang="sk"><head><title>Kuracie prsia z jednej panvice</title></head>
-<body>
-<nav><a href="/">Domov</a><a href="/recepty">Recepty</a></nav>
-<div class="recipeDetailLeft">
-<div class="headingFlex"><h1>Kuracie prsia z jednej panvice</h1></div>
-<div>
-<p>Rýchla večera z jednej panvice, ktorá je hotová za necelú polhodinu a chutí celej rodine bez výnimky.</p>
-<p>Spojenie kuracieho mäsa, špenátu a sušených paradajok si zamilujete a prenesie vás rovno do slnečného Talianska.</p>
-<p>Pri tomto recepte sa veľa nenarobíte, pripravíte ho raz-dva v jednej panvici alebo vo woku.</p>
-<p>Namiesto smotany použijeme syrokrém, vďaka ktorému ušetríme kalórie a omáčka bude ešte krémovejšia.</p>
-<p>Podávame s ryžou, kuskusom alebo quinoou. Recept je skvelý aj do krabičky na obed do práce.</p>
-</div>
-<div class="recipeDetailIngredients"><h3>Suroviny</h3><ul>
-<li>800 g kuracích pŕs</li><li>100 g sušených paradajok</li><li>100 g baby špenátu</li>
-<li>50 g syrokrému light (cream cheese)</li><li>200 ml vody</li><li>1 cibuľa</li><li>2 strúčiky cesnaku</li>
-<li>1 PL oleja (sezamový alebo olivový)</li><li>soľ a čierne korenie podľa chuti</li><li>1 ČL sušenej bazalky</li>
-</ul></div>
-<div><h3>Postup</h3><ol>
-<li>Kuracie prsia prekrojíme pozdĺžne na polovicu, aby sme dostali tenšie plátky.</li>
-<li>Na rozohriatom oleji orestujeme nadrobno nakrájanú cibuľu do sklovita.</li>
-<li>Pridáme kuracie prsia a restujeme ich približne tri minúty z každej strany.</li>
-<li>Vložíme cesnak, sušené paradajky, vodu, syrokrém a špenát a krátko povaríme.</li>
-<li>Vrátime mäso do omáčky, prikryjeme a dusíme ešte päť minút.</li>
-</ol></div>
-<div class="SocialShare">Zdieľaj recept s priateľmi:</div>
-</div>
-<footer>Copyright 2026</footer>
-</body></html>
-`
 
 describe('extractArticleContent', () => {
   it('extracts title and text content from a blog article', () => {
@@ -167,25 +83,11 @@ describe('extractArticleContent', () => {
     expect(result!.textContent).toContain('Preheat oven to 425 degrees F')
   })
 
-  it('keeps an ingredient list that sits in a columns block beside a photo', () => {
-    const result = extractArticleContent(COLUMNS_RECIPE_HTML, 'https://example.com/polievka')
-    expect(result!.textContent).toContain('600 g zemiakov')
-    expect(result!.textContent).toContain('1 pór')
-    expect(result!.textContent).toContain('Podávame so strateným vajcom')
-  })
-
   it('collapses indentation whitespace but keeps one line per list item', () => {
     const html = ARTICLE_HTML.replace(/<li>/g, '\n\t\t\t\t\t\t\t\t<li>          ')
     const text = extractArticleContent(html, URL)!.textContent
     expect(text).not.toMatch(/[ \t]{2,}|\n\s*\n/)
     expect(text).toContain('\n6 cups thinly sliced apples\n3/4 cup white sugar\n')
-  })
-
-  it('includes a recipe written only as lists, outside the intro paragraphs', () => {
-    const text = extractArticleContent(LIST_RECIPE_HTML, 'https://example.com/kuracie-prsia')!.textContent
-    expect(text).toContain('800 g kuracích pŕs')
-    expect(text).toContain('Kuracie prsia prekrojíme pozdĺžne na polovicu')
-    expect(text).toContain('Vrátime mäso do omáčky')
   })
 
   it('returns null when the page has no identifiable article content', () => {
