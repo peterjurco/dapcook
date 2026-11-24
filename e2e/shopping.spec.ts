@@ -227,13 +227,16 @@ test.describe('Shopping list', () => {
     await expect(page.getByTestId('planner-grid').getByText('(3 portions)')).toBeVisible()
   })
 
-  test('copies the list as text', async ({ page, user, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  test('copies the list as text', async ({ page, user, context, browserName }) => {
+    // Only Chromium lets a test grant clipboard access; elsewhere the confirmation is all we can see.
+    const canReadClipboard = browserName === 'chromium'
+    if (canReadClipboard) await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await addShoppingItems(user, [{ name: 'milk' }, { name: 'flour', quantity: 500, unit: 'g' }])
 
     await page.goto('/shopping')
     await page.getByRole('button', { name: 'Copy list' }).click()
     await expect(page.getByRole('button', { name: 'Copied!' })).toBeVisible()
+    if (!canReadClipboard) return
     const copied = await page.evaluate(() => navigator.clipboard.readText())
     expect(copied.split('\n')).toEqual(['milk', expect.stringMatching(/^500\s?g flour$/)])
   })

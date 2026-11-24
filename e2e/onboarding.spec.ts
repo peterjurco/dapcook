@@ -82,6 +82,8 @@ test.describe('Onboarding', () => {
 
     // The planner follows the chosen week start.
     await page.getByRole('button', { name: 'Go to recipes' }).click()
+    // Finishing is saved on the way out: let that land on Recipes first, or a goto racing it is cut short.
+    await expect(page.getByRole('heading', { name: 'Recipes' })).toBeVisible()
     await page.goto('/settings')
     await expect(page.getByRole('button', { name: 'Sunday', exact: true })).toHaveAttribute('aria-pressed', 'true')
   })

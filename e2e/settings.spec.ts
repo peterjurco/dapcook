@@ -22,7 +22,8 @@ test.describe('Settings', () => {
       .poll(async () => (await admin().from('households').select('week_start_day').eq('id', user.householdId!).single()).data?.week_start_day)
       .toBe('sunday')
 
-    await page.goto('/planner')
+    // Through the app, not page.goto: saving refreshes the page, and a goto racing that refresh is cut short.
+    await page.getByRole('link', { name: 'Planner' }).first().click()
     await expect(page.getByRole('button', { name: 'Add meal to Sun' })).toBeVisible()
     const firstDay = await page.getByRole('button', { name: /^Add meal to / }).first().getAttribute('aria-label')
     expect(firstDay).toBe('Add meal to Sun')
@@ -197,7 +198,8 @@ test.describe('Settings', () => {
       .poll(async () => (await admin().from('households').select('week_start_day').eq('id', user.householdId!).single()).data?.week_start_day)
       .toBe('saturday')
 
-    await page.goto('/planner')
+    // Through the app, not page.goto: saving refreshes the page, and a goto racing that refresh is cut short.
+    await page.getByRole('link', { name: 'Planner' }).first().click()
     const days = page.getByRole('button', { name: /^Add meal to / })
     await expect(days.first()).toHaveAttribute('aria-label', 'Add meal to Sat')
     await expect(days.last()).toHaveAttribute('aria-label', 'Add meal to Fri')

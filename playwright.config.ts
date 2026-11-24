@@ -29,6 +29,18 @@ export default defineConfig({
       use: { ...devices['Pixel 7'] },
       grep: /@mobile/,
     },
+    {
+      // Safari's engine: the same suites, so Safari-only breakage (date inputs, drag and drop,
+      // CSS) shows up before an iPhone or Mac user finds it.
+      name: 'desktop-webkit',
+      use: { ...devices['Desktop Safari'] },
+      grepInvert: /@mobile/,
+    },
+    {
+      name: 'iphone',
+      use: { ...devices['iPhone 15'] },
+      grep: /@mobile/,
+    },
   ],
   webServer: [
     {

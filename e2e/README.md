@@ -16,7 +16,13 @@ Playwright drives a **production build** of the app (port 3001) in Chromium, aga
   - a recipe website at `/recipe-site/<slug>`: schema.org JSON-LD pages, plain blog articles for the AI to
     read, and `?title=` to give a page a unique (or failing) title.
 
-Two projects run: **desktop** (everything) and **mobile** (a Pixel 7 viewport, only tests tagged `@mobile`).
+Four projects run: **desktop** (Chromium, everything), **mobile** (a Pixel 7 viewport, only tests tagged
+`@mobile`), and the same two in Safari's engine, WebKit: **desktop-webkit** and **iphone** (iPhone 15).
+`--project=desktop` runs one. First time: `npx playwright install chromium webkit`.
+
+WebKit is less forgiving of a `page.goto` issued while the app is still navigating or refreshing
+(after a save that calls `router.refresh()`, or a redirect on finishing onboarding): the goto is "interrupted by
+another navigation". Wait for the page the app is heading to, or navigate through its links, instead.
 
 ## Running
 
