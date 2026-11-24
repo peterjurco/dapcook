@@ -203,10 +203,13 @@ export async function openRecipeForm(page: Page, path: string): Promise<void> {
   await hydrated
 }
 
-/** Opens the planner and waits until it has hydrated (it fetches its week from the API on mount). */
-export async function openPlanner(page: Page): Promise<void> {
+/**
+ * Opens the planner (on `week`, a YYYY-MM-DD week start, when given) and waits until
+ * it has hydrated: it fetches its week from the API on mount.
+ */
+export async function openPlanner(page: Page, week?: string): Promise<void> {
   const hydrated = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/planner/week')
-  await page.goto('/planner')
+  await page.goto(week ? `/planner?week=${week}` : '/planner')
   await hydrated
 }
 
@@ -325,6 +328,19 @@ export function thisMonday(offsetWeeks = 0): string {
   const d = new Date()
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offsetWeeks * 7)
   return isoDate(d)
+}
+
+/** Day `index` of this Monday-started week (0 = Monday … 6 = Sunday; negative or ≥ 7 leave it), as YYYY-MM-DD. */
+export function weekDay(index: number, offsetWeeks = 0): string {
+  const d = new Date(`${thisMonday(offsetWeeks)}T00:00:00`)
+  d.setDate(d.getDate() + index)
+  return isoDate(d)
+}
+
+/** The short weekday and day of month the planner shows for a YYYY-MM-DD date, e.g. "Wed 25". */
+export function dayLabel(date: string): string {
+  const d = new Date(`${date}T00:00:00`)
+  return `${d.toLocaleDateString('en-GB', { weekday: 'short' })} ${d.getDate()}`
 }
 
 export const test = base.extend<{ household: boolean; skipTours: boolean; user: TestUser }>({

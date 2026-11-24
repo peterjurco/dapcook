@@ -175,4 +175,116 @@ test.describe('Recipes', () => {
     await page.getByRole('link', { name: 'Add manually' }).click()
     await expect(page).toHaveURL(/\/recipes\/new$/)
   })
+  test('shows prep, cook and total time and servings', async ({ page, user }) => {
+    const recipe = await createRecipe(user, { title: 'Timed tart', prepTime: 20, cookTime: 70, servings: 6 })
+    await page.goto(`/recipes/${recipe.id}`)
+    for (const [label, value] of [['Prep', '20m'], ['Cook', '1h 10m'], ['Total', '1h 30m'], ['Servings', '6']]) {
+      await expect(page.getByText(label, { exact: true }).locator('xpath=..')).toContainText(value)
+    }
+  })
+
+  test('edits and removes ingredients and steps', async ({ page, user }) => {
+    const recipe = await createRecipe(user, {
+      title: 'Fixable fritters',
+      ingredients: [
+        { quantity: 2, unit: '', name: 'eggs' },
+        { quantity: 1, unit: 'tsp', name: 'baking soda' },
+      ],
+      steps: ['Whisk the eggs.', 'Add a mistake.'],
+    })
+
+    await openRecipeForm(page, `/recipes/${recipe.id}/edit`)
+    const eggs = page.locator('div.group').filter({ has: page.locator('input[value="eggs"]') })
+    await eggs.getByPlaceholder('200', { exact: true }).fill('3')
+    await eggs.getByPlaceholder('chicken breast').fill('large eggs')
+
+    const soda = page.locator('div.group').filter({ has: page.locator('input[value="baking soda"]') })
+    await soda.hover()
+    await soda.getByRole('button', { name: 'Remove ingredient' }).filter({ visible: true }).click()
+    await expect(page.locator('input[value="baking soda"]')).toHaveCount(0)
+
+    const steps = page.getByPlaceholder('Describe this step...')
+    await expect(steps.nth(1)).toHaveValue('Add a mistake.')
+    await steps.nth(1).hover()
+    await page.getByRole('button', { name: 'Remove step' }).nth(1).click()
+    await expect(steps).toHaveCount(1)
+    await steps.first().fill('Whisk the eggs well.')
+
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Fixable fritters' })).toBeVisible()
+
+    const { data } = await admin().from('recipes').select('ingredients, steps').eq('id', recipe.id).single()
+    const ingredients = data!.ingredients as { quantity: number | null; name: string }[]
+    const savedSteps = data!.steps as { text: string; order: number }[]
+    expect(ingredients.map((i) => [i.quantity, i.name])).toEqual([[3, 'large eggs']])
+    expect(savedSteps.map((s) => s.text)).toEqual(['Whisk the eggs well.'])
+  })
+
+  test('removes a tag while editing', async ({ page, user }) => {
+    const recipe = await createRecipe(user, { title: 'Overtagged omelette', tags: ['breakfast', 'dinner'] })
+    await openRecipeForm(page, `/recipes/${recipe.id}/edit`)
+    await page.getByRole('button', { name: 'Remove dinner' }).click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Overtagged omelette' })).toBeVisible()
+    await expect.poll(async () => (await admin().from('recipes').select('tags').eq('id', recipe.id).single()).data?.tags).toEqual(['breakfast'])
+  })
+
+  test('filters recipes by an ingredient', async ({ page, user }) => {
+    await createRecipe(user, { title: 'Garlic bread', ingredients: [{ quantity: 3, unit: 'cloves', name: 'garlic' }] })
+    await createRecipe(user, { title: 'Plain toast', ingredients: [{ quantity: 2, unit: '', name: 'bread slices' }] })
+
+    await page.goto('/recipes')
+    await page.getByRole('button', { name: 'Filters' }).filter({ visible: true }).click()
+    const filters = page.getByRole('dialog', { name: 'Filters' })
+    await filters.getByPlaceholder('e.g. garlic').fill('garl')
+    await expect(filters.getByRole('button', { name: 'Show 1 recipe' })).toBeVisible()
+    await filters.getByRole('button', { name: 'Show 1 recipe' }).click()
+
+    await expect(page.getByText('Garlic bread')).toBeVisible()
+    await expect(page.getByText('Plain toast')).toHaveCount(0)
+  })
+
+  test('filters recipes by total time and by portions', async ({ page, user }) => {
+    await createRecipe(user, { title: 'Quick salad', prepTime: 10, servings: 2 })
+    await createRecipe(user, { title: 'Slow brisket', prepTime: 30, cookTime: 240, servings: 8 })
+    await createRecipe(user, { title: 'Weeknight pasta', prepTime: 10, cookTime: 15, servings: 4 })
+
+    await page.goto('/recipes')
+    await page.getByRole('button', { name: 'Filters' }).filter({ visible: true }).click()
+    const filters = page.getByRole('dialog', { name: 'Filters' })
+    await filters.getByRole('group', { name: 'Total time (min)' }).getByRole('button', { name: '≤ 15' }).click()
+    await filters.getByRole('button', { name: 'Show 1 recipe' }).click()
+    await expect(page.getByText('Quick salad')).toBeVisible()
+    await expect(page.getByText('Weeknight pasta')).toHaveCount(0)
+
+    await page.getByRole('button', { name: /Filters/ }).filter({ visible: true }).click()
+    await filters.getByRole('button', { name: 'Clear all' }).click()
+    await filters.getByRole('group', { name: 'Portions' }).getByRole('button', { name: '5+' }).click()
+    await filters.getByRole('button', { name: 'Show 1 recipe' }).click()
+    await expect(page.getByText('Slow brisket')).toBeVisible()
+    await expect(page.getByText('Quick salad')).toHaveCount(0)
+  })
+
+  test('a default view opens filtered, and a search looks past it', async ({ page, user }) => {
+    await createRecipe(user, { title: 'Vegan chili', tags: ['vegan'] })
+    await createRecipe(user, { title: 'Pork ribs', tags: ['meat'] })
+
+    await page.goto('/recipes')
+    await page.getByRole('button', { name: 'Filters' }).filter({ visible: true }).click()
+    const filters = page.getByRole('dialog', { name: 'Filters' })
+    await filters.getByRole('button', { name: 'vegan' }).click()
+    await filters.getByRole('button', { name: 'Set as default' }).click()
+    await expect(filters.getByRole('button', { name: 'Clear default' })).toBeVisible()
+    await expect
+      .poll(async () => (await admin().from('profiles').select('default_recipe_filter').eq('id', user.id).single()).data?.default_recipe_filter)
+      .toEqual(['vegan'])
+
+    await page.goto('/recipes')
+    await expect(page.getByText('Vegan chili')).toBeVisible()
+    await expect(page.getByText('Pork ribs')).toHaveCount(0)
+
+    await page.getByPlaceholder('Search recipes...').fill('ribs')
+    await expect(page.getByText('Searching all recipes, ignoring your default view.')).toBeVisible()
+    await expect(page.getByText('Pork ribs')).toBeVisible()
+  })
 })

@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 
-export const APP_PORT = 3001
+/** Override with E2E_APP_PORT when 3001 is taken (e.g. by another dev server). */
+export const APP_PORT = Number(process.env.E2E_APP_PORT ?? 3001)
 export const FAKE_SERVICES_PORT = 3011
 export const APP_URL = `http://localhost:${APP_PORT}`
 /** The fake recipe website served by e2e/support/fake-services.ts. */

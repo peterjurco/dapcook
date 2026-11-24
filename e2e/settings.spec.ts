@@ -1,4 +1,4 @@
-import { test, expect, admin, createRecipe, createUser, openAs, planRecipe, today } from './support/fixtures'
+import { test, expect, admin, addShoppingItems, createRecipe, createUser, openAs, planRecipe, today } from './support/fixtures'
 
 test.describe('Settings', () => {
   test('renames the household', async ({ page, user }) => {
@@ -138,5 +138,78 @@ test.describe('Settings', () => {
     await partnerPage.goto('/recipes')
     await expect(partnerPage.getByRole('link', { name: 'Recipes' })).toBeVisible()
     await partnerPage.context().close()
+  })
+  test('creates and deletes a tag group', async ({ page, user }) => {
+    await createRecipe(user, { title: 'Grouped gnocchi', tags: ['comfort'] })
+    const groups = async () =>
+      ((await admin().from('tag_groups').select('name').eq('household_id', user.householdId!)).data ?? []).map((g) => g.name)
+
+    await page.goto('/settings')
+    await page.getByRole('button', { name: 'New group' }).click()
+    await page.getByPlaceholder('e.g. Course').fill('Mood')
+    await page.getByRole('button', { name: 'Create', exact: true }).click()
+    await expect(page.getByText('Mood', { exact: true })).toBeVisible()
+    await expect.poll(groups).toEqual(['Mood'])
+
+    await page.getByText('Mood', { exact: true }).click()
+    await page.getByTitle('Delete group').click()
+    // The confirmation's own button, not a category's hidden "Delete".
+    await page.getByText('Delete the group "Mood"?').locator('xpath=..').getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect.poll(groups).toEqual([])
+    // Its tags stay.
+    const { data } = await admin().from('recipes').select('tags').eq('household_id', user.householdId!).single()
+    expect(data?.tags).toEqual(['comfort'])
+  })
+
+  test('deleting a tag takes it off every recipe', async ({ page, user }) => {
+    const hot = await createRecipe(user, { title: 'Hot wings', tags: ['spicy', 'meat'] })
+    const mild = await createRecipe(user, { title: 'Mild korma', tags: ['spicy'] })
+
+    await page.goto('/settings')
+    await page.getByRole('button', { name: 'spicy', exact: true }).click()
+    await page.getByTitle('Delete tag').click()
+    await page
+      .getByText('Remove tag "spicy" from all recipes? This cannot be undone.')
+      .locator('xpath=..')
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click()
+
+    const tagsOf = async (id: string) => (await admin().from('recipes').select('tags').eq('id', id).single()).data?.tags
+    await expect.poll(() => tagsOf(hot.id)).toEqual(['meat'])
+    expect(await tagsOf(mild.id)).toEqual([])
+    await expect(page.getByRole('button', { name: 'spicy', exact: true })).toHaveCount(0)
+  })
+
+  test('renaming a shopping category keeps its items under it', async ({ page, user }) => {
+    // Items store their category's name, so the rename has to move them too.
+    await addShoppingItems(user, [{ name: 'sourdough', category: 'Bakery' }])
+
+    await page.goto('/settings')
+    const row = page.getByText('Bakery', { exact: true }).locator('xpath=..')
+    await row.hover()
+    await row.getByTitle('Rename').click()
+    await page.locator('input[value="Bakery"]').fill('Bread')
+    await page.locator('input[value="Bread"]').press('Enter')
+    await expect(page.getByText('Bread', { exact: true })).toBeVisible()
+
+    await page.goto('/shopping')
+    await expect(page.getByText('sourdough')).toBeVisible()
+    await expect(page.getByText('Bread', { exact: true })).toBeVisible()
+    await expect(page.getByText('Bakery', { exact: true })).toHaveCount(0)
+  })
+
+  test('week start can be Saturday too', async ({ page, user }) => {
+    await planRecipe(user, null, today(), { customLabel: 'Fasting' })
+    await page.goto('/settings')
+    await page.getByRole('button', { name: 'Saturday', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Saturday', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    await expect
+      .poll(async () => (await admin().from('households').select('week_start_day').eq('id', user.householdId!).single()).data?.week_start_day)
+      .toBe('saturday')
+
+    await page.goto('/planner')
+    const days = page.getByRole('button', { name: /^Add meal to / })
+    await expect(days.first()).toHaveAttribute('aria-label', 'Add meal to Sat')
+    await expect(days.last()).toHaveAttribute('aria-label', 'Add meal to Fri')
   })
 })

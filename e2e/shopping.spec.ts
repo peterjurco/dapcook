@@ -1,4 +1,18 @@
-import { test, expect, admin, addShoppingItems, createRecipe, createUser, openAs, planRecipe, today } from './support/fixtures'
+import {
+  test,
+  expect,
+  admin,
+  addShoppingItems,
+  createRecipe,
+  createUser,
+  dayLabel,
+  openAs,
+  openPlanner,
+  planRecipe,
+  thisMonday,
+  today,
+  weekDay,
+} from './support/fixtures'
 
 async function listItems(householdId: string) {
   const { data: list } = await admin().from('shopping_lists').select('id').eq('household_id', householdId).single()
@@ -128,6 +142,136 @@ test.describe('Shopping list', () => {
     await page.goto('/shopping')
     await expect(page.getByText('Veggies & Fruits', { exact: true })).toBeVisible()
     await expect(page.getByText('Bakery', { exact: true })).toBeVisible()
+  })
+
+  test('lists a recipe planned twice once, and turns typed meals into items', async ({ page, user }) => {
+    const recipe = await createRecipe(user, {
+      title: 'Twice-weekly pancakes',
+      ingredients: [
+        { quantity: 200, unit: 'g', name: 'flour' },
+        { quantity: 2, unit: '', name: 'eggs' },
+      ],
+    })
+    await planRecipe(user, recipe.id, weekDay(0))
+    await planRecipe(user, recipe.id, weekDay(2))
+    await planRecipe(user, null, weekDay(1), { customLabel: 'Birthday cake' })
+    // Status labels are not things to buy.
+    await planRecipe(user, null, weekDay(3), { customLabel: 'Leftovers' })
+    await planRecipe(user, null, weekDay(4), { customLabel: 'Eating out' })
+    // Next week's meals stay out of this week's list.
+    await planRecipe(user, null, weekDay(0, 1), { customLabel: 'Next-week nibbles' })
+
+    await page.goto(`/shopping/generate?week=${thisMonday()}`)
+    const pancakes = page.getByRole('region', { name: 'Twice-weekly pancakes' })
+    await expect(pancakes.getByText(`${dayLabel(weekDay(0))}, ${dayLabel(weekDay(2))}`)).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Birthday cake' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Leftovers' })).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Eating out' })).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Next-week nibbles' })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Add 3 items to shopping list' }).click()
+    await expect(page).toHaveURL(/\/shopping$/)
+    await expect.poll(async () => (await listItems(user.householdId!)).map((i) => i.name).sort()).toEqual(['Birthday cake', 'eggs', 'flour'])
+  })
+
+  test('leaves out what you already have and recipes you remove', async ({ page, user }) => {
+    const cake = await createRecipe(user, {
+      title: 'Sponge cake',
+      ingredients: [
+        { quantity: 200, unit: 'g', name: 'flour' },
+        { quantity: 100, unit: 'g', name: 'sugar' },
+      ],
+    })
+    const soup = await createRecipe(user, { title: 'Skipped soup', ingredients: [{ quantity: 1, unit: '', name: 'leek' }] })
+    await planRecipe(user, cake.id, weekDay(0))
+    await planRecipe(user, soup.id, weekDay(1))
+
+    await page.goto(`/shopping/generate?week=${thisMonday()}`)
+    await expect(page.getByRole('button', { name: 'Add 3 items to shopping list' })).toBeVisible()
+
+    // Ticking an ingredient off means "I already have it".
+    await page.getByRole('region', { name: 'Sponge cake' }).getByRole('checkbox').first().check()
+    await expect(page.getByRole('button', { name: 'Add 2 items to shopping list' })).toBeVisible()
+
+    const soupBox = page.getByRole('region', { name: 'Skipped soup' })
+    await soupBox.getByRole('button', { name: 'Remove from shopping list' }).click()
+    await expect(page.getByRole('button', { name: 'Add 1 item to shopping list' })).toBeVisible()
+    await soupBox.getByRole('button', { name: 'Undo' }).click()
+    await expect(page.getByRole('button', { name: 'Add 2 items to shopping list' })).toBeVisible()
+    await soupBox.getByRole('button', { name: 'Remove from shopping list' }).click()
+
+    await page.getByRole('button', { name: 'Add 1 item to shopping list' }).click()
+    await expect(page).toHaveURL(/\/shopping$/)
+    await expect.poll(async () => (await listItems(user.householdId!)).map((i) => i.name)).toEqual(['sugar'])
+  })
+
+  test('an empty week has nothing to add', async ({ page }) => {
+    await page.goto(`/shopping/generate?week=${thisMonday()}`)
+    await expect(page.getByText("No meals in this week's plan.")).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Add 0 items to shopping list' })).toBeDisabled()
+    await page.getByRole('button', { name: 'Go back to the planner' }).click()
+    await expect(page).toHaveURL(/\/planner/)
+  })
+
+  test('the planner shows the portions you shopped for', async ({ page, user }) => {
+    const recipe = await createRecipe(user, { title: 'Portioned paella', servings: 2, ingredients: [{ quantity: 300, unit: 'g', name: 'rice' }] })
+    await planRecipe(user, recipe.id, weekDay(0))
+
+    await page.goto(`/shopping/generate?week=${thisMonday()}`)
+    await page.getByRole('button', { name: 'More portions' }).click()
+    await page.getByRole('button', { name: 'Add 1 item to shopping list' }).click()
+    await expect(page).toHaveURL(/\/shopping$/)
+    await expect.poll(async () => (await listItems(user.householdId!)).map((i) => i.quantity)).toEqual([450])
+
+    await openPlanner(page, thisMonday())
+    await expect(page.getByTestId('planner-grid').getByText('(3 portions)')).toBeVisible()
+  })
+
+  test('copies the list as text', async ({ page, user, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await addShoppingItems(user, [{ name: 'milk' }, { name: 'flour', quantity: 500, unit: 'g' }])
+
+    await page.goto('/shopping')
+    await page.getByRole('button', { name: 'Copy list' }).click()
+    await expect(page.getByRole('button', { name: 'Copied!' })).toBeVisible()
+    const copied = await page.evaluate(() => navigator.clipboard.readText())
+    expect(copied.split('\n')).toEqual(['milk', expect.stringMatching(/^500\s?g flour$/)])
+  })
+
+  test('a check-off that fails to save is undone and explained', async ({ page, user }) => {
+    await addShoppingItems(user, [{ name: 'olive oil' }])
+    await page.route('**/api/shopping/items/*', (route) => (route.request().method() === 'PATCH' ? route.abort() : route.continue()))
+
+    await page.goto('/shopping')
+    await page.getByRole('checkbox').first().check()
+    await expect(page.getByText("Couldn't save the change. Check your connection and try again.")).toBeVisible()
+    await expect(page.getByText('olive oil')).toBeVisible()
+    expect((await listItems(user.householdId!))[0].is_checked).toBe(false)
+  })
+
+  test('Enter on an item adds a new one below it, in the same category', async ({ page, user }) => {
+    await addShoppingItems(user, [
+      { name: 'carrots', category: 'Veggies & Fruits' },
+      { name: 'baguette', category: 'Bakery' },
+    ])
+
+    await page.goto('/shopping')
+    await page.getByText('carrots', { exact: true }).click()
+    await page.getByRole('textbox').press('Enter')
+    await page.keyboard.type('leeks')
+    await page.keyboard.press('Enter')
+    await page.keyboard.press('Escape')
+
+    await expect
+      .poll(async () => {
+        const { data } = await admin()
+          .from('shopping_items')
+          .select('name, category')
+          .eq('name', 'leeks')
+          .in('shopping_list_id', ((await admin().from('shopping_lists').select('id').eq('household_id', user.householdId!)).data ?? []).map((l) => l.id))
+        return data
+      })
+      .toEqual([{ name: 'leeks', category: 'Veggies & Fruits' }])
   })
 
   // Known issue, found by this test: no change ever reaches the other member's

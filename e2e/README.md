@@ -26,19 +26,20 @@ npm run e2e:db:stop
 ```
 
 Locally an already-running server on :3001 is reused, so after changing app code either stop it or the
-suite tests the old build. CI runs the whole thing in the `e2e` job of `.github/workflows/ci.yml`.
+suite tests the old build. If :3001 is taken by something else (say a `next dev`), pick another port:
+`E2E_APP_PORT=3002 npm run test:e2e`. CI runs the whole thing in the `e2e` job of `.github/workflows/ci.yml`.
 
 ## What's covered
 
 | Spec | Area |
 |---|---|
 | `auth.spec.ts` | Signed-out redirects |
-| `onboarding.spec.ts` | Wizard, resuming it, joining by invite link |
-| `recipes.spec.ts` | Create, validate, paste, edit, delete, cover upload, search, tag filter, tags, isolation |
+| `onboarding.spec.ts` | Wizard (and that its units, week start and tags are saved), resuming it, joining by invite link |
+| `recipes.spec.ts` | Create, validate, paste, edit (ingredients, steps, tags), delete, cover upload, times, search, filters (tag, ingredient, time, portions), default view, isolation |
 | `share-and-import.spec.ts` | Public share links (and disabling them), URL import and its errors |
-| `planner.spec.ts` | Adding from a recipe and from the grid, custom meals, removing, weeks, shared plans, phone views |
-| `shopping.spec.ts` | Generating from the plan (portions, re-adding), editing the list, clearing, categories |
-| `settings.spec.ts` | Household name, week start, language, units (and failed conversions), categories, rules, members, tags, sign-out |
+| `planner.spec.ts` | Adding (recipe page picker and its "Change", grid search), several meals a day, multi-day meals and lanes, dragging to another day, stretching and shrinking, meals carried over from last week, removing, weeks, shared plans; on a phone: agenda, edit mode (add, remove, move, stretch, shrink) |
+| `shopping.spec.ts` | Generating from the plan (repeat meals, typed meals, skipped items and recipes, portions, re-adding), editing the list, copying, failed saves, clearing, categories |
+| `settings.spec.ts` | Household name, week start, language, units (and failed conversions), categories (add, rename, delete), rules, members, tags and tag groups, sign-out |
 | `access.spec.ts` | Cross-household API access, signed-out API calls, the admin page |
 | `join-and-tours.spec.ts` | Invite pages, product tours |
 
@@ -69,3 +70,7 @@ the page only does once hydrated, never for a fixed time.
 
 Select elements by role, label or visible text (the English UI), the way a user finds them.
 Check flakiness before pushing new tests: `npx playwright test --repeat-each=3 --workers=6`.
+
+**Drag and drop** (`planner.spec.ts`): drive the real mouse with `page.mouse`, and release only once the
+day under the pointer is highlighted as the drop target (`dropAt`): dnd-kit measures its targets after a
+drag begins, so an immediate release on a busy machine drops on nothing.
