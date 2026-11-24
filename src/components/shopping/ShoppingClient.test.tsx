@@ -10,6 +10,8 @@ import type { ShoppingItem, ShoppingList, ShoppingCategory } from '@/types/datab
 const mockCapture = vi.fn()
 const realtime = vi.hoisted(() => ({
   insertHandler: null as null | ((payload: { new: ShoppingItem }) => void),
+  /** Order of realtime calls, to check the channel joins only once it has the user's token. */
+  calls: [] as string[],
 }))
 
 vi.mock('next-intl', () => ({
@@ -46,9 +48,17 @@ vi.mock('@/lib/supabase/client', () => ({
         if (config.event === 'INSERT') realtime.insertHandler = handler
         return channel
       }),
-      subscribe: vi.fn(() => channel),
+      subscribe: vi.fn(() => {
+        realtime.calls.push('subscribe')
+        return channel
+      }),
     }
     return {
+      realtime: {
+        setAuth: vi.fn(async () => {
+          realtime.calls.push('setAuth')
+        }),
+      },
       channel: vi.fn(() => channel),
       removeChannel: vi.fn(),
     }
@@ -88,6 +98,7 @@ const defaultProps = {
 beforeEach(() => {
   vi.clearAllMocks()
   realtime.insertHandler = null
+  realtime.calls = []
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
 })
 
@@ -168,6 +179,12 @@ describe('ShoppingClient', () => {
     expect(queryByText('Remove all items from the list?')).toBeNull()
   })
 
+  it('joins the live channel only after handing it the signed-in user\'s token', async () => {
+    render(<ShoppingClient {...defaultProps} initialList={mockList} />)
+    // An anonymous channel gets nothing: RLS filters every change out.
+    await waitFor(() => expect(realtime.calls).toEqual(['setAuth', 'subscribe']))
+  })
+
   it('does not append a realtime duplicate while a new item is saving', async () => {
     const itemId = '11111111-1111-4111-8111-111111111111'
     const randomUuid = vi.spyOn(globalThis.crypto, 'randomUUID')
@@ -190,6 +207,7 @@ describe('ShoppingClient', () => {
     render(
       <ShoppingClient {...defaultProps} initialList={mockList} />
     )
+    await waitFor(() => expect(realtime.insertHandler).not.toBeNull())
     fireEvent.click(screen.getByRole('button', { name: 'Add item' }))
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Milk' } })
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })

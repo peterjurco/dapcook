@@ -274,12 +274,7 @@ test.describe('Shopping list', () => {
       .toEqual([{ name: 'leeks', category: 'Veggies & Fruits' }])
   })
 
-  // Known issue, found by this test: no change ever reaches the other member's
-  // browser. Its realtime channel joins without the user's access token, so RLS
-  // filters every row out — even though the same browser client does have the
-  // session (cover uploads send it). Also, no migration adds shopping_items to
-  // the supabase_realtime publication. Remove `fixme` once live sync is fixed.
-  test.fixme("a household member sees items checked off live", async ({ page, user, browser }) => {
+  test("a household member sees items checked off live", async ({ page, user, browser }) => {
     await addShoppingItems(user, [{ name: 'coffee' }, { name: 'tea' }])
     const partner = await createUser({ joinHousehold: user })
     const partnerPage = await openAs(browser, partner)
@@ -292,6 +287,13 @@ test.describe('Shopping list', () => {
     // No reload: the partner's list follows through Supabase realtime.
     await expect(partnerPage.getByText('coffee')).toHaveCount(0)
     await expect(partnerPage.getByText('tea')).toBeVisible()
+
+    // New items arrive too.
+    await page.getByRole('button', { name: 'Add item' }).click()
+    await page.keyboard.type('biscuits')
+    await page.keyboard.press('Enter')
+    await page.keyboard.press('Escape')
+    await expect(partnerPage.getByText('biscuits')).toBeVisible()
     await partnerPage.context().close()
   })
 })
