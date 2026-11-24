@@ -7,7 +7,7 @@ import { collectJsonLd, fetchPageHtml } from '@/lib/scraper'
 import { parseJsonLd } from '@/lib/scraper/jsonld'
 import { extractArticleContent } from '@/lib/scraper/readability'
 import { detectInputProblem } from './coverage'
-import { newId } from './store'
+import { newId, savePageHtml } from './store'
 import type { EvalCase, EvalReference, EvalRun, PromptId } from './types'
 
 // Each prompt plugs into the eval tool with two pieces:
@@ -50,6 +50,7 @@ const extractRecipe: PromptRunner = {
   async prepare(source) {
     const url = parseUrl(source.url)
     const html = await fetchPageHtml(url)
+    await savePageHtml(url, html)
     const $ = cheerio.load(html)
     const jsonLd = parseJsonLd(collectJsonLd($), url)
     const article = extractArticleContent(html, url)

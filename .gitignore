@@ -46,3 +46,8 @@ next-env.d.ts
 
 # Supabase CLI cache (the e2e config has its own .gitignore)
 /supabase/.temp/
+
+# Real recipe pages saved by the eval tool for scripts/check-recipe-pages.ts.
+# Third-party content: never commit (the repo is public). Synthetic versions of
+# the ones that caught bugs live in src/lib/scraper/recipe-pages.fixtures.ts.
+/evals/pages/

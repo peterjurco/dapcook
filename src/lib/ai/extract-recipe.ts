@@ -3,6 +3,7 @@ import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resource
 import { createClient } from '@/lib/supabase/server'
 import { logAiUsage } from './log-usage'
 import { parseJsonFromText } from './json-response'
+import { MAX_ARTICLE_CHARS } from './article-limits'
 
 export interface ExtractedRecipeContent {
   rawIngredients: string[]
@@ -11,11 +12,7 @@ export interface ExtractedRecipeContent {
 
 const client = new Anthropic()
 
-// Caps cost on unusually long blog posts (long personal backstories,
-// imperfectly-filtered related-post blocks, etc). Food blogs often put the recipe
-// after several thousand characters of story (delish.com: ~7,200), so this has
-// room for that; 12k chars is roughly 3k input tokens.
-export const MAX_ARTICLE_CHARS = 12_000
+export { MAX_ARTICLE_CHARS }
 
 /**
  * The exact request sent to Claude for a page's article text. Exported so the

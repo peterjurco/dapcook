@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, readdir, rm } from 'fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import path from 'path'
-import { createCase, deleteCase, getCase, listCases, newId, updateCase } from './store'
+import { createCase, deleteCase, getCase, listCases, newId, pageFileName, pagesDir, savePageHtml, updateCase } from './store'
 import type { EvalCase, EvalRun } from './types'
 
 let dir: string
@@ -92,6 +92,14 @@ describe('eval store', () => {
     await createCase(c)
     await deleteCase('extract-recipe', c.id)
     expect(await getCase('extract-recipe', c.id)).toBeNull()
+  })
+
+  it('saves fetched page HTML next to the data folder, named after the URL', async () => {
+    expect(pageFileName('https://www.example.com/recipes/Pesto-Risotto/?utm=x')).toBe('example.com-recipes-pesto-risotto.html')
+    await savePageHtml('https://www.example.com/recipes/pesto-risotto/', '<html>pesto</html>')
+    expect(pagesDir()).toBe(path.join(path.dirname(dir), 'pages'))
+    expect(await readFile(path.join(pagesDir(), 'example.com-recipes-pesto-risotto.html'), 'utf8')).toBe('<html>pesto</html>')
+    await rm(pagesDir(), { recursive: true, force: true })
   })
 
   it('rejects ids that could escape the data directory', async () => {

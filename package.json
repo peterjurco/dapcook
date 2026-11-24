@@ -15,7 +15,8 @@
     "backfill:covers": "node --env-file=.env.local scripts/backfill-recipe-covers.ts",
     "e2e:db:start": "supabase start --workdir e2e",
     "e2e:db:reset": "supabase db reset --workdir e2e",
-    "e2e:db:stop": "supabase stop --workdir e2e"
+    "e2e:db:stop": "supabase stop --workdir e2e",
+    "check:recipe-pages": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-recipe-pages.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.11.0",
