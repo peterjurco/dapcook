@@ -129,7 +129,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
               'flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors',
               pathname.startsWith(item.href)
                 ? 'text-gray-900'
-                : 'text-gray-400'
+                : 'text-gray-500'
             )}
           >
             {item.icon}
@@ -141,7 +141,7 @@ export function AppShell({ user, profile, isAdmin = false, birthdayConfig, child
             href="/admin"
             className={cn(
               'flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors',
-              pathname.startsWith('/admin') ? 'text-gray-900' : 'text-gray-400'
+              pathname.startsWith('/admin') ? 'text-gray-900' : 'text-gray-500'
             )}
           >
             <Shield size={18} />

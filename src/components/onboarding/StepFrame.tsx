@@ -52,7 +52,7 @@ export function StepFrame({ title, help, children, error, onNext, nextLabel, onB
         </button>
       </div>
 
-      {settingsNote && <p className="text-xs text-gray-400 text-right">{t('onboarding.settingsNote')}</p>}
+      {settingsNote && <p className="text-xs text-gray-500 text-right">{t('onboarding.settingsNote')}</p>}
     </section>
   )
 }

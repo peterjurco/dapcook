@@ -116,7 +116,7 @@ export function CustomLabelCard({
         <button
           {...attributes}
           {...listeners}
-          className="absolute top-1.5 left-1.5 p-0.5 rounded bg-white/70 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          className="absolute top-1.5 left-1.5 p-0.5 rounded bg-white/70 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
           aria-label={t('labels.dragAria')}
         >
           <GripVertical size={12} />
@@ -126,7 +126,7 @@ export function CustomLabelCard({
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/70 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+          className="absolute top-1.5 right-1.5 p-0.5 rounded bg-white/70 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-20"
           aria-label={t('labels.removeAria')}
         >
           <X size={12} />

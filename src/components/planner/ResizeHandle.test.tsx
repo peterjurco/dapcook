@@ -13,7 +13,7 @@ describe('ResizeHandle', () => {
   it('is a tour target that is hover-revealed by default', () => {
     mockHighlighted = false
     render(<ResizeHandle {...props} />)
-    const handle = screen.getByLabelText('Resize')
+    const handle = screen.getByTitle('Resize')
     expect(handle).toHaveAttribute('data-tour', 'grid-resize')
     expect(handle).toHaveClass('opacity-0')
   })
@@ -21,7 +21,7 @@ describe('ResizeHandle', () => {
   it('is forced visible while the tour step points at it', () => {
     mockHighlighted = true
     render(<ResizeHandle {...props} />)
-    const handle = screen.getByLabelText('Resize')
+    const handle = screen.getByTitle('Resize')
     expect(handle).toHaveClass('opacity-100')
     expect(handle).not.toHaveClass('opacity-0')
   })

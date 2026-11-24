@@ -93,7 +93,7 @@ export function RangeFilter({ label, presets, value, onChange }: RangeFilterProp
             onChange={(e) => setBound('min', e.target.value)}
             className={inputClass}
           />
-          <span className="text-gray-400">–</span>
+          <span className="text-gray-500">–</span>
           <input
             type="text"
             inputMode="numeric"

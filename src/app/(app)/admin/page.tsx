@@ -124,7 +124,7 @@ export default async function AdminPage() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                   {t('empty')}
                 </td>
               </tr>

@@ -109,7 +109,7 @@ export function DeleteCaseButton({ prompt, caseId, runCount }: { prompt: string;
           startTransition(() => deleteCaseAction(prompt, caseId))
         }
       }}
-      className="text-xs text-gray-400 hover:text-red-700"
+      className="text-xs text-gray-500 hover:text-red-700"
     >
       Delete input
     </button>

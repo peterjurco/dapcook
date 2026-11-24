@@ -15,10 +15,10 @@ function isPrimitive(value: unknown): value is string | number | boolean | null 
 }
 
 function Primitive({ value }: { value: string | number | boolean | null }) {
-  if (value === null) return <span className="italic text-gray-400">null</span>
+  if (value === null) return <span className="italic text-gray-500">null</span>
   if (typeof value === 'string') {
     return value === ''
-      ? <span className="italic text-gray-400">empty string</span>
+      ? <span className="italic text-gray-500">empty string</span>
       : <span className="whitespace-pre-wrap break-words">{value}</span>
   }
   return <span className="font-mono text-sky-700">{String(value)}</span>
@@ -30,7 +30,7 @@ function Primitive({ value }: { value: string | number | boolean | null }) {
  */
 export function JsonView({ value, depth = 0 }: { value: unknown; depth?: number }) {
   if (isPrimitive(value)) return <Primitive value={value} />
-  if (value === undefined) return <span className="italic text-gray-400">undefined</span>
+  if (value === undefined) return <span className="italic text-gray-500">undefined</span>
 
   if (Array.isArray(value)) {
     if (value.length === 0) {
@@ -40,7 +40,7 @@ export function JsonView({ value, depth = 0 }: { value: unknown; depth?: number 
       <ol className="space-y-1">
         {value.map((item, i) => (
           <li key={i} className="flex gap-2">
-            <span className="w-6 shrink-0 select-none text-right font-mono text-xs leading-6 text-gray-400">{i + 1}</span>
+            <span className="w-6 shrink-0 select-none text-right font-mono text-xs leading-6 text-gray-500">{i + 1}</span>
             <div className={isPrimitive(item) ? 'min-w-0 leading-6' : 'min-w-0 flex-1 rounded border border-gray-200 p-2'}>
               <JsonView value={item} depth={depth + 1} />
             </div>
@@ -51,7 +51,7 @@ export function JsonView({ value, depth = 0 }: { value: unknown; depth?: number 
   }
 
   const entries = Object.entries(value as Record<string, unknown>)
-  if (entries.length === 0) return <span className="italic text-gray-400">empty object</span>
+  if (entries.length === 0) return <span className="italic text-gray-500">empty object</span>
 
   // Top level: one section per key. Nested: a compact two-column grid.
   if (depth === 0) {
@@ -61,7 +61,7 @@ export function JsonView({ value, depth = 0 }: { value: unknown; depth?: number 
           <section key={key}>
             <h4 className="mb-1.5 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
               {humanizeKey(key)}
-              {Array.isArray(v) && <span className="font-normal normal-case text-gray-400">{v.length}</span>}
+              {Array.isArray(v) && <span className="font-normal normal-case text-gray-500">{v.length}</span>}
             </h4>
             <JsonView value={v} depth={depth + 1} />
           </section>

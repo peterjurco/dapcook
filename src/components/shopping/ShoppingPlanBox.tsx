@@ -43,10 +43,10 @@ export function ShoppingPlanBox({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium ${entry.removed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+          <p className={`text-sm font-medium ${entry.removed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
             {entry.title}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">{entry.days.join(', ')}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{entry.days.join(', ')}</p>
         </div>
         <button
           type="button"
@@ -81,7 +81,7 @@ export function ShoppingPlanBox({
                 })}
               </div>
             ) : (
-              <p className="px-3 pb-2 text-xs text-gray-400">{t('generate.noIngredients')}</p>
+              <p className="px-3 pb-2 text-xs text-gray-500">{t('generate.noIngredients')}</p>
             )
           )}
 

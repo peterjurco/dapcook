@@ -21,9 +21,10 @@ export function ResizeHandle({ show, isResizing, title, onMouseDown }: ResizeHan
         isResizing || highlighted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
       }`}
       title={title}
-      aria-label={title}
+      // Mouse-only: a div has no role to carry a label. The tooltip stays for mouse users.
+      aria-hidden="true"
     >
-      <GripHorizontal size={12} className="text-gray-400" />
+      <GripHorizontal size={12} className="text-gray-500" />
     </div>
   )
 }

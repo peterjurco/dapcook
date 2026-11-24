@@ -193,7 +193,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
         <button
           type="button"
           onClick={add}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
           <Plus size={14} />
           {t('stepEditor.add')}
@@ -201,7 +201,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
         <button
           type="button"
           onClick={() => setPasteMode(true)}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
           <ClipboardPaste size={14} />
           {t('stepEditor.pasteText')}

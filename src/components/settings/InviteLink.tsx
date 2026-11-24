@@ -43,6 +43,7 @@ export function InviteLink({ url, shareText }: Props) {
     <div className="flex items-center gap-2">
       <input
         readOnly
+        aria-label={t('page.inviteLinkLabel')}
         value={url}
         className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-mono"
       />

@@ -20,11 +20,11 @@ export function PromptNav({ prompts }: { prompts: Pick<PromptInfo, 'id' | 'title
             className={cn(
               'flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-2 text-sm',
               active ? 'bg-emerald-50 font-medium text-emerald-800' : 'text-gray-700 hover:bg-gray-100',
-              !p.ready && !active && 'text-gray-400'
+              !p.ready && !active && 'text-gray-500'
             )}
           >
             {p.title}
-            {!p.ready && <span className="text-[10px] uppercase tracking-wide text-gray-400">soon</span>}
+            {!p.ready && <span className="text-[10px] uppercase tracking-wide text-gray-500">soon</span>}
           </Link>
         )
       })}

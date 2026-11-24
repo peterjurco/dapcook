@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 
 function MetaValue({ value }: { value: unknown }) {
   if (typeof value === 'boolean') return <>{value ? 'yes' : 'no'}</>
-  if (value === null || value === undefined || value === '') return <span className="text-gray-400">—</span>
+  if (value === null || value === undefined || value === '') return <span className="text-gray-500">—</span>
   if (typeof value === 'string' && /^\d{4}-\d\d-\d\dT/.test(value)) {
     return <>{new Date(value).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</>
   }
@@ -64,7 +64,7 @@ export default async function CasePage({ params }: { params: Promise<{ prompt: s
             {primary.map(([key, value]) => (
               <div key={key}>
                 <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  {humanizeKey(key)} <span className="font-normal normal-case text-gray-400">{String(value).length} chars</span>
+                  {humanizeKey(key)} <span className="font-normal normal-case text-gray-500">{String(value).length} chars</span>
                 </h3>
                 <pre className="whitespace-pre-wrap break-words rounded bg-gray-50 p-3 font-mono text-xs leading-relaxed">
                   {String(value)}

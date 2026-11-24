@@ -189,12 +189,14 @@ export function ShoppingItemRow({
               type="checkbox"
               checked={isVisuallyChecked}
               onChange={handleCheckChange}
+              aria-label={item.name}
               className="w-4 h-4 rounded border-gray-300 text-gray-900 cursor-pointer flex-shrink-0"
             />
             {/* Inline transparent input — blur saves, Enter saves+creates-below, Escape cancels.
                 font-size: 16px prevents iOS Safari from zooming on focus. */}
             <input
               autoFocus
+              aria-label={t('itemRow.editAria')}
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onBlur={() => save()}
@@ -233,6 +235,7 @@ export function ShoppingItemRow({
                 type="checkbox"
                 checked={isVisuallyChecked}
                 onChange={handleCheckChange}
+                aria-label={item.name}
                 className="w-4 h-4 mt-1 rounded border-gray-300 text-gray-900 cursor-pointer flex-shrink-0"
               />
 
@@ -244,7 +247,7 @@ export function ShoppingItemRow({
                   saveError
                     ? 'text-gray-900 cursor-text'
                     : isVisuallyChecked
-                      ? 'line-through text-gray-400 cursor-text'
+                      ? 'line-through text-gray-500 cursor-text'
                       : 'text-gray-900 cursor-text'
                 }`}
               >

@@ -47,7 +47,7 @@ export function ShoppingRulesEditor({ initialRules }: Props) {
             <button
               type="button"
               onClick={() => handleDeleteRule(r.id)}
-              className="text-gray-400 hover:text-gray-700 transition-colors ml-0.5"
+              className="text-gray-500 hover:text-gray-700 transition-colors ml-0.5"
               aria-label={t('shoppingRules.removeAria')}
             >
               <X size={11} />
@@ -75,7 +75,7 @@ export function ShoppingRulesEditor({ initialRules }: Props) {
           <button
             type="button"
             onClick={() => { setAddingRule(false); setNewRule('') }}
-            className="text-gray-400 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700"
           >
             <X size={14} />
           </button>
@@ -84,7 +84,7 @@ export function ShoppingRulesEditor({ initialRules }: Props) {
         <button
           type="button"
           onClick={() => setAddingRule(true)}
-          className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
         >
           <Plus size={12} />
           {t('shoppingRules.add')}

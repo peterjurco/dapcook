@@ -66,7 +66,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
     <div ref={containerRef} className="absolute z-20 top-0 left-0 w-56 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
       {/* Search input */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-        <Search size={14} className="text-gray-400 flex-shrink-0" />
+        <Search size={14} className="text-gray-500 flex-shrink-0" />
         <input
           ref={inputRef}
           type="text"
@@ -75,7 +75,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
           placeholder={t('search.placeholder')}
           className="flex-1 text-sm text-gray-900 outline-none placeholder:text-gray-400"
         />
-        <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-600">
           <X size={14} />
         </button>
       </div>
@@ -83,7 +83,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
       {/* Custom labels */}
       {!query && (
         <div className="p-2 border-b border-gray-100">
-          <p className="text-xs font-medium text-gray-400 px-2 mb-1">{t('search.quickLabels')}</p>
+          <p className="text-xs font-medium text-gray-500 px-2 mb-1">{t('search.quickLabels')}</p>
           <div className="flex flex-wrap gap-1.5 px-1">
             {CUSTOM_LABELS.map((label) => (
               <button
@@ -102,10 +102,10 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
       {/* Results */}
       <div className="max-h-56 overflow-y-auto">
         {loading && (
-          <p className="text-xs text-gray-400 px-4 py-3">{t('search.searching')}</p>
+          <p className="text-xs text-gray-500 px-4 py-3">{t('search.searching')}</p>
         )}
         {!loading && query && results.length === 0 && (
-          <p className="text-xs text-gray-400 px-4 py-3">{t('search.noResults')}</p>
+          <p className="text-xs text-gray-500 px-4 py-3">{t('search.noResults')}</p>
         )}
         {results.map((recipe) => (
           <button
@@ -132,7 +132,7 @@ export function RecipeSearch({ onSelectRecipe, onSelectCustom, onClose }: Recipe
             onClick={() => onSelectCustom(query.trim())}
             className="w-full flex items-center gap-2 px-3 py-2 border-t border-gray-100 hover:bg-gray-50 transition-colors text-left"
           >
-            <Plus size={14} className="text-gray-400 flex-shrink-0" />
+            <Plus size={14} className="text-gray-500 flex-shrink-0" />
             <span className="text-sm text-gray-600 line-clamp-1">
               {t('search.useAsCustom', { query: query.trim() })}
             </span>

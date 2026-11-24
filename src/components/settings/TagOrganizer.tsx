@@ -310,7 +310,7 @@ export function TagOrganizer({ initialGroups, initialTags }: TagOrganizerProps) 
   const draggedTag = activeDrag?.type === 'tag' ? tags.find((tag) => tag.name === activeDrag.id) : undefined
 
   if (tags.length === 0 && groups.length === 0) {
-    return <p className="text-sm text-gray-400">{t('tagOrganizer.noTags')}</p>
+    return <p className="text-sm text-gray-500">{t('tagOrganizer.noTags')}</p>
   }
 
   return (

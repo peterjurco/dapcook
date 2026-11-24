@@ -43,6 +43,7 @@ export function InterfaceLanguageSelector({ initialValue }: { initialValue: Loca
       <div className="relative inline-block">
         <select
           value={value}
+          aria-label={t('account.interfaceLanguage')}
           disabled={saving}
           onChange={(e) => handleChange(e.target.value as Locale)}
           className="text-sm border border-gray-300 rounded-lg pl-3 pr-9 py-2 bg-white appearance-none"

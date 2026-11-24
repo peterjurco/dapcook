@@ -220,9 +220,9 @@ export default function ImportRecipePage() {
                 <div key={step.key} className="flex items-center gap-3">
                   {isActive
                     ? <Loader2 size={15} className="animate-spin text-gray-700 flex-shrink-0" />
-                    : <CheckCircle2 size={15} className="text-gray-400 flex-shrink-0" />
+                    : <CheckCircle2 size={15} className="text-gray-500 flex-shrink-0" />
                   }
-                  <span className={`text-sm ${isActive ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                  <span className={`text-sm ${isActive ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
                     {step.message}
                   </span>
                 </div>
@@ -273,7 +273,7 @@ export default function ImportRecipePage() {
         )}
 
         <div className="mt-8 space-y-2">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('import.worksWellWith')}</p>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('import.worksWellWith')}</p>
           <ul className="text-sm text-gray-500 space-y-1">
             <li>bbcgoodfood.com</li>
             <li>bbc.co.uk/food</li>

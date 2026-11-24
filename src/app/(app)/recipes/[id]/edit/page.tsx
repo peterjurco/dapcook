@@ -28,7 +28,7 @@ export default async function EditRecipePage(props: Props) {
       <div className="mb-8">
         <Link
           href={`/recipes/${params.id}`}
-          className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-3"
         >
           <ChevronLeft size={16} />
           {t('editPage.backToRecipe')}

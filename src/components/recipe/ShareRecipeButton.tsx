@@ -184,7 +184,7 @@ export function ShareRecipeButton({ recipeId, initialShareToken }: ShareRecipeBu
                 aria-label={t('share.closeAria')}
                 disabled={loading}
                 onClick={close}
-                className="-mr-1 -mt-1 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="-mr-1 -mt-1 rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <X size={16} />
               </button>

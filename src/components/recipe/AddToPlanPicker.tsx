@@ -189,7 +189,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
           onClick={() => changeWeek(prevWeekStart(weekStart))}
           disabled={isCurrentWeek(weekStart)}
           aria-label={t('addToPlan.earlierWeekAria')}
-          className="text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="text-gray-500 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronLeft size={16} />
         </button>
@@ -198,7 +198,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
           type="button"
           onClick={() => changeWeek(nextWeekStart(weekStart))}
           aria-label={t('addToPlan.laterWeekAria')}
-          className="text-gray-400 hover:text-gray-700"
+          className="text-gray-500 hover:text-gray-700"
         >
           <ChevronRight size={16} />
         </button>
@@ -225,7 +225,7 @@ export function AddToPlanPicker({ recipeId, onClose }: AddToPlanPickerProps) {
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <span className="text-[9px] font-medium text-gray-400">{weekday}</span>
+              <span className="text-[9px] font-medium text-gray-500">{weekday}</span>
               {day}
             </button>
           )

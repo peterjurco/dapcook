@@ -79,7 +79,7 @@ export function BulkTransformModal({ recipeIds, targetLanguage, targetUnits, onC
           <button
             type="button"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-500 hover:text-gray-600 transition-colors"
             aria-label={t('bulkTransform.closeAria')}
           >
             <X size={16} />

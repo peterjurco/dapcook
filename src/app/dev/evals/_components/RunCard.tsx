@@ -74,7 +74,7 @@ export function RunCard({
           onClick={() => {
             if (confirm(`Delete run ${number}?`)) startTransition(() => deleteRunAction(prompt, caseId, run.id))
           }}
-          className="ml-auto text-gray-400 hover:text-red-700"
+          className="ml-auto text-gray-500 hover:text-red-700"
         >
           Delete
         </button>
@@ -134,7 +134,7 @@ export function RunCard({
               {label}
             </button>
           ))}
-          <span className="ml-auto text-xs text-gray-400">
+          <span className="ml-auto text-xs text-gray-500">
             {pending ? 'Saving…' : notes !== savedNotes ? 'Unsaved notes' : ''}
           </span>
         </div>

@@ -36,7 +36,7 @@ export default async function PromptPage({
     <header className="mb-5">
       <h1 className="text-2xl font-semibold">{info.title}</h1>
       <p className="mt-1 max-w-2xl text-sm text-gray-600">{info.description}</p>
-      <p className="mt-1 font-mono text-xs text-gray-400">{info.file}</p>
+      <p className="mt-1 font-mono text-xs text-gray-500">{info.file}</p>
     </header>
   )
 
@@ -162,10 +162,10 @@ export default async function PromptPage({
                             {run.notes ? (
                               <span className="whitespace-pre-wrap text-gray-800">{run.notes}</span>
                             ) : (
-                              !run.error && <span className="text-gray-400">No notes</span>
+                              !run.error && <span className="text-gray-500">No notes</span>
                             )}
                           </span>
-                          <span className="hidden shrink-0 text-xs leading-5 text-gray-400 sm:block">
+                          <span className="hidden shrink-0 text-xs leading-5 text-gray-500 sm:block">
                             {formatDate(run.createdAt)}
                           </span>
                         </Link>

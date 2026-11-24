@@ -41,6 +41,7 @@
   },
   "itemRow": {
     "dragAria": "Drag to reorder",
+    "editAria": "Item name",
     "cancelEditAria": "Cancel edit",
     "deleteTitle": "Delete",
     "unknownRecipe": "Unknown recipe",
