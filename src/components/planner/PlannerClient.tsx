@@ -263,6 +263,9 @@ export function PlannerClient({ weekStart }: PlannerClientProps) {
           <div className="hidden md:block">
             <DndContext
               collisionDetection={pointerWithin}
+              // The week always fits across the screen, so never scroll sideways: a multi-day
+              // meal dragged towards Sunday pokes past the edge and would slide the page away.
+              autoScroll={{ threshold: { x: 0, y: 0.2 } }}
               onDragStart={(e) => {
                 const slot = e.active.data.current?.slot as MealSlotWithRecipe | undefined
                 setActiveSlot(slot ?? null)

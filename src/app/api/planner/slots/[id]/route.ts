@@ -4,6 +4,7 @@ import type { TablesUpdate } from '@/types/database'
 import { parseDateString, spanFitsWeek } from '@/lib/utils/week'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getHouseholdWeekStartDay } from '@/lib/auth/household'
+import { canPlanRecipe } from '@/lib/planner/recipe-access'
 
 export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -29,7 +30,12 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
     }
     update.span_days = body.span_days
   }
-  if (body.recipe_id !== undefined) update.recipe_id = body.recipe_id
+  if (body.recipe_id !== undefined) {
+    if (body.recipe_id !== null && !(await canPlanRecipe(supabase, body.recipe_id))) {
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 })
+    }
+    update.recipe_id = body.recipe_id
+  }
   if (body.custom_label !== undefined) update.custom_label = body.custom_label
 
   if (body.date !== undefined || body.span_days !== undefined) {

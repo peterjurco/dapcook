@@ -17,8 +17,10 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 vi.mock('@/lib/auth/current-user', () => ({ getCurrentUser: vi.fn(async () => ({ id: 'user-1' })) }))
 vi.mock('@/lib/auth/household', () => ({ getHouseholdWeekStartDay: vi.fn(async () => 'sunday') }))
+vi.mock('@/lib/planner/recipe-access', () => ({ canPlanRecipe: vi.fn(async () => true) }))
 
 import { PUT } from './route'
+import { canPlanRecipe } from '@/lib/planner/recipe-access'
 
 const put = (body: unknown) =>
   PUT(new NextRequest('http://localhost/api/planner/slots/s-1', { method: 'PUT', body: JSON.stringify(body) }), {
@@ -35,6 +37,18 @@ describe('PUT /api/planner/slots/[id]', () => {
     mocks.current.mockResolvedValue({ data: { date: '2026-09-28', span_days: 2 } })
     expect((await put({ date: '2026-09-30' })).status).toBe(200)
     expect(mocks.update).toHaveBeenCalledWith({ date: '2026-09-30' })
+  })
+
+  it("refuses to point a meal at a recipe outside the user's household", async () => {
+    vi.mocked(canPlanRecipe).mockResolvedValueOnce(false)
+    expect((await put({ recipe_id: 'someone-elses' })).status).toBe(404)
+    expect(mocks.update).not.toHaveBeenCalled()
+  })
+
+  it('lets a meal drop its recipe', async () => {
+    expect((await put({ recipe_id: null, custom_label: 'Leftovers' })).status).toBe(200)
+    expect(canPlanRecipe).not.toHaveBeenCalled()
+    expect(mocks.update).toHaveBeenCalledWith({ recipe_id: null, custom_label: 'Leftovers' })
   })
 
   it('rejects a move that would straddle the week edge', async () => {
