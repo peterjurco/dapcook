@@ -7,6 +7,8 @@ const supabase = localSupabase()
 
 export default defineConfig({
   testDir: './e2e',
+  // Read-only checks against the deployed site; see playwright.smoke.config.ts.
+  testIgnore: 'smoke/**',
   // Safe because every test gets its own user and household (e2e/support/fixtures.ts).
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

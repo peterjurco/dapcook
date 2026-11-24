@@ -84,3 +84,19 @@ Check flakiness before pushing new tests: `npx playwright test --repeat-each=3 -
 **Drag and drop** (`planner.spec.ts`): drive the real mouse with `page.mouse`, and release only once the
 day under the pointer is highlighted as the drop target (`dropAt`): dnd-kit measures its targets after a
 drag begins, so an immediate release on a busy machine drops on nothing.
+
+## Smoke test of production
+
+`e2e/smoke/` is a separate, read-only suite for the **deployed** site (its own `playwright.smoke.config.ts`;
+the main config ignores it). It signs nobody in and writes nothing: the sign-in page renders without errors,
+signed-out API calls are sent to sign in (so Supabase Auth is reachable), an unknown share link is a 404 (so
+the database answers), the manifest is served.
+
+`.github/workflows/smoke.yml` runs it whenever Vercel reports a successful Production deploy, and by hand
+(Actions → Smoke test → Run workflow) against a public URL. Staging sits behind Vercel's deployment
+protection (every request redirects to Vercel's sign-in), so it can't be checked this way without a bypass
+token. Locally:
+
+```bash
+npx playwright test -c playwright.smoke.config.ts   # SMOKE_URL defaults to production
+```
