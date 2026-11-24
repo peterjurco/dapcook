@@ -24,6 +24,11 @@ function PostHogRuntime({
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com',
         capture_pageview: false,
         capture_pageleave: true,
+        // Signals for the weekly PostHog review: browser errors, clicks that do
+        // nothing, and console output inside recordings.
+        capture_exceptions: true,
+        capture_dead_clicks: true,
+        enable_recording_console_log: true,
         session_recording: {
           maskAllInputs: false,
         },
@@ -32,6 +37,8 @@ function PostHogRuntime({
       posthog.set_config({
         autocapture: true,
         capture_pageleave: true,
+        capture_exceptions: true,
+        capture_dead_clicks: true,
         disable_session_recording: false,
       })
       posthog.startSessionRecording()
@@ -41,6 +48,8 @@ function PostHogRuntime({
       posthog.set_config({
         autocapture: false,
         capture_pageleave: false,
+        capture_exceptions: false,
+        capture_dead_clicks: false,
         disable_session_recording: true,
       })
       posthog.stopSessionRecording()

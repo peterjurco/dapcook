@@ -51,6 +51,11 @@ describe('PostHogProvider analytics boundary', () => {
     await act(async () => {})
 
     expect(mocks.init).toHaveBeenCalledOnce()
+    expect(mocks.init).toHaveBeenCalledWith('test-key', expect.objectContaining({
+      capture_exceptions: true,
+      capture_dead_clicks: true,
+      enable_recording_console_log: true,
+    }))
     expect(mocks.capture).toHaveBeenCalledWith('$pageview', {
       $current_url: 'http://localhost:3000/recipes',
     })
@@ -69,6 +74,8 @@ describe('PostHogProvider analytics boundary', () => {
     expect(mocks.setConfig).toHaveBeenCalledWith(expect.objectContaining({
       autocapture: false,
       capture_pageleave: false,
+      capture_exceptions: false,
+      capture_dead_clicks: false,
       disable_session_recording: true,
     }))
     expect(mocks.capture).not.toHaveBeenCalled()
