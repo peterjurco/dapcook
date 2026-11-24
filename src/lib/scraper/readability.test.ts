@@ -122,6 +122,42 @@ const COLUMNS_RECIPE_HTML = `
 </body></html>
 `
 
+// Shaped like fitrecepty.sk: the intro is a block of paragraphs, and the recipe
+// is bare lists (no <p> inside) in sibling blocks next to it. Readability scores
+// paragraphs, not list items, so the intro used to win and the model got no
+// ingredients or steps.
+const LIST_RECIPE_HTML = `
+<!DOCTYPE html>
+<html lang="sk"><head><title>Kuracie prsia z jednej panvice</title></head>
+<body>
+<nav><a href="/">Domov</a><a href="/recepty">Recepty</a></nav>
+<div class="recipeDetailLeft">
+<div class="headingFlex"><h1>Kuracie prsia z jednej panvice</h1></div>
+<div>
+<p>Rýchla večera z jednej panvice, ktorá je hotová za necelú polhodinu a chutí celej rodine bez výnimky.</p>
+<p>Spojenie kuracieho mäsa, špenátu a sušených paradajok si zamilujete a prenesie vás rovno do slnečného Talianska.</p>
+<p>Pri tomto recepte sa veľa nenarobíte, pripravíte ho raz-dva v jednej panvici alebo vo woku.</p>
+<p>Namiesto smotany použijeme syrokrém, vďaka ktorému ušetríme kalórie a omáčka bude ešte krémovejšia.</p>
+<p>Podávame s ryžou, kuskusom alebo quinoou. Recept je skvelý aj do krabičky na obed do práce.</p>
+</div>
+<div class="recipeDetailIngredients"><h3>Suroviny</h3><ul>
+<li>800 g kuracích pŕs</li><li>100 g sušených paradajok</li><li>100 g baby špenátu</li>
+<li>50 g syrokrému light (cream cheese)</li><li>200 ml vody</li><li>1 cibuľa</li><li>2 strúčiky cesnaku</li>
+<li>1 PL oleja (sezamový alebo olivový)</li><li>soľ a čierne korenie podľa chuti</li><li>1 ČL sušenej bazalky</li>
+</ul></div>
+<div><h3>Postup</h3><ol>
+<li>Kuracie prsia prekrojíme pozdĺžne na polovicu, aby sme dostali tenšie plátky.</li>
+<li>Na rozohriatom oleji orestujeme nadrobno nakrájanú cibuľu do sklovita.</li>
+<li>Pridáme kuracie prsia a restujeme ich približne tri minúty z každej strany.</li>
+<li>Vložíme cesnak, sušené paradajky, vodu, syrokrém a špenát a krátko povaríme.</li>
+<li>Vrátime mäso do omáčky, prikryjeme a dusíme ešte päť minút.</li>
+</ol></div>
+<div class="SocialShare">Zdieľaj recept s priateľmi:</div>
+</div>
+<footer>Copyright 2026</footer>
+</body></html>
+`
+
 describe('extractArticleContent', () => {
   it('extracts title and text content from a blog article', () => {
     const result = extractArticleContent(ARTICLE_HTML, URL)
@@ -143,6 +179,13 @@ describe('extractArticleContent', () => {
     const text = extractArticleContent(html, URL)!.textContent
     expect(text).not.toMatch(/[ \t]{2,}|\n\s*\n/)
     expect(text).toContain('\n6 cups thinly sliced apples\n3/4 cup white sugar\n')
+  })
+
+  it('includes a recipe written only as lists, outside the intro paragraphs', () => {
+    const text = extractArticleContent(LIST_RECIPE_HTML, 'https://example.com/kuracie-prsia')!.textContent
+    expect(text).toContain('800 g kuracích pŕs')
+    expect(text).toContain('Kuracie prsia prekrojíme pozdĺžne na polovicu')
+    expect(text).toContain('Vrátime mäso do omáčky')
   })
 
   it('returns null when the page has no identifiable article content', () => {
