@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { collapseWhitespace, extractArticleContent } from './readability'
+import { collapseWhitespace, extractArticleContent, htmlToText } from './readability'
 
 const URL = 'https://example.com/grandmas-apple-pie'
 
@@ -159,6 +159,28 @@ describe('extractArticleContent', () => {
     const result = extractArticleContent(LONG_ARTICLE_HTML, URL)
     expect(result).not.toBeNull()
     expect(result!.textContent.length).toBeGreaterThan(200)
+  })
+})
+
+describe('htmlToText', () => {
+  it('puts list items written without whitespace on their own lines', () => {
+    const text = collapseWhitespace(htmlToText(
+      '<p>For Risotto:</p><ul><li>2 tablespoons olive oil</li><li>7 cups vegetable broth</li><li>¾ cup diced shallots</li></ul>'
+    ))
+    expect(text).toBe('For Risotto:\n2 tablespoons olive oil\n7 cups vegetable broth\n¾ cup diced shallots')
+  })
+
+  it('keeps a table row on one line and breaks between rows and at <br>', () => {
+    const text = collapseWhitespace(htmlToText(
+      '<table><tr><td>800 g</td><td>panenka bravčová</td></tr><tr><td>4</td><td>strúčiky cesnaku</td></tr></table>' +
+      '<p>Rúru predhrejeme.<br>Pečieme 45 minút.</p>'
+    ))
+    expect(text).toBe('800 g panenka bravčová\n4 strúčiky cesnaku\nRúru predhrejeme.\nPečieme 45 minút.')
+  })
+
+  it('does not split inline elements inside a line', () => {
+    expect(collapseWhitespace(htmlToText('<li>1 PL <a href="/olej">olivového oleja</a> a <strong>soľ</strong></li>')))
+      .toBe('1 PL olivového oleja a soľ')
   })
 })
 
