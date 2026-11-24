@@ -212,4 +212,23 @@ test.describe('Settings', () => {
     await expect(days.first()).toHaveAttribute('aria-label', 'Add meal to Sat')
     await expect(days.last()).toHaveAttribute('aria-label', 'Add meal to Fri')
   })
+  test('deleting a shopping category leaves its items uncategorized', async ({ page, user }) => {
+    await addShoppingItems(user, [{ name: 'oat milk', category: 'Drinks' }])
+
+    await page.goto('/settings')
+    const row = page.getByText('Drinks', { exact: true }).locator('xpath=..')
+    await row.hover()
+    await row.getByTitle('Delete').click()
+    await page
+      .getByText('Delete category "Drinks"?')
+      .locator('xpath=..')
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click()
+    await expect(page.getByText('Drinks', { exact: true })).toHaveCount(0)
+
+    await page.goto('/shopping')
+    await expect(page.getByText('oat milk')).toBeVisible()
+    await expect(page.getByText('Drinks', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Other', { exact: true })).toBeVisible()
+  })
 })

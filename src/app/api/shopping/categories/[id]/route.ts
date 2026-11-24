@@ -19,7 +19,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
   if (body.color !== undefined) updates.color = body.color
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order
 
-  // Items name their category rather than point at it, so a rename has to carry them along.
+  // Remember the old name: the household's items are moved to the new one below.
   const { data: before } = updates.name
     ? await supabase.from('shopping_categories').select('name').eq('id', params.id).eq('household_id', householdId).maybeSingle()
     : { data: null }
@@ -35,16 +35,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
   if (error || !data) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 404 })
 
   if (before && before.name !== data.name) {
-    const { data: lists } = await supabase.from('shopping_lists').select('id').eq('household_id', householdId)
-    const listIds = (lists ?? []).map((list) => list.id)
-    if (listIds.length) {
-      const { error: itemsError } = await supabase
-        .from('shopping_items')
-        .update({ category: data.name })
-        .eq('category', before.name)
-        .in('shopping_list_id', listIds)
-      if (itemsError) console.error('[shopping/categories] moving items to the renamed category failed:', itemsError)
-    }
+    await recategorizeItems(supabase, householdId, before.name, data.name)
   }
 
   return NextResponse.json(data)
@@ -59,13 +50,40 @@ export async function DELETE(_request: NextRequest, props: { params: Promise<{ i
   const householdId = await getCurrentHouseholdId()
   if (!householdId) return NextResponse.json({ error: 'No household' }, { status: 403 })
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from('shopping_categories')
     .delete()
     .eq('id', params.id)
     .eq('household_id', householdId)
+    .select('name')
+    .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Its items stay on the list, uncategorized.
+  if (deleted) await recategorizeItems(supabase, householdId, deleted.name, null)
+
   return new NextResponse(null, { status: 204 })
+}
+
+/**
+ * Items name their category rather than point at it, so renaming or deleting a
+ * category has to carry the household's items along (`to` null = uncategorized).
+ * Best effort: the category change itself has already succeeded.
+ */
+async function recategorizeItems(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  householdId: string,
+  from: string,
+  to: string | null
+): Promise<void> {
+  const { data: lists } = await supabase.from('shopping_lists').select('id').eq('household_id', householdId)
+  const listIds = (lists ?? []).map((list) => list.id)
+  if (!listIds.length) return
+  const { error } = await supabase
+    .from('shopping_items')
+    .update({ category: to })
+    .eq('category', from)
+    .in('shopping_list_id', listIds)
+  if (error) console.error('[shopping/categories] updating items after a category change failed:', error)
 }
