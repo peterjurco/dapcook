@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
-import { APP_PORT, APP_URL, FAKE_ANTHROPIC_PORT, localSupabase } from './e2e/support/env'
+import { APP_PORT, APP_URL, FAKE_SERVICES_PORT, localSupabase } from './e2e/support/env'
 
 // End-to-end tests run a production build against a local Supabase in Docker
 // (`npm run e2e:db:start`) and a fake Anthropic API. See e2e/README.md.
@@ -19,15 +19,22 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
+      name: 'desktop',
       use: { ...devices['Desktop Chrome'] },
+      grepInvert: /@mobile/,
+    },
+    {
+      // Phone layouts (the planner's agenda and edit list). Tag a test `@mobile` to run it here instead.
+      name: 'mobile',
+      use: { ...devices['Pixel 7'] },
+      grep: /@mobile/,
     },
   ],
   webServer: [
     {
-      command: 'node e2e/support/fake-anthropic.ts',
-      url: `http://localhost:${FAKE_ANTHROPIC_PORT}`,
-      env: { PORT: String(FAKE_ANTHROPIC_PORT) },
+      command: 'node e2e/support/fake-services.ts',
+      url: `http://localhost:${FAKE_SERVICES_PORT}`,
+      env: { PORT: String(FAKE_SERVICES_PORT) },
       reuseExistingServer: !process.env.CI,
     },
     {
@@ -44,7 +51,7 @@ export default defineConfig({
         SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
         NEXT_PUBLIC_SITE_URL: APP_URL,
         ANTHROPIC_API_KEY: 'e2e-fake-key',
-        ANTHROPIC_BASE_URL: `http://localhost:${FAKE_ANTHROPIC_PORT}`,
+        ANTHROPIC_BASE_URL: `http://localhost:${FAKE_SERVICES_PORT}`,
         RECIPE_IMPORT_USE_AI: 'false',
         TAG_SUGGEST_USE_AI: 'false',
         NEXT_PUBLIC_POSTHOG_KEY: '',
