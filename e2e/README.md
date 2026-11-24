@@ -43,9 +43,6 @@ suite tests the old build. If :3001 is taken by something else (say a `next dev`
 | `access.spec.ts` | Cross-household API access, signed-out API calls, the admin page |
 | `join-and-tours.spec.ts` | Invite pages, product tours |
 
-**Known issue** — `shopping.spec.ts` › "a household member sees items checked off live" is marked
-`test.fixme`: live sync between members doesn't work (see the comment on the test). Remove `fixme` once fixed.
-
 ## Writing tests
 
 Import `test` and `expect` from `./support/fixtures`, not from `@playwright/test`.

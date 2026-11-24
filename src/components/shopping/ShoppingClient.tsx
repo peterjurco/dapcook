@@ -6,6 +6,7 @@ import { formatQtyUnit } from '@/lib/shopping/format-quantity'
 import { usePostHog } from 'posthog-js/react'
 import { Copy, Check, Trash2, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
   DndContext,
   closestCenter,
@@ -97,43 +98,55 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
   useEffect(() => {
     if (!list) return
     const supabase = createClient()
-    const channel = supabase
-      .channel(`shopping-${list.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
-        (payload) => {
-          const updated = payload.new as ShoppingItem
-          setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item))
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
-        (payload) => {
-          const newItem = payload.new as ShoppingItem
-          setItems((prev) => {
-            if (prev.some((item) => item.id === newItem.id)) return prev
-            const catOrder = new Map(categories.map((c, i) => [c.name, i]))
-            return [...prev, newItem].sort((a, b) => {
-              const ai = a.category ? (catOrder.get(a.category) ?? 999) : 999
-              const bi = b.category ? (catOrder.get(b.category) ?? 999) : 999
-              if (ai !== bi) return ai - bi
-              return a.sort_order - b.sort_order
+    let channel: RealtimeChannel | null = null
+    let cancelled = false
+    void (async () => {
+      // Join as the signed-in user. The client hands realtime the session only once its
+      // INITIAL_SESSION event fires, after this effect — a channel joined before that is
+      // anonymous, and RLS then filters out every change.
+      await supabase.realtime.setAuth()
+      if (cancelled) return
+      channel = supabase
+        .channel(`shopping-${list.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
+          (payload) => {
+            const updated = payload.new as ShoppingItem
+            setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item))
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'shopping_items', filter: `shopping_list_id=eq.${list.id}` },
+          (payload) => {
+            const newItem = payload.new as ShoppingItem
+            setItems((prev) => {
+              if (prev.some((item) => item.id === newItem.id)) return prev
+              const catOrder = new Map(categories.map((c, i) => [c.name, i]))
+              return [...prev, newItem].sort((a, b) => {
+                const ai = a.category ? (catOrder.get(a.category) ?? 999) : 999
+                const bi = b.category ? (catOrder.get(b.category) ?? 999) : 999
+                if (ai !== bi) return ai - bi
+                return a.sort_order - b.sort_order
+              })
             })
-          })
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'shopping_items' },
-        (payload) => {
-          const deletedId = (payload.old as { id: string }).id
-          setItems((prev) => prev.filter((item) => item.id !== deletedId))
-        }
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'shopping_items' },
+          (payload) => {
+            const deletedId = (payload.old as { id: string }).id
+            setItems((prev) => prev.filter((item) => item.id !== deletedId))
+          }
+        )
+        .subscribe()
+    })()
+    return () => {
+      cancelled = true
+      if (channel) void supabase.removeChannel(channel)
+    }
   }, [list])
 
   // Resolves to whether the server saved the change, so the row can undo its
