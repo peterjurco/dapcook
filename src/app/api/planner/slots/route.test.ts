@@ -19,8 +19,10 @@ vi.mock('@/lib/auth/household', () => ({
   getCurrentHouseholdId: vi.fn(async () => 'hh-1'),
   getHouseholdWeekStartDay: vi.fn(async () => 'sunday'),
 }))
+vi.mock('@/lib/planner/recipe-access', () => ({ canPlanRecipe: vi.fn(async () => true) }))
 
 import { POST } from './route'
+import { canPlanRecipe } from '@/lib/planner/recipe-access'
 
 const post = (body: unknown) =>
   POST(new NextRequest('http://localhost/api/planner/slots', { method: 'POST', body: JSON.stringify(body) }))
@@ -52,5 +54,11 @@ describe('POST /api/planner/slots', () => {
 
   it('requires a recipe or a custom label', async () => {
     expect((await post({ date: '2026-09-30' })).status).toBe(400)
+  })
+
+  it("refuses a recipe outside the user's household", async () => {
+    vi.mocked(canPlanRecipe).mockResolvedValueOnce(false)
+    expect((await post({ date: '2026-09-30', recipe_id: 'someone-elses' })).status).toBe(404)
+    expect(mocks.insert).not.toHaveBeenCalled()
   })
 })

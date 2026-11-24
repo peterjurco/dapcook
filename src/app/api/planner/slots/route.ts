@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { parseDateString, spanFitsWeek } from '@/lib/utils/week'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getCurrentHouseholdId, getHouseholdWeekStartDay } from '@/lib/auth/household'
+import { canPlanRecipe } from '@/lib/planner/recipe-access'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -31,6 +32,9 @@ export async function POST(request: NextRequest) {
   }
   if (!spanFitsWeek(body.date!, span, await getHouseholdWeekStartDay())) {
     return NextResponse.json({ error: 'Meal must end within its week' }, { status: 400 })
+  }
+  if (body.recipe_id && !(await canPlanRecipe(supabase, body.recipe_id))) {
+    return NextResponse.json({ error: 'Recipe not found' }, { status: 404 })
   }
 
   const { data: slot, error } = await supabase

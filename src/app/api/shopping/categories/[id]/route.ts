@@ -19,6 +19,11 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
   if (body.color !== undefined) updates.color = body.color
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order
 
+  // Items name their category rather than point at it, so a rename has to carry them along.
+  const { data: before } = updates.name
+    ? await supabase.from('shopping_categories').select('name').eq('id', params.id).eq('household_id', householdId).maybeSingle()
+    : { data: null }
+
   const { data, error } = await supabase
     .from('shopping_categories')
     .update(updates)
@@ -28,6 +33,19 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
     .single()
 
   if (error || !data) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 404 })
+
+  if (before && before.name !== data.name) {
+    const { data: lists } = await supabase.from('shopping_lists').select('id').eq('household_id', householdId)
+    const listIds = (lists ?? []).map((list) => list.id)
+    if (listIds.length) {
+      const { error: itemsError } = await supabase
+        .from('shopping_items')
+        .update({ category: data.name })
+        .eq('category', before.name)
+        .in('shopping_list_id', listIds)
+      if (itemsError) console.error('[shopping/categories] moving items to the renamed category failed:', itemsError)
+    }
+  }
 
   return NextResponse.json(data)
 }

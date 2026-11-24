@@ -13,18 +13,18 @@
  *     test('…', async ({ page, user }) => { … })        //   (lands on /onboarding)
  *   })
  *
- *   // A second person: their own browser context.
- *   const bob = await createUser({ household: false })
- *   const bobContext = await browser.newContext()
- *   await signIn(bobContext, bob)
+ *   // A second member of the same household, in their own browser:
+ *   const partner = await createUser({ joinHousehold: user })
+ *   const partnerPage = await openAs(browser, partner)
  */
 import { randomUUID } from 'node:crypto'
-import { test as base, type BrowserContext } from '@playwright/test'
+import { test as base, type Browser, type BrowserContext, type Page } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
 import { DEFAULT_SHOPPING_CATEGORIES } from '@/lib/onboarding/defaults'
 import { TOUR_IDS } from '@/lib/tours/ids'
+import { SPLASH_SESSION_KEY } from '@/components/ui/SplashScreen'
 import { generateInviteToken } from '@/lib/utils/invite'
 import { APP_URL, localSupabase } from './env'
 
@@ -40,8 +40,12 @@ export interface TestUser {
 interface CreateUserOptions {
   /** Create a household (as finished onboarding would) and put the user in it. Default true. */
   household?: boolean
+  /** Put the user in this user's household instead of creating one. */
+  joinHousehold?: TestUser
   /** Mark every product tour as seen, so no tour overlay covers the page. Default true. */
   skipTours?: boolean
+  /** A fixed address (e.g. the e2e ADMIN_EMAIL). Reuses the account if it already exists. */
+  email?: string
 }
 
 let adminClient: SupabaseClient<Database> | null = null
@@ -58,7 +62,7 @@ export function admin(): SupabaseClient<Database> {
 }
 
 /** Unwraps a Supabase result to its success branch, or fails the test setup loudly. */
-function must<R extends { data: unknown; error: { message: string } | null }>(
+export function must<R extends { data: unknown; error: { message: string } | null }>(
   result: R,
   what: string
 ): Extract<R, { error: null }>['data'] {
@@ -66,30 +70,47 @@ function must<R extends { data: unknown; error: { message: string } | null }>(
   return result.data
 }
 
+async function authUserId(email: string, displayName: string): Promise<string> {
+  const db = admin()
+  const created = await db.auth.admin.createUser({ email, email_confirm: true, user_metadata: { full_name: displayName } })
+  if (!created.error) return created.data.user.id
+  if (created.error.code !== 'email_exists') throw new Error(`e2e setup: createUser failed: ${created.error.message}`)
+  // Looked up by email: minting a link returns the account, however many users the database holds.
+  const link = must(await db.auth.admin.generateLink({ type: 'magiclink', email }), 'find existing user')
+  return link.user.id
+}
+
 /** Creates a user with a profile, plus a finished household unless `household: false`. */
-export async function createUser({ household = true, skipTours = true }: CreateUserOptions = {}): Promise<TestUser> {
+export async function createUser({
+  household = true,
+  joinHousehold,
+  skipTours = true,
+  email,
+}: CreateUserOptions = {}): Promise<TestUser> {
   const db = admin()
   const tag = randomUUID().slice(0, 8)
-  const email = `e2e-${tag}@test.local`
+  const address = email ?? `e2e-${tag}@test.local`
   const displayName = `E2E ${tag}`
-
-  const created = must(
-    await db.auth.admin.createUser({ email, email_confirm: true, user_metadata: { full_name: displayName } }),
-    'createUser'
-  )
-  const id = created.user.id
+  const id = await authUserId(address, displayName)
 
   must(
     await db.from('profiles').upsert({
       id,
       display_name: displayName,
+      household_id: null,
       ui_language: 'en',
       tours_seen: skipTours ? [...TOUR_IDS] : [],
     }),
     'create profile'
   )
 
-  if (!household) return { id, email, displayName, householdId: null, inviteToken: null }
+  if (joinHousehold) {
+    if (!joinHousehold.householdId) throw new Error('e2e setup: joinHousehold needs a user with a household')
+    must(await db.from('profiles').update({ household_id: joinHousehold.householdId }).eq('id', id), 'join household')
+    return { id, email: address, displayName, householdId: joinHousehold.householdId, inviteToken: joinHousehold.inviteToken }
+  }
+
+  if (!household) return { id, email: address, displayName, householdId: null, inviteToken: null }
 
   // Mirrors createHousehold in src/lib/auth/actions.ts, with onboarding already finished.
   const householdId = randomUUID()
@@ -118,7 +139,7 @@ export async function createUser({ household = true, skipTours = true }: CreateU
     'create shopping categories'
   )
 
-  return { id, email, displayName, householdId, inviteToken }
+  return { id, email: address, displayName, householdId, inviteToken }
 }
 
 /**
@@ -148,26 +169,94 @@ export async function signIn(context: BrowserContext, user: TestUser): Promise<v
   )
 }
 
+/**
+ * Marks the splash screen as already shown, so the app hides it (`html[data-splash=skip]`,
+ * see src/components/ui/SplashScreen.tsx). Without this its animation covers the first
+ * second of every page load and replays on every step of a trace.
+ */
+async function skipSplash(context: BrowserContext): Promise<void> {
+  await context.addInitScript((key) => {
+    try {
+      sessionStorage.setItem(key, '1')
+    } catch {
+      // No storage: the app shows the splash as it would for a real user.
+    }
+  }, SPLASH_SESSION_KEY)
+}
+
+/** A page in a fresh browser context signed in as `user` (or signed out when `user` is null). */
+export async function openAs(browser: Browser, user: TestUser | null): Promise<Page> {
+  const context = await browser.newContext({ baseURL: APP_URL })
+  await skipSplash(context)
+  if (user) await signIn(context, user)
+  return context.newPage()
+}
+
+/**
+ * Opens the recipe form (`/recipes/new` or `/recipes/<id>/edit`) and waits until
+ * React has hydrated it: it loads the household's tags on mount. Clicks and
+ * file uploads before that are silently lost.
+ */
+export async function openRecipeForm(page: Page, path: string): Promise<void> {
+  const hydrated = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/tags')
+  await page.goto(path)
+  await hydrated
+}
+
+/**
+ * Opens the planner (on `week`, a YYYY-MM-DD week start, when given) and waits until
+ * it has hydrated: it fetches its week from the API on mount.
+ */
+export async function openPlanner(page: Page, week?: string): Promise<void> {
+  const hydrated = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/planner/week')
+  await page.goto(week ? `/planner?week=${week}` : '/planner')
+  await hydrated
+}
+
+function householdOf(user: TestUser, what: string): string {
+  if (!user.householdId) throw new Error(`e2e setup: ${what} needs a user with a household`)
+  return user.householdId
+}
+
 export interface TestIngredient {
   quantity: number | null
   unit: string
   name: string
 }
 
+export interface TestRecipe {
+  title: string
+  servings?: number
+  prepTime?: number
+  cookTime?: number
+  tags?: string[]
+  ingredients?: TestIngredient[]
+  steps?: string[]
+}
+
 /** Inserts a recipe straight into `user`'s household, for tests whose subject is something else. */
-export async function createRecipe(
-  user: TestUser,
-  recipe: { title: string; servings?: number; ingredients?: TestIngredient[]; steps?: string[] }
-): Promise<{ id: string; title: string }> {
-  if (!user.householdId) throw new Error('e2e setup: createRecipe needs a user with a household')
-  const row = must(
+export async function createRecipe(user: TestUser, recipe: TestRecipe): Promise<{ id: string; title: string }> {
+  const householdId = householdOf(user, 'createRecipe')
+  const tags = recipe.tags ?? []
+  if (tags.length) {
+    must(
+      await admin()
+        .from('tags')
+        .upsert(tags.map((name) => ({ household_id: householdId, name })), { onConflict: 'household_id,name', ignoreDuplicates: true }),
+      'create tags'
+    )
+  }
+  return must(
     await admin()
       .from('recipes')
       .insert({
-        household_id: user.householdId,
+        household_id: householdId,
         created_by: user.id,
         title: recipe.title,
         servings: recipe.servings ?? 2,
+        prep_time_min: recipe.prepTime ?? null,
+        cook_time_min: recipe.cookTime ?? null,
+        tags,
         ingredients: (recipe.ingredients ?? []).map((ing) => ({ id: randomUUID(), notes: '', ...ing })),
         steps: (recipe.steps ?? []).map((text, i) => ({ id: randomUUID(), order: i + 1, text })),
       })
@@ -175,31 +264,97 @@ export async function createRecipe(
       .single(),
     'create recipe'
   )
-  return row
 }
 
-/** Puts a recipe on `user`'s plan for `date` (YYYY-MM-DD). */
-export async function planRecipe(user: TestUser, recipeId: string, date: string): Promise<void> {
-  if (!user.householdId) throw new Error('e2e setup: planRecipe needs a user with a household')
-  must(
-    await admin().from('meal_slots').insert({ household_id: user.householdId, recipe_id: recipeId, date }),
+/** Puts a recipe (or a custom label such as "Leftovers") on `user`'s plan for `date` (YYYY-MM-DD). */
+export async function planRecipe(
+  user: TestUser,
+  recipeId: string | null,
+  date: string,
+  options: { customLabel?: string; spanDays?: number } = {}
+): Promise<{ id: string }> {
+  return must(
+    await admin()
+      .from('meal_slots')
+      .insert({
+        household_id: householdOf(user, 'planRecipe'),
+        recipe_id: recipeId,
+        custom_label: options.customLabel ?? null,
+        span_days: options.spanDays ?? 1,
+        date,
+      })
+      .select('id')
+      .single(),
     'plan recipe'
   )
 }
 
-/** Today as YYYY-MM-DD in local time, the format the planner uses. */
-export function today(): string {
-  const d = new Date()
+/** Adds items to `user`'s household shopping list. */
+export async function addShoppingItems(
+  user: TestUser,
+  items: { name: string; quantity?: number | null; unit?: string | null; category?: string | null }[]
+): Promise<void> {
+  const db = admin()
+  const list = must(
+    await db.from('shopping_lists').select('id').eq('household_id', householdOf(user, 'addShoppingItems')).single(),
+    'find shopping list'
+  )
+  must(
+    await db.from('shopping_items').insert(
+      items.map((item, i) => ({
+        shopping_list_id: list.id,
+        name: item.name,
+        quantity: item.quantity ?? null,
+        unit: item.unit ?? null,
+        category: item.category ?? null,
+        sort_order: i,
+      }))
+    ),
+    'add shopping items'
+  )
+}
+
+/** YYYY-MM-DD in local time, the format the planner uses. */
+export function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export const test = base.extend<{ household: boolean; user: TestUser }>({
+export function today(): string {
+  return isoDate(new Date())
+}
+
+/** The Monday of the current week (the default week start), as YYYY-MM-DD. */
+export function thisMonday(offsetWeeks = 0): string {
+  const d = new Date()
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offsetWeeks * 7)
+  return isoDate(d)
+}
+
+/** Day `index` of this Monday-started week (0 = Monday … 6 = Sunday; negative or ≥ 7 leave it), as YYYY-MM-DD. */
+export function weekDay(index: number, offsetWeeks = 0): string {
+  const d = new Date(`${thisMonday(offsetWeeks)}T00:00:00`)
+  d.setDate(d.getDate() + index)
+  return isoDate(d)
+}
+
+/** The short weekday and day of month the planner shows for a YYYY-MM-DD date, e.g. "Wed 25". */
+export function dayLabel(date: string): string {
+  const d = new Date(`${date}T00:00:00`)
+  return `${d.toLocaleDateString('en-GB', { weekday: 'short' })} ${d.getDate()}`
+}
+
+export const test = base.extend<{ household: boolean; skipTours: boolean; user: TestUser }>({
   household: [true, { option: true }],
+  skipTours: [true, { option: true }],
+  context: async ({ context }, provide) => {
+    await skipSplash(context)
+    await provide(context)
+  },
   // `auto`: every test is signed in, whether or not it names `user`.
   // `provide` is Playwright's `use`, renamed so the React hooks lint rule leaves it alone.
   user: [
-    async ({ context, household }, provide) => {
-      const user = await createUser({ household })
+    async ({ context, household, skipTours }, provide) => {
+      const user = await createUser({ household, skipTours })
       await signIn(context, user)
       await provide(user)
     },

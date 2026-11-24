@@ -1,13 +1,16 @@
 /**
- * Stand-in for api.anthropic.com while the e2e suite runs. The app under test
- * gets ANTHROPIC_BASE_URL pointing here, so no test can make a paid call.
+ * The outside world, faked, while the e2e suite runs.
  *
- * A request whose prompt one of the `cannedReplies` recognises gets a
- * deterministic answer built from its own input. Anything else gets a
- * non-retryable 400, so the feature takes its error path. A test that needs
- * another AI feature adds a reply here rather than reach the real API.
+ * - POST /v1/messages — stand-in for api.anthropic.com. The app under test gets
+ *   ANTHROPIC_BASE_URL pointing here, so no test can make a paid call. A request
+ *   whose prompt one of the `cannedReplies` recognises gets a deterministic
+ *   answer built from its own input; anything else gets a non-retryable 400, so
+ *   the feature takes its error path. A test that needs another AI feature adds
+ *   a reply here rather than reach the real API.
+ * - GET /recipe-site/<slug> — a recipe website for URL import (see `recipePages`).
+ *   Unknown slugs are a 404.
  *
- *   node e2e/support/fake-anthropic.ts
+ *   node e2e/support/fake-services.ts
  */
 import { createServer } from 'node:http'
 
@@ -55,10 +58,44 @@ function promptOf(request: MessagesRequest): string {
     .join('\n')
 }
 
+/** Pages of the fake recipe website, with schema.org JSON-LD like real recipe sites. */
+export const recipePages: Record<string, object> = {
+  'shakshuka': {
+    '@context': 'https://schema.org',
+    '@type': 'Recipe',
+    name: 'Fake-site shakshuka',
+    description: 'Eggs poached in a spiced tomato sauce.',
+    recipeYield: '2',
+    prepTime: 'PT10M',
+    cookTime: 'PT20M',
+    recipeIngredient: ['4 eggs', '400 g chopped tomatoes', '1 tsp cumin'],
+    recipeInstructions: [
+      { '@type': 'HowToStep', text: 'Simmer the tomatoes with the cumin.' },
+      { '@type': 'HowToStep', text: 'Crack in the eggs and cover until set.' },
+    ],
+  },
+}
+
+function recipePage(slug: string): string | null {
+  const recipe = recipePages[slug]
+  if (!recipe) return null
+  const name = (recipe as { name: string }).name
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${name}</title>
+<meta property="og:title" content="${name}">
+<script type="application/ld+json">${JSON.stringify(recipe)}</script></head>
+<body><article><h1>${name}</h1><p>A recipe from the e2e fake recipe site.</p></article></body></html>`
+}
+
 createServer((req, res) => {
   if (req.method === 'GET') {
+    const slug = req.url?.match(/^\/recipe-site\/([\w-]+)$/)?.[1]
+    if (slug) {
+      const html = recipePage(slug)
+      res.writeHead(html ? 200 : 404, { 'content-type': 'text/html; charset=utf-8' }).end(html ?? 'Not found')
+      return
+    }
     // Playwright's webServer readiness probe.
-    res.writeHead(200).end('fake anthropic')
+    res.writeHead(200).end('e2e fake services')
     return
   }
   let body = ''
