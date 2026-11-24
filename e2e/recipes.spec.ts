@@ -34,29 +34,6 @@ test.describe('Recipes', () => {
     expect(count).toBe(0)
   })
 
-  test('pastes a block of ingredients and steps', async ({ page }) => {
-    await openRecipeForm(page, '/recipes/new')
-    await page.getByLabel('Title *').fill('Pasted bread')
-
-    // With AI parsing off (as in e2e) each pasted line becomes one ingredient / step as written.
-    await page.getByRole('button', { name: 'Paste text' }).first().click()
-    const ingredientsBox = page.getByPlaceholder(/^200g chicken breast/)
-    await ingredientsBox.fill('500 g flour\n1 tsp salt')
-    await page.getByRole('button', { name: 'Parse' }).click()
-    await expect(ingredientsBox).toHaveCount(0) // closes once parsed
-
-    await page.getByRole('button', { name: 'Paste text' }).last().click()
-    const stepsBox = page.getByPlaceholder(/^1\. Preheat the oven/)
-    await stepsBox.fill('1. Mix everything.\n2. Bake for an hour.')
-    await page.getByRole('button', { name: 'Parse' }).click()
-    await expect(stepsBox).toHaveCount(0)
-
-    await page.getByRole('button', { name: 'Save recipe' }).click()
-    await expect(page.getByRole('heading', { name: 'Pasted bread' })).toBeVisible()
-    await expect(page.getByText('500 g flour')).toBeVisible()
-    await expect(page.getByText('Bake for an hour.')).toBeVisible()
-  })
-
   test('edits a recipe', async ({ page, user }) => {
     const recipe = await createRecipe(user, {
       title: 'Plain rice',

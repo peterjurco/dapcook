@@ -2,7 +2,8 @@ import { execFileSync } from 'node:child_process'
 
 /** Override with E2E_APP_PORT when 3001 is taken (e.g. by another dev server). */
 export const APP_PORT = Number(process.env.E2E_APP_PORT ?? 3001)
-export const FAKE_SERVICES_PORT = 3011
+/** Override with E2E_FAKE_PORT when 3011 is taken (e.g. by another e2e run). */
+export const FAKE_SERVICES_PORT = Number(process.env.E2E_FAKE_PORT ?? 3011)
 export const APP_URL = `http://localhost:${APP_PORT}`
 /** The fake recipe website served by e2e/support/fake-services.ts. */
 export const FAKE_RECIPE_SITE = `http://localhost:${FAKE_SERVICES_PORT}/recipe-site`
@@ -43,4 +44,10 @@ export function localSupabase(): LocalSupabase {
     anonKey: process.env.E2E_SUPABASE_ANON_KEY!,
     serviceRoleKey: process.env.E2E_SUPABASE_SERVICE_ROLE_KEY!,
   }
+}
+
+/** Prompts the fake Anthropic API has received that contain `text` (see fake-services.ts). */
+export async function aiPrompts(text: string): Promise<string[]> {
+  const res = await fetch(`http://localhost:${FAKE_SERVICES_PORT}/anthropic/requests?contains=${encodeURIComponent(text)}`)
+  return (await res.json()) as string[]
 }

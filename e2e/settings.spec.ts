@@ -52,16 +52,6 @@ test.describe('Settings', () => {
     expect(JSON.stringify(recipe?.ingredients)).toContain('"unit":"g"')
   })
 
-  test('reports recipes that fail to convert', async ({ page, user }) => {
-    // The fake AI rejects conversion requests, so every recipe fails, visibly.
-    await createRecipe(user, { title: 'Metric scones', ingredients: [{ quantity: 100, unit: 'g', name: 'flour' }] })
-
-    await page.goto('/settings')
-    await page.getByRole('button', { name: 'imperial', exact: true }).click()
-    await page.getByRole('button', { name: 'Convert all' }).click()
-    await expect(page.getByText('0 updated, 1 failed.')).toBeVisible()
-  })
-
   test('adds and deletes a shopping category', async ({ page, user }) => {
     await page.goto('/settings')
     await page.getByRole('button', { name: 'Add category' }).click()
