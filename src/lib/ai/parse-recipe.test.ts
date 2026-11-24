@@ -46,6 +46,15 @@ afterEach(() => {
 })
 
 describe('parseRecipeData', () => {
+  it('falls back to the raw lines when the Claude call fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockCreate.mockRejectedValue(new Error('529 overloaded'))
+    const result = await parseRecipeData(RAW_INGREDIENTS, RAW_STEPS, 'hh-1', TAG_CONTEXT)
+    expect(result.ingredients.map((i) => i.name)).toEqual(RAW_INGREDIENTS)
+    expect(result.steps.map((s) => s.text)).toEqual(RAW_STEPS)
+    expect(result.suggestedTags).toBeUndefined()
+  })
+
   it('parses ingredients and steps without tag suggestions when no tagContext is given', async () => {
     mockAnthropicJson(PARSED)
     const result = await parseRecipeData(RAW_INGREDIENTS, RAW_STEPS, 'hh-1')

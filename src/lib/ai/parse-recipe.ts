@@ -93,11 +93,18 @@ Rules:
 - steps: clean up whitespace but preserve the full instruction text
 - Handle mixed languages (Slovak, English, etc.) — do not translate, keep original language${tagSection}`
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
-  })
+  let response: Anthropic.Message
+  try {
+    response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }],
+    })
+  } catch (err) {
+    // Unstructured lines beat no recipe: an import still reaches review, a paste still fills the form.
+    console.error('[parse-recipe] Claude call failed, falling back to raw:', err)
+    return rawFallback(rawIngredients, rawSteps)
+  }
 
   if (householdId) {
     void logAiUsage(await createClient(), householdId, 'recipe_parse', response.usage)

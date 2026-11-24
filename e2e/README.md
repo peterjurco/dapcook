@@ -6,10 +6,15 @@ Playwright drives a **production build** of the app (port 3001) in Chromium, aga
   in filename order, so the suite also proves the migrations still build a working database from empty.
   It never touches staging or production.
 - **Fake outside services** (`support/fake-services.ts`, port 3011):
-  - an Anthropic API stand-in, so no test can make a paid AI call. It gives a predictable answer to
-    prompts it recognises (today: the shopping-list merge, which passes items through unmerged under the
-    first category) and an error to everything else — which is how the "conversion failed" paths are tested;
-  - a recipe website at `/recipe-site/<slug>` with schema.org JSON-LD pages, for URL import.
+  - an Anthropic API stand-in, so no test can make a paid AI call. Every AI feature (import parsing,
+    reading a page without recipe data, translation, unit conversion, tag suggestions, the shopping-list
+    merge) gets a predictable answer computed from its own prompt: translation appends " (<Language>)"
+    to each text, conversion uses real factors, the merge sums identical items under the first category.
+    `fail-ai:<feature>` anywhere in the input (a recipe title, an ingredient) makes that feature fail,
+    `fail-ai-once:<feature>` only on the first try, and `aiPrompts(text)` (`support/env.ts`) returns the
+    prompts it received, for checking what the app sent. `RECIPE_IMPORT_USE_AI` and `TAG_SUGGEST_USE_AI` are on;
+  - a recipe website at `/recipe-site/<slug>`: schema.org JSON-LD pages, plain blog articles for the AI to
+    read, and `?title=` to give a page a unique (or failing) title.
 
 Two projects run: **desktop** (everything) and **mobile** (a Pixel 7 viewport, only tests tagged `@mobile`).
 
@@ -27,7 +32,7 @@ npm run e2e:db:stop
 
 Locally an already-running server on :3001 is reused, so after changing app code either stop it or the
 suite tests the old build. If :3001 is taken by something else (say a `next dev`), pick another port:
-`E2E_APP_PORT=3002 npm run test:e2e`. CI runs the whole thing in the `e2e` job of `.github/workflows/ci.yml`.
+`E2E_APP_PORT=3002 npm run test:e2e` (and `E2E_FAKE_PORT=3012` if another run holds the fake on :3011). CI runs the whole thing in the `e2e` job of `.github/workflows/ci.yml`.
 
 ## What's covered
 
@@ -35,11 +40,12 @@ suite tests the old build. If :3001 is taken by something else (say a `next dev`
 |---|---|
 | `auth.spec.ts` | Signed-out redirects |
 | `onboarding.spec.ts` | Wizard (and that its units, week start and tags are saved), resuming it, joining by invite link |
-| `recipes.spec.ts` | Create, validate, paste, edit (ingredients, steps, tags), delete, cover upload, times, search, filters (tag, ingredient, time, portions), default view, isolation |
+| `recipes.spec.ts` | Create, validate, edit (ingredients, steps, tags), delete, cover upload, times, search, filters (tag, ingredient, time, portions), default view, isolation |
 | `share-and-import.spec.ts` | Public share links (and disabling them), URL import and its errors |
 | `planner.spec.ts` | Adding (recipe page picker and its "Change", grid search), several meals a day, multi-day meals and lanes, dragging to another day, stretching and shrinking, meals carried over from last week, removing, weeks, shared plans; on a phone: agenda, edit mode (add, remove, move, stretch, shrink) |
 | `shopping.spec.ts` | Generating from the plan (repeat meals, typed meals, skipped items and recipes, portions, re-adding), editing the list, copying, failed saves, clearing, categories |
-| `settings.spec.ts` | Household name, week start, language, units (and failed conversions), categories (add, rename, delete), rules, members, tags and tag groups, sign-out |
+| `settings.spec.ts` | Household name, week start, language, units, categories (add, rename, delete), rules, members, tags and tag groups, sign-out |
+| `ai.spec.ts` | AI import (structuring, tag suggestions, pages without recipe data, translation and its retry, unit conversion, failures), pasting into the form, tag suggestions, converting and translating existing recipes, the shopping-list merge, rules and failures |
 | `access.spec.ts` | Cross-household API access, signed-out API calls, the admin page |
 | `join-and-tours.spec.ts` | Invite pages, product tours |
 
