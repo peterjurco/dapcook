@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'fs/promises'
 import { randomBytes } from 'crypto'
 import path from 'path'
-import { detectInputProblem } from './coverage'
+import { AUTO_PROBLEM_PREFIX, detectInputProblem } from './coverage'
 import type { EvalCase, PromptId } from './types'
 
 // One pretty-printed JSON file per case: evals/data/<prompt>/<caseId>.json.
@@ -24,6 +24,12 @@ function migrate(evalCase: EvalCase): EvalCase {
       legacy.map((r) => r.notes.trim()).find(Boolean) ||
       'Marked as bad input on a run.'
     for (const run of legacy) run.verdict = null
+  }
+  // Re-run the automatic input check on inputs it flagged, so a fix to the
+  // check (e.g. tolerating "c." vs "cup") clears its false alarms. Problems
+  // entered by hand are left alone.
+  if (evalCase.inputProblem?.startsWith(AUTO_PROBLEM_PREFIX)) {
+    evalCase.inputProblem = detectInputProblem(String(evalCase.input.articleText ?? ''), evalCase.reference)
   }
   return evalCase
 }

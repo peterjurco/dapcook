@@ -22,6 +22,31 @@ describe('coverage', () => {
     expect(detectInputProblem('anything', null)).toBeNull()
   })
 
+  it('matches lines worded a little differently from the page (delish.com, hellolittlehome.com)', () => {
+    const text = 'Ingredients\n3/4 cup low-sodium chicken broth\n¾ cup diced shallots (about 2 large)\n1 ½ cups arborio rice\nKosher salt'
+    expect(coverage(['3/4 c. low-sodium chicken broth', '3/4 cup diced shallots ((about 2 large))', '1 1/2 cups arborio rice', 'Kosher salt'], text))
+      .toEqual({ total: 4, found: 4, missing: [] })
+  })
+
+  it('still requires short lines to match exactly, and the words of a line to be close together', () => {
+    const text = 'Season with salt. ' + 'Filler words about the weather and the garden. '.repeat(10) + 'Add the chicken broth.'
+    expect(coverage(['pepper', 'salt chicken broth'], text).missing).toEqual(['pepper', 'salt chicken broth'])
+  })
+
+  it('flags an input only when more than 10% of a list is missing', () => {
+    const steps = [
+      'Heat the oil in a large skillet', 'Add the shallots and garlic', 'Stir in the arborio rice',
+      'Pour in the white wine', 'Add one cup of warm broth', 'Keep stirring until absorbed',
+      'Preheat the oven for tomatoes', 'Toss tomatoes with olive oil', 'Roast tomatoes until blistered',
+      'Fold in pesto and parmesan', 'Season risotto with salt', 'Spoon tomatoes over the top',
+      'Serve with extra cheese',
+    ]
+    const reference = { source: 'JSON-LD', data: { rawIngredients: [], rawSteps: steps } }
+    expect(detectInputProblem(steps.slice(0, 12).join('\n'), reference)).toBeNull()
+    expect(detectInputProblem(steps.slice(0, 8).join('\n'), reference))
+      .toBe("The article text is missing 5 of 13 steps from the page's JSON-LD.")
+  })
+
   it('ignores blank lines', () => {
     expect(coverage(['', '  '], 'anything')).toEqual({ total: 0, found: 0, missing: [] })
   })
