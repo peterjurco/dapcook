@@ -63,9 +63,9 @@ function SortableIngredientRow({ ing, onUpdate, onRemove, onEdit, t }: SortableR
 
         <button type="button" onClick={() => onEdit(ing.id)} className="flex-1 min-w-0 text-left py-1">
           <span className="text-sm text-gray-900">
-            {ingredientSummary(ing) || <span className="text-gray-400">{t('ingredientEditor.tapToAdd')}</span>}
+            {ingredientSummary(ing) || <span className="text-gray-500">{t('ingredientEditor.tapToAdd')}</span>}
           </span>
-          {ing.notes && <p className="text-xs text-gray-400 mt-0.5">{ing.notes}</p>}
+          {ing.notes && <p className="text-xs text-gray-500 mt-0.5">{ing.notes}</p>}
         </button>
 
         <button
@@ -315,10 +315,10 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
       {ingredients.length > 0 && (
         <div className="hidden sm:grid grid-cols-[auto_64px_80px_1fr_140px_auto] gap-x-2 px-8 mb-1">
           <span />
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.qty')}</span>
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.unit')}</span>
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.ingredient')}</span>
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('ingredientEditor.notes')}</span>
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('ingredientEditor.qty')}</span>
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('ingredientEditor.unit')}</span>
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('ingredientEditor.ingredient')}</span>
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('ingredientEditor.notes')}</span>
           <span />
         </div>
       )}
@@ -341,7 +341,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
         <button
           type="button"
           onClick={add}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
           <Plus size={14} />
           {t('ingredientEditor.add')}
@@ -349,7 +349,7 @@ export function IngredientEditor({ ingredients, onChange }: IngredientEditorProp
         <button
           type="button"
           onClick={() => setPasteMode(true)}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
           <ClipboardPaste size={14} />
           {t('ingredientEditor.pasteText')}

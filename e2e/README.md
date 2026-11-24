@@ -52,6 +52,7 @@ suite tests the old build. If :3001 is taken by something else (say a `next dev`
 | `shopping.spec.ts` | Generating from the plan (repeat meals, typed meals, skipped items and recipes, portions, re-adding), editing the list, copying, failed saves, clearing, categories |
 | `settings.spec.ts` | Household name, week start, language, units, categories (add, rename, delete), rules, members, tags and tag groups, sign-out |
 | `ai.spec.ts` | AI import (structuring, tag suggestions, pages without recipe data, translation and its retry, unit conversion, failures), pasting into the form, tag suggestions, converting and translating existing recipes, the shopping-list merge, rules and failures |
+| `a11y.spec.ts` | axe-core WCAG 2.1 A/AA scan of every main page (with real content), desktop and phone |
 | `access.spec.ts` | Cross-household API access, signed-out API calls, the admin page |
 | `join-and-tours.spec.ts` | Invite pages, product tours |
 

@@ -116,7 +116,7 @@ export function SlotCard({
           >
             {slot.recipe?.title ?? t('slotCard.recipeFallback')}
             {savedPortions != null && (
-              <span className="text-gray-400 text-xs font-normal ml-1">{t('slotCard.portions', { count: savedPortions })}</span>
+              <span className="text-gray-500 text-xs font-normal ml-1">{t('slotCard.portions', { count: savedPortions })}</span>
             )}
           </Link>
         </div>
@@ -125,7 +125,7 @@ export function SlotCard({
         <button
           {...attributes}
           {...listeners}
-          className="hidden md:block absolute top-1.5 left-1.5 p-0.5 rounded bg-white/80 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          className="hidden md:block absolute top-1.5 left-1.5 p-0.5 rounded bg-white/80 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
           aria-label={t('slotCard.dragAria')}
         >
           <GripVertical size={12} />
@@ -135,7 +135,7 @@ export function SlotCard({
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="hidden md:block absolute top-1.5 right-1.5 p-0.5 rounded bg-white/80 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+          className="hidden md:block absolute top-1.5 right-1.5 p-0.5 rounded bg-white/80 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-20"
           aria-label={t('slotCard.removeAria')}
         >
           <X size={12} />

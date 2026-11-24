@@ -16,7 +16,7 @@ export function ConfirmTransformModal({ recipeCount, message, confirmLabel, onCo
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4 space-y-4">
         <h2 className="text-sm font-semibold text-gray-900">{message}</h2>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-500">
           {t('confirmTransform.message', { count: recipeCount })}
         </p>
         <div className="flex gap-2 justify-end pt-1">

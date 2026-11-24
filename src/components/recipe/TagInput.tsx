@@ -146,7 +146,7 @@ export function TagInput({ tags, onChange, allTags, suggestions: aiSuggestions, 
                   {tag.color && <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: tag.color }} />}
                   {tag.name}
                 </span>
-                <span className="text-xs text-gray-400">{tag.count}×</span>
+                <span className="text-xs text-gray-500">{tag.count}×</span>
               </button>
             ))}
           </div>
@@ -156,7 +156,7 @@ export function TagInput({ tags, onChange, allTags, suggestions: aiSuggestions, 
       {/* One row: label, then add-able chips (AI suggestions, or most used as fallback) */}
       {(hasSuggestions || mostUsed.length > 0) && (
         <div data-testid="tag-suggestions" className="flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 text-xs text-gray-400 mr-0.5">
+          <span className="inline-flex items-center gap-1 text-xs text-gray-500 mr-0.5">
             {hasSuggestions && <Sparkles size={12} aria-hidden />}
             {hasSuggestions ? t('tagInput.suggested') : t('tagInput.mostUsed')}
           </span>

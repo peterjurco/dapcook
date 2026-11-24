@@ -117,7 +117,7 @@ function SortableCategoryRow({ t, cat, ...rowProps }: RowProps) {
                 className="w-6 h-6 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
                 title={t('shoppingCategories.removeColorTitle')}
               >
-                <X size={10} className="text-gray-400" />
+                <X size={10} className="text-gray-500" />
               </button>
             )}
           </div>
@@ -139,13 +139,13 @@ function SortableCategoryRow({ t, cat, ...rowProps }: RowProps) {
         />
       ) : (
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <span className="text-sm text-gray-900 font-medium" style={cat.color ? { color: cat.color } : undefined}>
+          <span className="text-sm text-gray-900 font-medium">
             {cat.name}
           </span>
           <button
             type="button"
             onClick={() => onRenameStart(cat.id, cat.name)}
-            className={`${ROW_ACTION_VISIBILITY} text-gray-400 hover:text-gray-700`}
+            className={`${ROW_ACTION_VISIBILITY} text-gray-500 hover:text-gray-700`}
             title={t('shoppingCategories.renameTitle')}
           >
             <Pencil size={12} />
@@ -153,7 +153,7 @@ function SortableCategoryRow({ t, cat, ...rowProps }: RowProps) {
           <button
             type="button"
             onClick={() => onDeleteRequest(cat.id)}
-            className={`${ROW_ACTION_VISIBILITY} text-gray-400 hover:text-red-500 flex-shrink-0`}
+            className={`${ROW_ACTION_VISIBILITY} text-gray-500 hover:text-red-500 flex-shrink-0`}
             title={t('shoppingCategories.deleteTitle')}
           >
             <Trash2 size={12} />
@@ -263,7 +263,7 @@ export function ShoppingCategoriesEditor({ initialCategories, onCategoriesChange
   return (
     <>
       {categories.length === 0 && !addingNew && (
-        <p className="text-sm text-gray-400 mb-3">
+        <p className="text-sm text-gray-500 mb-3">
           {t('shoppingCategories.empty')}
         </p>
       )}
@@ -316,7 +316,7 @@ export function ShoppingCategoriesEditor({ initialCategories, onCategoriesChange
           <button
             type="button"
             onClick={() => { setAddingNew(false); setAddName('') }}
-            className="text-gray-400 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700"
           >
             <X size={14} />
           </button>

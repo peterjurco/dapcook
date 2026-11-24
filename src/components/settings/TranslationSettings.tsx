@@ -97,6 +97,7 @@ export function TranslationSettings({ initialEnabled, initialLanguage, currentPr
         {enabled && (
           <div className="relative inline-block">
             <select
+              aria-label={t('translation.languageAria')}
               value={language}
               onChange={(e) => void handleLanguageChange(e.target.value)}
               className="text-sm border border-gray-200 rounded-md pl-2 pr-8 py-1.5 bg-white text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-gray-400"

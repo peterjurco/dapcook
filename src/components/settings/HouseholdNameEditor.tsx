@@ -51,7 +51,7 @@ export function HouseholdNameEditor({ initialName }: { initialName: string }) {
           type="button"
           onClick={startEditing}
           aria-label={t('page.rename')}
-          className="text-gray-400 hover:text-gray-700"
+          className="text-gray-500 hover:text-gray-700"
         >
           <Pencil size={13} />
         </button>

@@ -35,7 +35,7 @@ export default async function RecipeDetailPage(props: Props) {
     <div className="flex items-center justify-between mb-6">
       <BackToRecipesLink
         ariaLabel={t('detailPage.allRecipesAria')}
-        className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
       >
         <ChevronLeft size={16} />
         <span className="hidden sm:inline">{t('detailPage.allRecipes')}</span>

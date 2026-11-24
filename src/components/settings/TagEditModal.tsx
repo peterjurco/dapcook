@@ -104,7 +104,7 @@ export function TagEditModal({ tag, onSave, onDelete, onClose }: TagEditModalPro
               className="w-6 h-6 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center disabled:opacity-50"
               title={t('tagEditModal.noColorTitle')}
             >
-              {color === null && <Check size={12} className="text-gray-400" strokeWidth={3} />}
+              {color === null && <Check size={12} className="text-gray-500" strokeWidth={3} />}
             </button>
           </div>
         </div>

@@ -247,7 +247,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
         {/* Search — between title and actions on desktop; its own full-width
             row under them on mobile */}
         <div className="relative order-last w-full sm:order-none sm:w-auto sm:flex-1 sm:max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
             value={search}
@@ -288,7 +288,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
       </div>
 
       {defaultBypassed && (
-        <p className="text-xs text-gray-400 mb-3">{t('list.searchingAllNotice')}</p>
+        <p className="text-xs text-gray-500 mb-3">{t('list.searchingAllNotice')}</p>
       )}
 
       {/* Tag row — as many pills as fit on one line, no scrolling. The
@@ -347,7 +347,7 @@ export function RecipeList({ recipes, taxonomy, defaultFilter }: RecipeListProps
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-gray-500">
           {recipes.length === 0 ? (
             <div>
               <p className="text-lg font-medium text-gray-500 mb-2">{t('list.emptyHeading')}</p>

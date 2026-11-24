@@ -103,7 +103,7 @@ export function RecipeFiltersModal({
             type="button"
             onClick={onClose}
             aria-label={t('filtersModal.closeAria')}
-            className="text-gray-400 hover:text-gray-700 transition-colors"
+            className="text-gray-500 hover:text-gray-700 transition-colors"
           >
             <X size={18} />
           </button>
@@ -157,7 +157,7 @@ export function RecipeFiltersModal({
           )}
 
           {sections.groups.length === 0 && sections.ungrouped.length === 0 && (
-            <p className="text-sm text-gray-400">{t('filtersModal.noTags')}</p>
+            <p className="text-sm text-gray-500">{t('filtersModal.noTags')}</p>
           )}
         </div>
 

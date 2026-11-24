@@ -65,12 +65,12 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
         <span className="font-medium text-gray-700">
           {t('rules.heading')}
           {rules.length > 0 && (
-            <span className="ml-2 text-xs font-normal text-gray-400">
+            <span className="ml-2 text-xs font-normal text-gray-500">
               {t('rules.activeCount', { count: activeCount })}
             </span>
           )}
         </span>
-        {open ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+        {open ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
       </button>
 
       {open && (
@@ -80,7 +80,7 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
           </p>
 
           {rules.length === 0 && !adding && (
-            <p className="text-sm text-gray-400">{t('rules.noneYet')}</p>
+            <p className="text-sm text-gray-500">{t('rules.noneYet')}</p>
           )}
 
           {/* Rule list */}
@@ -102,10 +102,10 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
                   </svg>
                 )}
               </button>
-              <span className={`flex-1 text-sm ${rule.is_active ? 'text-gray-800' : 'text-gray-400 line-through'}`}>
+              <span className={`flex-1 text-sm ${rule.is_active ? 'text-gray-800' : 'text-gray-500 line-through'}`}>
                 {rule.label}
               </span>
-              <span className="text-xs text-gray-400 hidden group-hover:inline">
+              <span className="text-xs text-gray-500 hidden group-hover:inline">
                 {RULE_TYPES.find((t) => t.value === rule.rule_type)?.label ?? rule.rule_type}
               </span>
               <button
@@ -161,7 +161,7 @@ export function WeekRulesPanel({ weekPlanId, rules, onAdd, onDelete, onToggle }:
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               <Plus size={14} />
               {t('rules.addRuleFor')}

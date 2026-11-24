@@ -130,14 +130,14 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         >
           {uploading ? (
             <>
-              <Loader2 size={24} className="text-gray-400 animate-spin mb-2" />
-              <span className="text-sm text-gray-400">{t('imageUpload.uploading')}</span>
+              <Loader2 size={24} className="text-gray-500 animate-spin mb-2" />
+              <span className="text-sm text-gray-500">{t('imageUpload.uploading')}</span>
             </>
           ) : (
             <>
-              <ImagePlus size={24} className="text-gray-400 mb-2" />
+              <ImagePlus size={24} className="text-gray-500 mb-2" />
               <span className="text-sm font-medium text-gray-500">{t('imageUpload.addPhoto')}</span>
-              <span className="text-xs text-gray-400 mt-1">{t('imageUpload.dragDrop')}</span>
+              <span className="text-xs text-gray-500 mt-1">{t('imageUpload.dragDrop')}</span>
             </>
           )}
         </button>
@@ -148,6 +148,9 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         type="file"
         accept={ACCEPTED}
         onChange={handleInputChange}
+        // Reached through the "Add photo" button above, so hidden from keyboard and screen readers.
+        tabIndex={-1}
+        aria-hidden="true"
         className="sr-only"
       />
 

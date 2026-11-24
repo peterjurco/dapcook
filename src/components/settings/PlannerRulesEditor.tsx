@@ -53,10 +53,10 @@ export function PlannerRulesEditor({ initialRules }: PlannerRulesEditorProps) {
           </button>
 
           <div className="flex-1 min-w-0">
-            <p className={`text-sm ${rule.is_active ? 'text-gray-900' : 'text-gray-400 line-through'}`}>
+            <p className={`text-sm ${rule.is_active ? 'text-gray-900' : 'text-gray-500 line-through'}`}>
               {rule.label}
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500">
               {RULE_TYPES.find((ruleType) => ruleType.value === rule.rule_type)?.label ?? rule.rule_type}
             </p>
           </div>
@@ -72,7 +72,7 @@ export function PlannerRulesEditor({ initialRules }: PlannerRulesEditorProps) {
       ))}
 
       {/* Adding is disabled until AI planning ships — rules have no effect yet. */}
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-gray-500">
         {t('plannerRules.notice')}
       </p>
     </div>

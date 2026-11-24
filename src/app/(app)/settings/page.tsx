@@ -79,7 +79,7 @@ export default async function SettingsPage() {
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('account.heading')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
           <p className="text-xs text-gray-500 mb-1">{t('account.interfaceLanguage')}</p>
-          <p className="text-xs text-gray-400 mb-2">{t('account.interfaceLanguageHelp')}</p>
+          <p className="text-xs text-gray-500 mb-2">{t('account.interfaceLanguageHelp')}</p>
           <InterfaceLanguageSelector initialValue={isLocale(profile?.ui_language) ? profile.ui_language : defaultLocale} />
         </div>
       </section>
@@ -95,7 +95,7 @@ export default async function SettingsPage() {
 
           <div>
             <p className="text-xs text-gray-500 mb-2">{t('page.translationLabel')}</p>
-            <p className="text-xs text-gray-400 mb-2">
+            <p className="text-xs text-gray-500 mb-2">
               {t('page.translationHelp')}
             </p>
             <TranslationSettings
@@ -108,7 +108,7 @@ export default async function SettingsPage() {
 
           <div>
             <p className="text-xs text-gray-500 mb-2">{t('page.unitsLabel')}</p>
-            <p className="text-xs text-gray-400 mb-2">
+            <p className="text-xs text-gray-500 mb-2">
               {t('page.unitsHelp')}
             </p>
             <UnitPreferenceSelector
@@ -121,13 +121,13 @@ export default async function SettingsPage() {
 
           <div>
             <p className="text-xs text-gray-500 mb-2">{t('page.weekStartLabel')}</p>
-            <p className="text-xs text-gray-400 mb-2">{t('page.weekStartHelp')}</p>
+            <p className="text-xs text-gray-500 mb-2">{t('page.weekStartHelp')}</p>
             <WeekStartSelector initialValue={household?.week_start_day ?? 'monday'} />
           </div>
 
           <div>
             <p className="text-xs text-gray-500 mb-2">{t('page.inviteLinkLabel')}</p>
-            <p className="text-xs text-gray-400 mb-2">
+            <p className="text-xs text-gray-500 mb-2">
               {t('page.inviteLinkHelp')}
             </p>
             <InviteLink url={inviteUrl((await getOrigin()), household?.invite_token ?? '')} shareText={t('inviteLink.shareText')} />
@@ -139,7 +139,7 @@ export default async function SettingsPage() {
       <section className="space-y-4">
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.tags')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs text-gray-400 mb-4">
+          <p className="text-xs text-gray-500 mb-4">
             {t('page.tagsHelp')}
           </p>
           <TagOrganizer initialGroups={tagGroups ?? []} initialTags={allTags} />
@@ -150,7 +150,7 @@ export default async function SettingsPage() {
       <section className="space-y-4">
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.shoppingCategories')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs text-gray-400 mb-4">
+          <p className="text-xs text-gray-500 mb-4">
             {t('page.shoppingCategoriesHelp')}
           </p>
           <ShoppingCategoriesEditor initialCategories={shoppingCategories ?? []} />
@@ -161,7 +161,7 @@ export default async function SettingsPage() {
       <section className="space-y-4">
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.shoppingRules')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs text-gray-400 mb-4">
+          <p className="text-xs text-gray-500 mb-4">
             {t('page.shoppingRulesHelp')}
           </p>
           <ShoppingRulesEditor initialRules={shoppingRules ?? []} />
@@ -172,7 +172,7 @@ export default async function SettingsPage() {
       <section className="space-y-4">
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{t('page.plannerRules')}</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs text-gray-400 mb-4">
+          <p className="text-xs text-gray-500 mb-4">
             {t('page.plannerRulesHelp')}
           </p>
           <PlannerRulesEditor initialRules={plannerRules ?? []} />
@@ -203,7 +203,7 @@ export default async function SettingsPage() {
                 <p className="text-sm font-medium text-gray-900">
                   {member.display_name ?? t('page.memberFallbackName')}
                   {member.id === user.id && (
-                    <span className="ml-2 text-xs text-gray-400 font-normal">{t('page.you')}</span>
+                    <span className="ml-2 text-xs text-gray-500 font-normal">{t('page.you')}</span>
                   )}
                 </p>
               </div>

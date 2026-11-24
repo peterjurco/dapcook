@@ -83,18 +83,18 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
           <div className="flex flex-wrap gap-6 mt-6 py-4 border-y border-gray-100">
             {times.map(({ label, time }) => (
               <div key={label} className="flex items-start gap-1 sm:gap-1.5">
-                <Clock size={15} className="text-gray-400 mt-px h-[13px] w-[13px] sm:h-[15px] sm:w-[15px]" />
+                <Clock size={15} className="text-gray-500 mt-px h-[13px] w-[13px] sm:h-[15px] sm:w-[15px]" />
                 <div>
-                  <p className="text-xs text-gray-400">{label}</p>
+                  <p className="text-xs text-gray-500">{label}</p>
                   <p className="text-sm font-semibold text-gray-800">{time}</p>
                 </div>
               </div>
             ))}
             {r.servings && (
               <div className="flex items-start gap-1 sm:gap-1.5">
-                <Users size={15} className="text-gray-400 mt-px h-[13px] w-[13px] sm:h-[15px] sm:w-[15px]" />
+                <Users size={15} className="text-gray-500 mt-px h-[13px] w-[13px] sm:h-[15px] sm:w-[15px]" />
                 <div>
-                  <p className="text-xs text-gray-400">{t('view.servings')}</p>
+                  <p className="text-xs text-gray-500">{t('view.servings')}</p>
                   <p className="text-sm font-semibold text-gray-800">{r.servings}</p>
                 </div>
               </div>
@@ -117,7 +117,7 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
                     </span>
                     <span className="text-gray-700">
                       {ing.name}
-                      {ing.notes && <span className="text-gray-400">, {ing.notes}</span>}
+                      {ing.notes && <span className="text-gray-500">, {ing.notes}</span>}
                     </span>
                   </li>
                 ))}
@@ -174,7 +174,7 @@ export function RecipeView({ recipe: r, toolbar, mode = 'authenticated', taxonom
               href={r.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               <ExternalLink size={13} />
               {t('view.originalRecipe')}

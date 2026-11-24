@@ -25,14 +25,14 @@ export function WeekNav({ weekStart }: WeekNavProps) {
       <button
         type="button"
         onClick={() => navigate(prevWeekStart(weekStart))}
-        className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+        className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
         aria-label={t('weekNav.prevAria')}
       >
         <ChevronLeft size={18} />
       </button>
 
       <div className="flex min-w-0 items-center gap-2">
-        <CalendarDays size={16} className="hidden shrink-0 text-gray-400 sm:block" />
+        <CalendarDays size={16} className="hidden shrink-0 text-gray-500 sm:block" />
         <h2 className="whitespace-nowrap text-sm font-semibold text-gray-900 sm:text-base">
           <span className="sm:hidden">{formatWeekLabel(weekStart, locale, true)}</span>
           <span className="hidden sm:inline">{formatWeekLabel(weekStart, locale)}</span>
@@ -52,7 +52,7 @@ export function WeekNav({ weekStart }: WeekNavProps) {
       <button
         type="button"
         onClick={() => navigate(nextWeekStart(weekStart))}
-        className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+        className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
         aria-label={t('weekNav.nextAria')}
       >
         <ChevronRight size={18} />

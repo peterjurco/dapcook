@@ -41,6 +41,7 @@
   },
   "itemRow": {
     "dragAria": "Presunúť ťahaním",
+    "editAria": "Názov položky",
     "cancelEditAria": "Zrušiť úpravu",
     "deleteTitle": "Odstrániť",
     "unknownRecipe": "Neznámy recept",

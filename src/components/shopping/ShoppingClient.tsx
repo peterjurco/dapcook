@@ -409,7 +409,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
           </div>
         )}
       </div>
-      <p className="text-xs text-gray-400 mb-4 px-4 sm:px-0">
+      <p className="text-xs text-gray-500 mb-4 px-4 sm:px-0">
         {t('client.itemCount', { count: visibleItems.length })}
       </p>
       {checkFailed && (
@@ -422,7 +422,7 @@ export function ShoppingClient({ initialList, initialItems, initialCategories, i
       <div className="sm:bg-white sm:border sm:border-gray-200 sm:rounded-xl divide-y divide-gray-50">
         {visibleItems.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               {t('client.empty')}
             </p>
             <button

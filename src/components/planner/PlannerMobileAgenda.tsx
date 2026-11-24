@@ -36,7 +36,7 @@ export function PlannerMobileAgenda({ weekDays, today, slots }: PlannerMobileAge
 
             {agendaDay.cards.length === 0 ? (
               <div className="min-h-[64px] rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center">
-                <span className="text-sm text-gray-400">{t('mobileAgenda.nothingPlanned')}</span>
+                <span className="text-sm text-gray-500">{t('mobileAgenda.nothingPlanned')}</span>
               </div>
             ) : (
               <div className="space-y-2">
@@ -55,7 +55,7 @@ export function PlannerMobileAgenda({ weekDays, today, slots }: PlannerMobileAge
 function DayBadge({ dayIndex, span, t }: { dayIndex: number; span: number; t: ReturnType<typeof useTranslations> }) {
   if (span <= 1) return null
   return (
-    <span className="ml-2 text-xs font-medium text-gray-400 whitespace-nowrap">
+    <span className="ml-2 text-xs font-medium text-gray-500 whitespace-nowrap">
       {t('mobileAgenda.dayBadge', { index: dayIndex, span })}
     </span>
   )
