@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { TranslationValues } from 'use-intl'
 import { mockTranslate } from '@/test/mockMessages'
 import { JoinedWelcome } from './JoinedWelcome'
@@ -41,7 +41,8 @@ describe('JoinedWelcome', () => {
     scrollTo.mockClear()
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
     expect(await screen.findByText("You're in The Jurcos!")).toBeInTheDocument()
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
+    // The scroll runs in a passive effect, which can land just after the text appears.
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ top: 0 }))
     scrollTo.mockRestore()
   })
 
