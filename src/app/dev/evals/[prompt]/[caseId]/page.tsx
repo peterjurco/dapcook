@@ -7,6 +7,16 @@ import { humanizeKey } from '../../_components/JsonView'
 import { RunCard } from '../../_components/RunCard'
 import { DeleteCaseButton, RunControls } from '../../_components/CaseActions'
 import { InputCheck } from '../../_components/InputCheck'
+import { ExpectedEditor, type ExpectedSource } from '../../_components/ExpectedEditor'
+import type { ExpectedRecipe } from '@/lib/evals/types'
+
+const asRecipe = (value: unknown): ExpectedRecipe | null => {
+  const v = value as { rawIngredients?: unknown; rawSteps?: unknown } | null
+  const lines = (x: unknown) => (Array.isArray(x) ? x.filter((s): s is string => typeof s === 'string') : null)
+  const rawIngredients = lines(v?.rawIngredients)
+  const rawSteps = lines(v?.rawSteps)
+  return rawIngredients && rawSteps ? { rawIngredients, rawSteps } : null
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +45,15 @@ export default async function CasePage({ params }: { params: Promise<{ prompt: s
   const inputs = Object.entries(evalCase.input)
   const primary = inputs.filter(([, v]) => typeof v === 'string' && v.length >= PRIMARY_INPUT_MIN_CHARS)
   const secondary = inputs.filter((entry) => !primary.includes(entry))
+
+  // Starting points for the expected output: the page's JSON-LD and runs marked correct.
+  const sources: ExpectedSource[] = []
+  const fromJsonLd = evalCase.reference && asRecipe(evalCase.reference.data)
+  if (fromJsonLd) sources.push({ label: "Page's JSON-LD", value: fromJsonLd })
+  for (const { run, number } of numberRuns(evalCase)) {
+    const output = run.verdict === 'correct' ? asRecipe(run.output) : null
+    if (output) sources.push({ label: `Run ${number} (correct)`, value: output })
+  }
 
   return (
     <div>
@@ -96,6 +115,9 @@ export default async function CasePage({ params }: { params: Promise<{ prompt: s
 
         {/* Right: the runs, judged against the input on the left. */}
         <div className="min-w-0 space-y-4">
+          {info.id === 'extract-recipe' && !evalCase.inputProblem && (
+            <ExpectedEditor prompt={info.id} caseId={evalCase.id} expected={evalCase.expected} sources={sources} />
+          )}
           {evalCase.inputProblem ? (
             <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
               This input is marked as bad, so it isn&apos;t run or judged. Runs from before it was marked stay

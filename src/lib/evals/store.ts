@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, rename, rm, writeFile } from 'fs/promises'
 import { randomBytes } from 'crypto'
 import path from 'path'
 import { AUTO_PROBLEM_PREFIX, detectInputProblem } from './coverage'
-import type { EvalCase, PromptId } from './types'
+import type { EvalCase, PromptId, SuiteResult } from './types'
 
 // One pretty-printed JSON file per case: evals/data/<prompt>/<caseId>.json.
 // Plain files keep the dataset diffable and easy to feed into an eval runner.
@@ -139,6 +139,42 @@ export async function updateCase(
     return await next
   } finally {
     if (locks.get(key) === next) locks.delete(key)
+  }
+}
+
+// ── Eval suite results: evals/results/<prompt>/<id>.json, git-ignored ──────
+
+function resultsDir(prompt: PromptId): string {
+  return path.join(path.dirname(dataDir()), 'results', prompt)
+}
+
+export async function saveSuiteResult(result: SuiteResult): Promise<void> {
+  const dir = resultsDir(result.prompt)
+  await mkdir(dir, { recursive: true })
+  await writeFile(path.join(dir, `${result.id}.json`), JSON.stringify(result, null, 2) + '\n', 'utf8')
+}
+
+/** Newest first. */
+export async function listSuiteResults(prompt: PromptId): Promise<SuiteResult[]> {
+  const dir = resultsDir(prompt)
+  let files: string[]
+  try {
+    files = (await readdir(dir)).filter((f) => f.endsWith('.json'))
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return []
+    throw err
+  }
+  const results = await Promise.all(files.map(async (f) => JSON.parse(await readFile(path.join(dir, f), 'utf8')) as SuiteResult))
+  return results.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+export async function getSuiteResult(prompt: PromptId, id: string): Promise<SuiteResult | null> {
+  if (!SAFE_ID.test(id)) throw new Error(`Invalid id: ${id}`)
+  try {
+    return JSON.parse(await readFile(path.join(resultsDir(prompt), `${id}.json`), 'utf8')) as SuiteResult
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null
+    throw err
   }
 }
 

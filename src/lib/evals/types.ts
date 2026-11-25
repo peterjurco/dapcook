@@ -58,5 +58,60 @@ export interface EvalCase {
    * not run, judged or used in evals. It's a pipeline bug report instead.
    */
   inputProblem?: string | null
+  /** The correct output, written by hand; samples with one are scored by the eval suite. */
+  expected?: ExpectedRecipe | null
   runs: EvalRun[]
+}
+
+export interface ExpectedRecipe {
+  rawIngredients: string[]
+  rawSteps: string[]
+}
+
+// ── Eval suite results ──────────────────────────────────────────────────────
+
+export interface ListScore {
+  pass: boolean
+  /** Expected lines (ingredients) or passages (steps) not in the output. */
+  missing: string[]
+  /** Output lines or passages that weren't expected. */
+  extra: string[]
+}
+
+export interface DivisionScore {
+  /** skipped: not judged because instruction completeness failed. */
+  status: 'pass' | 'fail' | 'skipped' | 'error'
+  reasoning?: string
+  /** Model that actually answered (differs from the judge model after a refusal fallback). */
+  servedBy?: string
+  error?: string
+}
+
+export interface SampleResult {
+  caseId: string
+  label: string
+  url: string | null
+  /** 1-based repeat of this sample within the suite run. */
+  attempt: number
+  output: ExpectedRecipe | null
+  rawText: string
+  stopReason?: string | null
+  /** The extraction call failed or its reply wasn't usable JSON. */
+  error?: string
+  ingredients: ListScore
+  completeness: ListScore
+  division: DivisionScore
+  usage: { input_tokens: number; output_tokens: number }
+  durationMs: number
+}
+
+export interface SuiteResult {
+  id: string
+  prompt: PromptId
+  createdAt: string
+  /** Model under test (the production request with this model swapped in). */
+  model: string
+  judgeModel: string
+  runsPerSample: number
+  samples: SampleResult[]
 }

@@ -34,7 +34,14 @@ export default async function PromptPage({
 
   const header = (
     <header className="mb-5">
-      <h1 className="text-2xl font-semibold">{info.title}</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-semibold">{info.title}</h1>
+        {info.id === 'extract-recipe' && (
+          <Link href={`/dev/evals/${info.id}/suite`} className="rounded-md border border-emerald-700 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50">
+            Eval suite →
+          </Link>
+        )}
+      </div>
       <p className="mt-1 max-w-2xl text-sm text-gray-600">{info.description}</p>
       <p className="mt-1 font-mono text-xs text-gray-500">{info.file}</p>
     </header>
@@ -139,7 +146,12 @@ export default async function PromptPage({
               <li key={evalCase.id} className="rounded-lg border border-gray-200 bg-white">
                 <Link href={caseHref} className="block rounded-t-lg p-3 hover:bg-gray-50">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <span className="font-medium">{evalCase.label}</span>
+                    <span className="font-medium">
+                      {evalCase.label}
+                      {evalCase.expected && (
+                        <span title="Has an expected output: scored by the eval suite" className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-normal text-emerald-800">expected ✓</span>
+                      )}
+                    </span>
                     <span className="text-xs text-gray-500">
                       {evalCase.runs.length} {evalCase.runs.length === 1 ? 'run' : 'runs'}
                       {correct > 0 && <span className="ml-2 text-emerald-700">✓ {correct}</span>}

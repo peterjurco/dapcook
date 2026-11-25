@@ -5,8 +5,9 @@ import { redirect } from 'next/navigation'
 import { detectInputProblem } from '@/lib/evals/coverage'
 import { getPromptInfo } from '@/lib/evals/prompts'
 import { executeRun, getRunner } from '@/lib/evals/runners'
-import { createCase, deleteCase, getCase, listCases, newId, updateCase } from '@/lib/evals/store'
-import type { EvalCase, PromptId, Verdict } from '@/lib/evals/types'
+import { createCase, deleteCase, getCase, listCases, newId, saveSuiteResult, updateCase } from '@/lib/evals/store'
+import { runExtractRecipeSuite } from '@/lib/evals/suite'
+import type { EvalCase, ExpectedRecipe, PromptId, Verdict } from '@/lib/evals/types'
 
 // These actions write to the local filesystem and spend Anthropic credits, so
 // they only exist in `next dev`, like /dev/login.
@@ -104,6 +105,41 @@ export async function setInputProblemAction(promptParam: string, caseId: string,
   const prompt = assertDev(promptParam)
   await updateCase(prompt, caseId, (c) => { c.inputProblem = problem?.trim() || null })
   revalidatePath(base(prompt), 'layout')
+}
+
+/** Sets the hand-written correct output of an input (null clears it). */
+export async function setExpectedAction(promptParam: string, caseId: string, expected: ExpectedRecipe | null): Promise<void> {
+  const prompt = assertDev(promptParam)
+  const clean = (lines: string[]) => lines.map((l) => l.trim()).filter(Boolean)
+  const value = expected && { rawIngredients: clean(expected.rawIngredients), rawSteps: clean(expected.rawSteps) }
+  await updateCase(prompt, caseId, (c) => {
+    c.expected = value && (value.rawIngredients.length || value.rawSteps.length) ? value : null
+  })
+  revalidatePath(base(prompt), 'layout')
+}
+
+export interface RunSuiteState {
+  error?: string
+}
+
+/** Runs the eval suite over every input with an expected output. Paid: extraction + judge calls. */
+export async function runSuiteAction(promptParam: string, _prev: RunSuiteState, formData: FormData): Promise<RunSuiteState> {
+  const prompt = assertDev(promptParam)
+  const model = String(formData.get('model') ?? '').trim()
+  const runsPerSample = Math.min(Math.max(Number(formData.get('runsPerSample')) || 1, 1), 5)
+  if (!model) return { error: 'Choose a model' }
+
+  let id: string
+  try {
+    const result = await runExtractRecipeSuite(await listCases(prompt), { model, runsPerSample })
+    if (result.samples.length === 0) return { error: 'No inputs have an expected output yet' }
+    await saveSuiteResult(result)
+    id = result.id
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+  revalidatePath(`${base(prompt)}/suite`)
+  redirect(`${base(prompt)}/suite/${id}`)
 }
 
 export async function deleteRunAction(promptParam: string, caseId: string, runId: string): Promise<void> {

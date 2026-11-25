@@ -80,3 +80,27 @@ When a real page catches a bug, add a synthetic copy of it to
 `src/lib/scraper/recipe-pages.fixtures.ts`: the same HTML structure, but our
 own text. Check that it fails without the fix and passes with it, so the bug
 stays covered in CI without committing anyone's content.
+
+## Eval suite (extract-recipe)
+
+Turns the collected inputs into a repeatable test of the prompt, for example to
+compare a new model with the production one.
+
+1. **Write the expected output** on an input's page ("Expected output"): one
+   ingredient per line, steps separated by a blank line. Start from the page's
+   JSON-LD or from a run marked correct, then correct it by hand. Inputs with an
+   expected output (and not marked as bad input) are the suite's samples.
+2. **Run the suite** from "Eval suite →" on the prompt page: pick the model under
+   test (default: the production model) and how many runs per sample. It sends
+   the production extraction request with that model and scores each output:
+   - **Ingredients** (code): the same lines in any order, ignoring case,
+     whitespace and punctuation; "¾", "3/4" and "3⁄4" are the same.
+   - **Instruction completeness** (code): all steps joined and compared word by
+     word with the same normalisation, so how the text is split into steps
+     doesn't matter. Missing and extra passages are listed.
+   - **Step division** (AI judge, `claude-sonnet-5-5`, prompt in
+     `src/lib/evals/judge.ts`): only when completeness passed.
+
+Each run makes paid API calls (one extraction per sample and run, plus one judge
+call when completeness passes). Results are saved to `evals/results/`
+(git-ignored) and listed on the suite page.
