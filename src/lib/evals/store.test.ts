@@ -3,8 +3,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, readdir, readFile, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import path from 'path'
-import { createCase, deleteCase, getCase, listCases, newId, pageFileName, pagesDir, savePageHtml, updateCase } from './store'
-import type { EvalCase, EvalRun } from './types'
+import { createCase, deleteCase, getCase, getSuiteResult, listCases, listSuiteResults, newId, pageFileName, pagesDir, savePageHtml, saveSuiteResult, updateCase } from './store'
+import type { EvalCase, EvalRun, SuiteResult } from './types'
 
 let dir: string
 
@@ -102,7 +102,19 @@ describe('eval store', () => {
     await rm(pagesDir(), { recursive: true, force: true })
   })
 
-  it('rejects ids that could escape the data directory', async () => {
+  it('saves eval suite results outside the case folders and lists them newest first', async () => {
+    const result = (id: string, createdAt: string): SuiteResult => ({
+      id, prompt: 'extract-recipe', createdAt, model: 'm', judgeModel: 'j', runsPerSample: 1, samples: [],
+    })
+    await saveSuiteResult(result('aaa-1', '2026-01-01T00:00:00.000Z'))
+    await saveSuiteResult(result('bbb-2', '2026-02-01T00:00:00.000Z'))
+    expect((await listSuiteResults('extract-recipe')).map((r) => r.id)).toEqual(['bbb-2', 'aaa-1'])
+    expect((await getSuiteResult('extract-recipe', 'aaa-1'))?.createdAt).toBe('2026-01-01T00:00:00.000Z')
+    expect(await listCases('extract-recipe')).toEqual([])
+    await rm(path.join(path.dirname(dir), 'results'), { recursive: true, force: true })
+  })
+
+    it('rejects ids that could escape the data directory', async () => {
     await expect(getCase('extract-recipe', '../../etc/passwd')).rejects.toThrow('Invalid id')
   })
 })

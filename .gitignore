@@ -51,3 +51,6 @@ next-env.d.ts
 # Third-party content: never commit (the repo is public). Synthetic versions of
 # the ones that caught bugs live in src/lib/scraper/recipe-pages.fixtures.ts.
 /evals/pages/
+
+# Eval suite results (model outputs on those pages), written by /dev/evals.
+/evals/results/
