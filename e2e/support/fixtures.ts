@@ -184,9 +184,63 @@ async function skipSplash(context: BrowserContext): Promise<void> {
   }, SPLASH_SESSION_KEY)
 }
 
+/**
+ * Resolves once React has hydrated every form control on the page. React tags each
+ * element it hydrates (Next.js server-action hidden inputs aside, which are skipped) with a `__reactProps$…` property; until then a click does
+ * nothing, and text typed into a field is wiped when hydration resets it to its
+ * state. Suspense boundaries (our `loading.tsx` files) can hydrate after the rest
+ * of the page, so this checks the controls themselves rather than a root marker.
+ */
+export async function waitForHydration(page: Page): Promise<void> {
+  const allHydrated = () =>
+    [...document.querySelectorAll('button, input:not([type=hidden]), select, textarea')].every((el) =>
+      Object.keys(el).some((key) => key.startsWith('__reactProps$'))
+    )
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await page.waitForFunction(allHydrated, undefined, { timeout: 15_000 })
+      return
+    } catch (err) {
+      // A client-side redirect replaced the document mid-wait: check the new one.
+      if (attempt < 2 && /context was destroyed|navigation/i.test(String(err))) {
+        await page.waitForLoadState()
+        continue
+      }
+      const stragglers = await page
+        .evaluate(() =>
+          [...document.querySelectorAll('button, input:not([type=hidden]), select, textarea')]
+            .filter((el) => !Object.keys(el).some((key) => key.startsWith('__reactProps$')))
+            .map((el) => el.outerHTML.slice(0, 160))
+        )
+        .catch(() => [])
+      throw new Error(`Page never finished hydrating. Controls React hasn't taken over:\n${stragglers.join('\n')}`, { cause: err })
+    }
+  }
+}
+
+/**
+ * Makes every `page.goto` to an app page wait for hydration (see waitForHydration),
+ * so no test can type or click into a page React hasn't taken over yet. That race
+ * only shows on slow machines, e.g. WebKit in CI.
+ */
+function gotoWaitsForHydration(context: BrowserContext) {
+  context.on('page', (page) => {
+    const goto = page.goto.bind(page)
+    page.goto = async (url, options) => {
+      const response = await goto(url, options)
+      const isAppPage =
+        new URL(page.url()).origin === new URL(APP_URL).origin &&
+        (response?.headers()['content-type'] ?? '').includes('text/html')
+      if (isAppPage) await waitForHydration(page)
+      return response
+    }
+  })
+}
+
 /** A page in a fresh browser context signed in as `user` (or signed out when `user` is null). */
 export async function openAs(browser: Browser, user: TestUser | null): Promise<Page> {
   const context = await browser.newContext({ baseURL: APP_URL })
+  gotoWaitsForHydration(context)
   await skipSplash(context)
   if (user) await signIn(context, user)
   return context.newPage()
@@ -347,6 +401,7 @@ export const test = base.extend<{ household: boolean; skipTours: boolean; user: 
   household: [true, { option: true }],
   skipTours: [true, { option: true }],
   context: async ({ context }, provide) => {
+    gotoWaitsForHydration(context)
     await skipSplash(context)
     await provide(context)
   },
