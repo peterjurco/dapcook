@@ -145,9 +145,10 @@ contain `text`, to check what the app sent.
 
 **Things that make tests flaky:**
 
-- **Clicking before hydration.** A click or file upload that lands before React has hydrated the page is silently lost.
-  Wait for something the page only does once hydrated (`openRecipeForm` and `openPlanner` do this), never for a fixed
-  time.
+- **Clicking before hydration.** A click before React has hydrated the page does nothing, and text typed into a field
+  is wiped when hydration resets it. `page.goto` in these tests waits for hydration by itself (`waitForHydration` in
+  `support/fixtures.ts`: every control carries React's props). After a client-side navigation (clicking a link),
+  wait for something on the new page before typing into it, never for a fixed time.
 - **`page.goto` while the app is navigating.** After a save that calls `router.refresh()`, or a redirect such as
   finishing onboarding, a `goto` can be "interrupted by another navigation" — WebKit especially. Wait for the page the
   app is heading to, or navigate through the app's links.

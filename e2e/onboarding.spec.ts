@@ -82,10 +82,13 @@ test.describe('Onboarding', () => {
 
     // The planner follows the chosen week start.
     await page.getByRole('button', { name: 'Go to recipes' }).click()
-    // Finishing is saved on the way out: let that land on Recipes first, or a goto racing it is cut short.
+    // Finishing is saved on the way out, and the app may still be navigating to Recipes
+    // when we leave: a goto racing that is cut short, so retry until Settings sticks.
     await expect(page.getByRole('heading', { name: 'Recipes' })).toBeVisible()
-    await page.goto('/settings')
-    await expect(page.getByRole('button', { name: 'Sunday', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    await expect(async () => {
+      await page.goto('/settings')
+      await expect(page.getByRole('button', { name: 'Sunday', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
   })
 
   test('picks up where it left off after leaving mid-way', async ({ page }) => {
