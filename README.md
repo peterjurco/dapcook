@@ -43,17 +43,29 @@ Database schema and migrations live in `supabase/migrations`.
 
 ## Testing
 
-Five layers, from fastest to closest to real use. None of them calls the paid Anthropic API.
+None of the automated tests call the paid Anthropic API.
 
-| Layer | What it proves | Where | Run it | Runs automatically |
-| --- | --- | --- | --- | --- |
-| **Lint + types** | Code style, type safety | whole repo | `npm run lint`, `npm run type-check` | CI, every PR and push |
-| **Unit tests** (Vitest, ~1,300) | Logic and components in isolation: scraper and JSON-LD parsing, unit conversion, planner layout, API route handlers, React components. The Anthropic SDK and Supabase are mocked. | `src/**/*.test.ts(x)`, next to the code | `npm test` | CI (`npm run test:ci`) |
-| **Live scraper tests** | Importing still works on a few real recipe sites | `src/lib/scraper/*.integration.test.ts` | `npm test` (included) | Never — real sites change and block bots, so they'd make CI flaky |
-| **End-to-end** (Playwright, 260) | Real user journeys in a real browser, on a production build, against a real database with RLS and every migration applied, plus accessibility (axe) on every main page | `e2e/*.spec.ts` | `npm run test:e2e` | CI, every PR and push |
-| **Production smoke test** | The live site is up and reaches Supabase after a deploy (read-only, signed out) | `e2e/smoke/` | `npx playwright test -c playwright.smoke.config.ts` | After every successful Production deploy |
+| Layer | Command | Runs automatically |
+| --- | --- | --- |
+| Lint + types | `npm run lint` · `npm run type-check` | CI |
+| Unit tests | `npm test` | CI |
+| Live scraper tests | `npm test` (included) | never |
+| End-to-end | `npm run test:e2e` | CI |
+| Production smoke test | `npx playwright test -c playwright.smoke.config.ts` | after each production deploy |
 
-Separately, **AI output quality** is judged by hand with the eval tool at `/dev/evals` (`evals/README.md`); those runs
+"CI" means every pull request and every push to `main` and `staging` (`.github/workflows/ci.yml`).
+
+- **Lint + types** — code style and type safety across the repo.
+- **Unit tests** (Vitest, ~1,300, in `src/**/*.test.ts(x)` next to the code) — logic and components in isolation:
+  scraping and JSON-LD parsing, unit conversion, planner layout, API route handlers, React components. The Anthropic
+  SDK and Supabase are mocked.
+- **Live scraper tests** (`src/lib/scraper/*.integration.test.ts`) — importing still works on a few real recipe
+  sites. Left out of CI because real sites change and block bots.
+- **End-to-end** (Playwright, 260 runs, in `e2e/`) — real user journeys in a real browser, on a production build,
+  against a local database with RLS and every migration applied; includes accessibility checks. Needs Docker.
+- **Production smoke test** (`e2e/smoke/`) — read-only and signed out: the live site is up and reaches Supabase.
+
+AI answer quality is judged separately, by hand, with the eval tool at `/dev/evals` (`evals/README.md`); those runs
 do call the real API.
 
 ### What the end-to-end suite covers
