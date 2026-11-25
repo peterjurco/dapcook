@@ -54,12 +54,12 @@ describe('OnboardingWizard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText('Which units do you use?')).toBeInTheDocument()
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ top: 0 }))
 
     scrollTo.mockClear()
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(await screen.findByText('Translate recipes?')).toBeInTheDocument()
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0 })
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ top: 0 }))
     scrollTo.mockRestore()
   })
 
