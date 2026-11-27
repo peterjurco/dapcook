@@ -34,7 +34,7 @@ Return a JSON object with EXACTLY this structure, no other text:
 
 Rules:
 - rawIngredients: each element is one ingredient line, copied verbatim from the text (do not parse quantities/units, do not translate). Keep the spelling, grammar and punctuation exactly as written, even if they look wrong
-- rawIngredients must include every line of the recipe's ingredient list, including optional toppings, garnishes and serving suggestions. One element per line of the list: never split a line that names several ingredients, and never merge lines
+- rawIngredients must include every line of the recipe's ingredient list, including optional toppings, garnishes and serving suggestions. One element per line of the list: never split a line that names several ingredients, and never merge lines. Take rawIngredients only from the ingredient list itself: never add ingredients that are mentioned only in the steps or elsewhere in the text
 - rawSteps: each element is one instruction step, copied verbatim from the text (do not translate, do not merge or split steps)
 - If the text is not a recipe, or has no clear ingredient list or steps, return {"rawIngredients": [], "rawSteps": []}
 - Ignore unrelated content such as comments, related-post links, or navigation text`
